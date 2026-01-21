@@ -37,7 +37,7 @@ function App() {
         <Route path="/library-dashboard" element={<LibraryDashboard />} />
         <Route path="/repository-dashboard" element={<RepositoryDashboard />} />
         <Route path="/wikipedia-dashboard" element={<WikipediaDashboard />} />
-        <Route path="/researchers-dashboard" element={<ResearchersDashboard />} />
+        <Route path="/researcher-dashboard" element={<ResearchersDashboard />} />
         <Route path="/journal-dashboard" element={<JournalDashboard />} />
         <Route path="/library/users" element={<ProtectedRoute><LibraryUserList /></ProtectedRoute>} />
         

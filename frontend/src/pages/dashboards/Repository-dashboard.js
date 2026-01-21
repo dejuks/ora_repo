@@ -1,45 +1,139 @@
 import React from "react";
-import { logout } from "../../utils/auth";
+import MainLayout from "../../components/layout/MainLayout";
 
-export default function FinanceDashboard() {
-  const user = JSON.parse(localStorage.getItem("user"));
+export default function RepositoryDashboard() {
+  /* ===============================
+     MOCK DATA FOR REPOSITORY
+  ================================ */
+  const stats = [
+    {
+      id: 1,
+      title: "Total Repositories",
+      count: 320,
+      icon: "fas fa-folder",
+      color: "bg-info",
+    },
+    {
+      id: 2,
+      title: "Active Repositories",
+      count: 210,
+      icon: "fas fa-folder-open",
+      color: "bg-success",
+    },
+    {
+      id: 3,
+      title: "New Repositories",
+      count: 25,
+      icon: "fas fa-plus",
+      color: "bg-warning",
+    },
+    {
+      id: 4,
+      title: "Commits Today",
+      count: 480,
+      icon: "fas fa-code-branch",
+      color: "bg-danger",
+    },
+    {
+      id: 5,
+      title: "Contributors",
+      count: 65,
+      icon: "fas fa-users",
+      color: "bg-primary",
+    },
+    {
+      id: 6,
+      title: "Pending Pull Requests",
+      count: 12,
+      icon: "fas fa-file-import",
+      color: "bg-purple",
+    },
+  ];
 
   return (
-    <div className="container mt-4">
-      <h2>Finance Dashboard</h2>
-      <p className="text-muted">
-        Welcome <b>{user?.full_name}</b> (Finance Module)
-      </p>
-
-      <div className="row mt-4">
-        <div className="col-md-4">
-          <div className="card card-outline card-success">
-            <div className="card-body">
-              <h5>Payments</h5>
-              <p>Manage payments and invoices</p>
-              <a href="/payments" className="btn btn-success btn-sm">
-                Go
-              </a>
+    <MainLayout>
+      {/* ===============================
+          PAGE HEADER
+      ================================ */}
+      <section className="content-header">
+        <div className="container-fluid">
+          <div className="row mb-2">
+            <div className="col-sm-6">
+              <h1>Repository Dashboard</h1>
+            </div>
+            <div className="col-sm-6">
+              <ol className="breadcrumb float-sm-right">
+                <li className="breadcrumb-item">
+                  <a href="/repository/dashboard">Home</a>
+                </li>
+                <li className="breadcrumb-item active">Dashboard</li>
+              </ol>
             </div>
           </div>
         </div>
+      </section>
 
-        <div className="col-md-4">
-          <div className="card card-outline card-secondary">
-            <div className="card-body">
-              <h5>Reports</h5>
-              <p>Financial reports and analytics</p>
-              <a href="/finance-reports" className="btn btn-secondary btn-sm">
-                Go
-              </a>
+      {/* ===============================
+          DASHBOARD CONTENT
+      ================================ */}
+      <section className="content">
+        <div className="container-fluid">
+          <div className="row">
+            {stats.map((item) => (
+              <div key={item.id} className="col-lg-4 col-md-6 col-12">
+                <div className={`small-box ${item.color}`}>
+                  <div className="inner">
+                    <h3>{item.count}</h3>
+                    <p>{item.title}</p>
+                  </div>
+                  <div className="icon">
+                    <i className={item.icon}></i>
+                  </div>
+                  <a
+                    href="#"
+                    className="small-box-footer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      alert(`${item.title} clicked!`);
+                    }}
+                  >
+                    More info <i className="fas fa-arrow-circle-right"></i>
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* ===============================
+              REPOSITORY DETAILS CARD
+          ================================ */}
+          <div className="row mt-4">
+            <div className="col-12">
+              <div className="card card-outline card-secondary">
+                <div className="card-header">
+                  <h3 className="card-title">
+                    <i className="fas fa-database mr-2"></i>
+                    Repository Management Overview
+                  </h3>
+                </div>
+                <div className="card-body">
+                  <p>
+                    This dashboard provides an overview of repositories managed
+                    within the system. You can track repository activity, commits,
+                    contributors, and pending pull requests.
+                  </p>
+                  <ul>
+                    <li>View and manage all repositories</li>
+                    <li>Monitor commits and contributors</li>
+                    <li>Approve or reject pull requests</li>
+                    <li>Create new repositories and manage access</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <button className="btn btn-danger mt-4" onClick={logout}>
-        Logout
-      </button>
-    </div>
+      </section>
+    </MainLayout>
   );
 }
