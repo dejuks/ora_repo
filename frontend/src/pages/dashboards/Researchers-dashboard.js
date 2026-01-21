@@ -1,45 +1,58 @@
 import React from "react";
-import { logout } from "../../utils/auth";
+import MainLayout from "../../components/layout/MainLayout";
 
-export default function FinanceDashboard() {
-  const user = JSON.parse(localStorage.getItem("user"));
+export default function ResearcherNetworkDashboard() {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  // Mock data for Researcher Network
+  const stats = [
+    { id: 1, title: "Total Researchers", count: 200, icon: "fas fa-user-graduate", color: "bg-info" },
+    { id: 2, title: "Active Projects", count: 45, icon: "fas fa-flask", color: "bg-success" },
+    { id: 3, title: "Ongoing Collaborations", count: 12, icon: "fas fa-handshake", color: "bg-warning" },
+    { id: 4, title: "Funding Sources", count: 8, icon: "fas fa-hand-holding-usd", color: "bg-danger" },
+    { id: 5, title: "Reports Generated", count: 25, icon: "fas fa-chart-bar", color: "bg-primary" },
+    { id: 6, title: "Pending Approvals", count: 5, icon: "fas fa-clock", color: "bg-purple" },
+  ];
 
   return (
-    <div className="container mt-4">
-      <h2>Finance Dashboard</h2>
-      <p className="text-muted">
-        Welcome <b>{user?.full_name}</b> (Finance Module)
-      </p>
+    <MainLayout>
+      {/* Page Header */}
+      <section className="content-header">
+        <div className="container-fluid">
+          <h1>Researcher Network Dashboard</h1>
+          <p className="text-muted">
+            Welcome <b>{user.full_name}</b> (Researcher Network Module)
+          </p>
+        </div>
+      </section>
 
-      <div className="row mt-4">
-        <div className="col-md-4">
-          <div className="card card-outline card-success">
-            <div className="card-body">
-              <h5>Payments</h5>
-              <p>Manage payments and invoices</p>
-              <a href="/payments" className="btn btn-success btn-sm">
-                Go
-              </a>
-            </div>
+      {/* Dashboard Cards */}
+      <section className="content">
+        <div className="container-fluid">
+          <div className="row">
+            {stats.map((item) => (
+              <div key={item.id} className="col-lg-4 col-6">
+                <div className={`small-box ${item.color}`}>
+                  <div className="inner">
+                    <h3>{item.count}</h3>
+                    <p>{item.title}</p>
+                  </div>
+                  <div className="icon">
+                    <i className={item.icon}></i>
+                  </div>
+                  <a
+                    href="#"
+                    className="small-box-footer"
+                    onClick={() => alert(`${item.title} clicked!`)}
+                  >
+                    More info <i className="fas fa-arrow-circle-right"></i>
+                  </a>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-
-        <div className="col-md-4">
-          <div className="card card-outline card-secondary">
-            <div className="card-body">
-              <h5>Reports</h5>
-              <p>Financial reports and analytics</p>
-              <a href="/finance-reports" className="btn btn-secondary btn-sm">
-                Go
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <button className="btn btn-danger mt-4" onClick={logout}>
-        Logout
-      </button>
-    </div>
+      </section>
+    </MainLayout>
   );
 }
