@@ -9,6 +9,7 @@ import permissionRoutes from "./routes/permission.routes.js";
 import rolePermissionRoutes from "./routes/rolePermission.routes.js";
 import userRoleRoutes from "./routes/userRole.routes.js";
 import moduleRoutes from "./routes/module.routes.js";
+import libraryUserRoutes from "./routes/libraryUser.routes.js";
  
 
 
@@ -30,6 +31,10 @@ app.use("/api/permissions", permissionRoutes);
 app.use("/api/role-permissions", rolePermissionRoutes);
 app.use("/api/user-roles", userRoleRoutes);
 app.use("/api/modules", moduleRoutes);
+app.use("/uploads", express.static("uploads"));
+app.use("/api/library-users", libraryUserRoutes);
+
+
  
 
 
