@@ -25,6 +25,7 @@ const ROLES = {
   ORO_WIKI_MANAGER: "f06cb194-d9cf-4fb1-9ce8-55ded280e9b9",
   REPOSITORY_MANAGER: "5205b388-a2e4-4e40-baae-8fe018e08d18",
   RESEARCHER_NETWORK_MANAGER: "d2db77c2-177c-44e6-921a-d635abd674d3",
+  JOURNAL_AUTHOR: "1d67d32d-dcee-4302-8369-26ca00385a09",
 };
 
 export default function Sidebar() {
@@ -118,7 +119,7 @@ export default function Sidebar() {
       },
       {
         name: "Permissions",
-        path: "/settings/permissions",
+        path: "/permissions",
         roles: [ROLES.SUPER_ADMIN],
         icon: "fas fa-key",
       },
@@ -153,100 +154,203 @@ export default function Sidebar() {
   },
 ],
 
-// ================= JOURNAL MODULE ================= */
-    [MODULES.JOURNAL]: [
+// ================= JOURNAL MODULE =================
+[MODULES.JOURNAL]: [
+  /* ================= DASHBOARD ================= */
+  {
+    name: "Dashboard",
+    path: "/journal/dashboard",
+    icon: "fas fa-tachometer-alt",
+    roles: [
+      ROLES.JOURNAL_MANAGER,
+      ROLES.JOURNAL_AUTHOR,
+      ROLES.EDITOR,
+      ROLES.REVIEWER,
+    ],
+  },
+
+  /* ================= USERS & ROLES ================= */
+  {
+    name: "Users & Roles",
+    icon: "fas fa-users",
+    roles: [ROLES.JOURNAL_MANAGER],
+    subMenu: [
       {
-        name: "Dashboard",
-        path: "/journal/dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
+        name: "All Users",
+        path: "/journal/users",
+        icon: "fas fa-user",
       },
       {
-        name: "Journals",
-        icon: "fas fa-book",
-        roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
-        subMenu: [
-          { name: "All Journals", path: "/journal/list", icon: "fas fa-list" },
-          { name: "Add Journal", path: "/journal/create", icon: "fas fa-plus" },
-        ],
-      },
-      {
-        name: "Manuscripts",
-        icon: "fas fa-file-alt",
-        roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
-        subMenu: [
-          {
-            name: "Submit Manuscript",
-            path: "/journal/manuscripts/create",
-            icon: "fas fa-upload",
-          },
-          {
-            name: "My Manuscripts",
-            path: "/journal/manuscripts/my",
-            icon: "fas fa-newspaper",
-          },
-          {
-            name: "All Manuscripts",
-            path: "/journal/manuscripts",
-            icon: "fas fa-database",
-          },
-        ],
-      },
-      {
-        name: "Reviews",
-        icon: "fas fa-clipboard-check",
-        roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
-        subMenu: [
-          {
-            name: "Assigned Reviews",
-            path: "/journal/reviews/reviewer",
-            icon: "fas fa-tasks",
-          },
-          {
-            name: "Submit Review",
-            path: "/journal/reviews/submit/:manuscriptId",
-            icon: "fas fa-paper-plane",
-          },
-          {
-            name: "Review History",
-            path: "/journal/reviews/history",
-            icon: "fas fa-history",
-          },
-          {
-            name: "Reviewer Invitations",
-            path: "/journal/reviews/invitations",
-            icon: "fas fa-user-check",
-          },
-          {
-            name: "Reviewer Workload",
-            path: "/journal/reviews/workload",
-            icon: "fas fa-balance-scale",
-          },
-        ],
-      },
-      {
-        name: "Authors & Co-authors",
-        icon: "fas fa-users",
-        roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
-        subMenu: [
-          {
-            name: "Author List",
-            path: "/journal/authors",
-            icon: "fas fa-user-edit",
-          },
-          {
-            name: "Invite Co-author",
-            path: "/journal/coauthors/invite",
-            icon: "fas fa-user-plus",
-          },
-          {
-            name: "Invitations",
-            path: "/journal/coauthors/invitations",
-            icon: "fas fa-envelope-open-text",
-          },
-        ],
+        name: "Add New User",
+        path: "/journal/users/add",
+        icon: "fas fa-user-tag",
       },
     ],
+  },
+
+  /* ================= JOURNALS ================= */
+  {
+    name: "Journals",
+    icon: "fas fa-book",
+    roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
+    subMenu: [
+      {
+        name: "All Journals",
+        path: "/journal/list",
+        icon: "fas fa-list",
+      },
+      {
+        name: "Add Journal",
+        path: "/journal/create",
+        icon: "fas fa-plus",
+      },
+    ],
+  },
+
+  /* ================= MANUSCRIPTS ================= */
+  {
+    name: "Manuscripts",
+    icon: "fas fa-file-alt",
+    roles: [ROLES.JOURNAL_MANAGER, ROLES.JOURNAL_AUTHOR, ROLES.EDITOR],
+    subMenu: [
+      /* ----- AUTHOR ----- */
+       {
+        name: "Journals",
+        path: "/journal/list/create",
+        icon: "fas fa-upload",
+        roles: [ROLES.JOURNAL_AUTHOR],
+      },
+      {
+        name: "Submit Manuscript",
+        path: "/journal/manuscripts/create",
+        icon: "fas fa-upload",
+        roles: [ROLES.JOURNAL_AUTHOR],
+      },
+      {
+        name: "My Manuscripts",
+        path: "/journal/manuscripts/my",
+        icon: "fas fa-newspaper",
+        roles: [ROLES.JOURNAL_AUTHOR],
+      },
+      {
+        name: "Revisions Required",
+        path: "/journal/manuscripts/revisions",
+        icon: "fas fa-edit",
+        roles: [ROLES.JOURNAL_AUTHOR],
+      },
+
+      /* ----- EDITOR / MANAGER ----- */
+      {
+        name: "All Manuscripts",
+        path: "/journal/manuscripts",
+        icon: "fas fa-database",
+        roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
+      },
+      {
+        name: "Accepted Manuscripts",
+        path: "/journal/manuscripts/accepted",
+        icon: "fas fa-check-circle",
+        roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
+      },
+    ],
+  },
+
+  /* ================= REVIEWS ================= */
+  {
+    name: "Reviews",
+    icon: "fas fa-clipboard-check",
+    roles: [
+      ROLES.JOURNAL_MANAGER,
+      ROLES.REVIEWER,
+      ROLES.JOURNAL_AUTHOR, // only if author is also reviewer
+      ROLES.EDITOR,
+    ],
+    subMenu: [
+      {
+        name: "Assigned Reviews",
+        path: "/journal/reviews/reviewer",
+        icon: "fas fa-tasks",
+        roles: [ROLES.REVIEWER],
+      },
+      {
+        name: "Submit Review",
+        path: "/journal/reviews/submit/:manuscriptId",
+        icon: "fas fa-paper-plane",
+        roles: [ROLES.REVIEWER],
+      },
+      {
+        name: "Review History",
+        path: "/journal/reviews/history",
+        icon: "fas fa-history",
+        roles: [ROLES.REVIEWER],
+      },
+      {
+        name: "Reviewer Invitations",
+        path: "/journal/reviews/invitations",
+        icon: "fas fa-user-check",
+        roles: [ROLES.REVIEWER],
+      },
+      {
+        name: "Reviewer Workload",
+        path: "/journal/reviews/workload",
+        icon: "fas fa-balance-scale",
+        roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
+      },
+    ],
+  },
+
+  /* ================= AUTHORS & CO-AUTHORS ================= */
+  {
+    name: "Authors & Co-authors",
+    icon: "fas fa-users",
+    roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR, ROLES.JOURNAL_AUTHOR],
+    subMenu: [
+      {
+        name: "Author List",
+        path: "/journal/authors",
+        icon: "fas fa-user-edit",
+        roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
+      },
+      {
+        name: "Invite Co-author",
+        path: "/journal/coauthors/invite",
+        icon: "fas fa-user-plus",
+        roles: [ROLES.JOURNAL_AUTHOR],
+      },
+      {
+        name: "My Invitations",
+        path: "/journal/coauthors/invitations",
+        icon: "fas fa-envelope-open-text",
+        roles: [ROLES.JOURNAL_AUTHOR],
+      },
+    ],
+  },
+
+  /* ================= PROFILE ================= */
+  {
+    name: "Profile & Declarations",
+    icon: "fas fa-id-card",
+    roles: [
+      ROLES.JOURNAL_AUTHOR,
+      ROLES.REVIEWER,
+      ROLES.EDITOR,
+      ROLES.JOURNAL_MANAGER,
+    ],
+    subMenu: [
+      {
+        name: "My Profile",
+        path: "/journal/profile",
+        icon: "fas fa-user",
+      },
+      {
+        name: "Ethics Declarations",
+        path: "/journal/declarations",
+        icon: "fas fa-shield-alt",
+      },
+    ],
+  },
+],
+
 // ================= LIBRARY MODULE ================= */
     [MODULES.LIBRARY]: [
       {
@@ -638,7 +742,7 @@ export default function Sidebar() {
         <div className="user-panel mt-3 pb-3 mb-3 d-flex">
           <div className="image">
             <img
-              src="https://via.placeholder.com/160"
+              src="ora.png"
               className="img-circle elevation-2"
               alt="User"
             />

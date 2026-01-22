@@ -9,8 +9,12 @@ import permissionRoutes from "./routes/permission.routes.js";
 import rolePermissionRoutes from "./routes/rolePermission.routes.js";
 import userRoleRoutes from "./routes/userRole.routes.js";
 import moduleRoutes from "./routes/module.routes.js";
+<<<<<<< HEAD
 import libraryUserRoutes from "./routes/libraryUser.routes.js";
  
+=======
+ import journalRoutes from './journals/routes/journalRoutes.js';
+>>>>>>> eede764 (journal-manager)
 
 
 
@@ -36,7 +40,7 @@ app.use("/api/library-users", libraryUserRoutes);
 
 
  
-
+app.use('/journals', journalRoutes);
 
 
 

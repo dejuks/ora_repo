@@ -16,7 +16,12 @@ import WikipediaDashboard from "./pages/dashboards/Wikipedia-dashboard";
 import ResearchersDashboard from "./pages/dashboards/Researchers-dashboard";
 import JournalDashboard from "./pages/dashboards/journal-dashboard";
 import Dashboard from "./pages/dashboards/Dashboard";
- 
+import LibraryUserList from "./pages/library/users/pages/userList";
+import JournalUserList from "./pages/journals/users/pages/UserList";
+import JournalAddUser from "./pages/journals/users/pages/AddUser";
+import JournalForm from "./components/journal/JournalForm";
+import JournalEdit from "./pages/journals/journal/pages/JournalEdit";
+import JournalList from "./pages/journals/journal/pages/JournalList";
 
 
 function App() {
@@ -38,8 +43,22 @@ function App() {
         <Route path="/repository-dashboard" element={<RepositoryDashboard />} />
         <Route path="/wikipedia-dashboard" element={<WikipediaDashboard />} />
         <Route path="/researcher-dashboard" element={<ResearchersDashboard />} />
-        <Route path="/journal-dashboard" element={<JournalDashboard />} />
+
+      {/* Journal Dashboard */}
+        <Route path="/journal-dashboard" element={<ProtectedRoute><JournalDashboard /></ProtectedRoute>} />
+
+        {/* Journal Users */}
+        <Route path="/journal/users" element={<ProtectedRoute><JournalUserList /></ProtectedRoute>} />
+        <Route path="/module/users/add" element={<ProtectedRoute><JournalAddUser /></ProtectedRoute>} />
+
+        {/* Journal Management */}
+        <Route path="/journal/list" element={<ProtectedRoute><JournalList /></ProtectedRoute>} />
+        <Route path="/journal/add" element={<ProtectedRoute><JournalForm /></ProtectedRoute>} />
+        <Route path="/journal/edit/:id" element={<ProtectedRoute><JournalEdit /></ProtectedRoute>} />
+
         
+        
+        <Route path="/library/users" element={<ProtectedRoute><JournalUserList /></ProtectedRoute>} />
         
 
       </Routes>
