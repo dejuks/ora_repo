@@ -53,6 +53,7 @@ export const getAllJournals = async (req, res) => {
   }
 };
 
+
 export const deleteJournal = async (req, res) => {
   try {
     await Journal.delete(req.params.id);

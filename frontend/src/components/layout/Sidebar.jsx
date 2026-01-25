@@ -216,20 +216,20 @@ export default function Sidebar() {
       /* ----- AUTHOR ----- */
        {
         name: "Journals",
-        path: "/journal/list/create",
+        path: "/journal/list",
         icon: "fas fa-upload",
         roles: [ROLES.JOURNAL_AUTHOR],
       },
       {
         name: "Submit Manuscript",
-        path: "/journal/manuscripts/create",
-        icon: "fas fa-upload",
+        path: "/journal/manuscripts",
+        icon: "fas fa-paper-plane",
         roles: [ROLES.JOURNAL_AUTHOR],
       },
       {
-        name: "My Manuscripts",
-        path: "/journal/manuscripts/my",
-        icon: "fas fa-newspaper",
+        name: "Draft Manuscript",
+        path: "/journal/draft-manuscript",
+        icon: "fas fa-paper-plane",
         roles: [ROLES.JOURNAL_AUTHOR],
       },
       {
@@ -250,6 +250,13 @@ export default function Sidebar() {
         name: "Accepted Manuscripts",
         path: "/journal/manuscripts/accepted",
         icon: "fas fa-check-circle",
+        roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
+      },
+      ,
+      {
+        name: "Manuscription Status",
+        path: "/journal/manuscripts-status",
+        icon: "fas fa-balance-scale",
         roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
       },
     ],
@@ -295,7 +302,7 @@ export default function Sidebar() {
         path: "/journal/reviews/workload",
         icon: "fas fa-balance-scale",
         roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
-      },
+      }
     ],
   },
 

@@ -12,7 +12,7 @@ import FinanceDashboard from "./pages/dashboards/journal-dashboard";
 import BookDashboard from "./pages/dashboards/BookDashboard";
 import LibraryDashboard from "./pages/dashboards/library-dashboard";
 import RepositoryDashboard from "./pages/dashboards/Repository-dashboard";
-import WikipediaDashboard from "./pages/dashboards/Wikipedia-dashboard"; 
+import WikipediaDashboard from "./pages/dashboards/Wikipedia-dashboard";
 import ResearchersDashboard from "./pages/dashboards/Researchers-dashboard";
 import JournalDashboard from "./pages/dashboards/journal-dashboard";
 import Dashboard from "./pages/dashboards/Dashboard";
@@ -22,45 +22,215 @@ import JournalAddUser from "./pages/journals/users/pages/AddUser";
 import JournalForm from "./components/journal/JournalForm";
 import JournalEdit from "./pages/journals/journal/pages/JournalEdit";
 import JournalList from "./pages/journals/journal/pages/JournalList";
-
+import ManuscriptionList from "./pages/journals/manuscriptions/pages/ManuscriptionList";
+import ManuscriptStatuses from "./pages/manuscription/ManuscriptStatuses";
+import ManuscriptShow from "./pages/journals/manuscriptions/pages/ManuscriptShow";
+import ManuscriptEdit from "./pages/journals/manuscriptions/pages/ManuscriptEdit";
+import CreateManuscript from "./pages/journals/manuscriptions/pages/CreateManuscript";
+import DraftManuscription from "./pages/journals/manuscriptions/pages/DraftManuscription";
+import RevisionRequiredManuscription from "./pages/journals/manuscriptions/pages/RevisionRequiredManuscription";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
-        <Route path="/roles" element={<ProtectedRoute><Roles /></ProtectedRoute>} />
-        <Route path="/permissions" element={<ProtectedRoute><Permissions /></ProtectedRoute>} />
-        <Route path="/role-permissions" element={<ProtectedRoute><RolePermissions /></ProtectedRoute>} />
-        <Route path="/user-roles/:uuid" element={<ProtectedRoute><UserRoles /></ProtectedRoute>} />
-        <Route path="/modules" element={<ProtectedRoute><Modules /></ProtectedRoute>} />
-        <Route path="/admin-dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-        <Route path="/finance-dashboard" element={<ProtectedRoute><FinanceDashboard /></ProtectedRoute>} />
+        <Route
+          path="/users"
+          element={
+            <ProtectedRoute>
+              <Users />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/roles"
+          element={
+            <ProtectedRoute>
+              <Roles />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/permissions"
+          element={
+            <ProtectedRoute>
+              <Permissions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/role-permissions"
+          element={
+            <ProtectedRoute>
+              <RolePermissions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/user-roles/:uuid"
+          element={
+            <ProtectedRoute>
+              <UserRoles />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/modules"
+          element={
+            <ProtectedRoute>
+              <Modules />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin-dashboard"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/finance-dashboard"
+          element={
+            <ProtectedRoute>
+              <FinanceDashboard />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/book-dashboard" element={<BookDashboard />} />
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />  
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/library-dashboard" element={<LibraryDashboard />} />
         <Route path="/repository-dashboard" element={<RepositoryDashboard />} />
         <Route path="/wikipedia-dashboard" element={<WikipediaDashboard />} />
-        <Route path="/researcher-dashboard" element={<ResearchersDashboard />} />
+        <Route
+          path="/researcher-dashboard"
+          element={<ResearchersDashboard />}
+        />
 
-      {/* Journal Dashboard */}
-        <Route path="/journal-dashboard" element={<ProtectedRoute><JournalDashboard /></ProtectedRoute>} />
+        {/* Journal Dashboard */}
+        <Route
+          path="/journal-dashboard"
+          element={
+            <ProtectedRoute>
+              <JournalDashboard />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Journal Users */}
-        <Route path="/journal/users" element={<ProtectedRoute><JournalUserList /></ProtectedRoute>} />
-        <Route path="/module/users/add" element={<ProtectedRoute><JournalAddUser /></ProtectedRoute>} />
+        <Route
+          path="/journal/users"
+          element={
+            <ProtectedRoute>
+              <JournalUserList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/module/users/add"
+          element={
+            <ProtectedRoute>
+              <JournalAddUser />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Journal Management */}
-        <Route path="/journal/list" element={<ProtectedRoute><JournalList /></ProtectedRoute>} />
-        <Route path="/journal/add" element={<ProtectedRoute><JournalForm /></ProtectedRoute>} />
-        <Route path="/journal/edit/:id" element={<ProtectedRoute><JournalEdit /></ProtectedRoute>} />
+        <Route
+          path="/journal/list"
+          element={
+            <ProtectedRoute>
+              <JournalList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/journal/add"
+          element={
+            <ProtectedRoute>
+              <JournalForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/journal/edit/:id"
+          element={
+            <ProtectedRoute>
+              <JournalEdit />
+            </ProtectedRoute>
+          }
+        />
 
-        
-        
-        <Route path="/library/users" element={<ProtectedRoute><JournalUserList /></ProtectedRoute>} />
-        
+        {/* Manuscription Routes */}
 
+   <Route
+          path="/journal/manuscraipts/create"
+          element={
+            <ProtectedRoute>
+              <CreateManuscript />
+            </ProtectedRoute>
+          } 
+        />
+        <Route
+          path="/journal/manuscripts"
+          element={
+            <ProtectedRoute>
+              <ManuscriptionList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/journal/manuscripts-status"
+          element={
+            <ProtectedRoute>
+              <ManuscriptStatuses />
+            </ProtectedRoute>
+          }
+        />
+
+         <Route
+          path="/journal/draft-manuscript"
+          element={
+            <ProtectedRoute>
+              <DraftManuscription />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/journal/manuscripts/revisions"
+          element={
+            <ProtectedRoute>
+              <RevisionRequiredManuscription />
+            </ProtectedRoute>
+          }
+        />
+<Route
+  path="/journal/manuscripts/edit/:id"
+  element={<ManuscriptEdit />}
+/>
+
+   
+<Route
+  path="/journal/manuscripts/show/:id"
+  element={<ManuscriptShow />}
+/>
+        <Route
+          path="/library/users"
+          element={
+            <ProtectedRoute>
+              <JournalUserList />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
