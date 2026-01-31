@@ -13,6 +13,15 @@ API.interceptors.request.use((req) => {
 
 export const getManuscripts = () => API.get("/manuscripts");
 
+export const getAuthors = () => {
+  return API.get(`/users`);
+};
+export const inviteAuthor = (manuscriptId, data) =>
+  API.post(`/manuscripts/${manuscriptId}/co-authors`, data);
+
+export const getMyInvitedCoAuthors = () =>
+  API.get("/manuscripts/co-authors/my-invites");
+
 export const createManuscript = (data) =>
   API.post("/manuscripts", data);
 

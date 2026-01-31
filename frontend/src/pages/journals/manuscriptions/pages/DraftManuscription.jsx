@@ -36,7 +36,7 @@ export default function DraftManuscription() {
       // ✅ ONLY DRAFT manuscripts
       const drafts = res.data.filter(
         (m) =>
-          m.status_label?.toLowerCase() === "draft" ||
+          m.status?.toLowerCase() === "draft" ||
           m.status?.toLowerCase() === "draft"
       );
 

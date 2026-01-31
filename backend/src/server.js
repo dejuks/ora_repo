@@ -10,7 +10,7 @@ import permissionRoutes from "./routes/permission.routes.js";
 import rolePermissionRoutes from "./routes/rolePermission.routes.js";
 import userRoleRoutes from "./routes/userRole.routes.js";
 import moduleRoutes from "./routes/module.routes.js";
-
+import repositoryRoutes from "./repository/items/routes/repositoryItem.routes.js";
 import journalRoutes from "./journals/routes/journalRoutes.js";
 import journalSectionRoutes from "./journals/journalsection/routes/journalSection.routes.js";
 
@@ -28,7 +28,7 @@ app.use(
   cors({
     origin: "http://localhost:3000", // React app
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Accept"],
   })
 );
@@ -68,6 +68,10 @@ app.use("/api", journalSectionRoutes);
 
 app.use("/api/manuscript-statuses", manuscriptStatusRoutes);
 app.use("/api/manuscripts", manuscriptRoutes);
+
+app.use("/api/repository-items", repositoryRoutes);
+app.use("/uploads", express.static("uploads"));
+
 
 /* =======================
    SERVER START

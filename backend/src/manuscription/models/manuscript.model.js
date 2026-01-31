@@ -206,6 +206,73 @@ const Manuscript = {
     await pool.query("DELETE FROM manuscripts WHERE id=$1", [id]);
     return true;
   },
-};
+
+/* ================= INVITE CO-AUTHOR ================= */
+addCoAuthor: async ({ manuscript_id, user_id, invited_by }) => {
+  const res = await pool.query(
+    `INSERT INTO manuscript_co_authors (manuscript_id, user_id, invited_by)
+     VALUES ($1, $2, $3)
+     RETURNING *`,
+    [manuscript_id, user_id, invited_by]
+  );
+  return res.rows[0];
+},
+
+
+  getCoAuthors: async (manuscript_id) => {
+    const res = await pool.query(
+      `SELECT u.uuid, u.name, u.email, mca.status, mca.created_at
+       FROM manuscript_co_authors mca
+       JOIN users u ON u.uuid = mca.user_id
+       WHERE mca.manuscript_id = $1
+       ORDER BY mca.created_at`,
+      [manuscript_id]
+    );
+    return res.rows;
+  },
+  /* ================= ACCEPT / REJECT ================= */
+  updateCoAuthorStatus: async (manuscript_id, user_id, status) => {
+    const res = await pool.query(
+      `UPDATE manuscript_co_authors
+       SET status = $1
+       WHERE manuscript_id = $2 AND user_id = $3
+       RETURNING *`,
+      [status, manuscript_id, user_id]
+    );
+    return res.rows[0];
+  },
+
+  // Get co-authors invited by a specific user
+// manuscript.model.js
+ getMyInvitedCoAuthors : async (invited_by) => {
+  const res = await pool.query(
+    `
+    SELECT
+      mca.id,
+      mca.manuscript_id,
+      mca.status,
+      mca.created_at,
+
+      u.uuid       AS user_id,
+      u.full_name  AS user_name,
+      u.email      AS user_email,
+
+      m.title      AS manuscript_title
+    FROM manuscript_co_authors mca
+    JOIN users u ON u.uuid = mca.user_id
+    JOIN manuscripts m ON m.id = mca.manuscript_id
+    WHERE mca.invited_by = $1
+    ORDER BY mca.created_at DESC
+    `,
+    [invited_by]
+  );
+
+  return res.rows;
+}
+
+
+  };
+
+
 
 export default Manuscript;

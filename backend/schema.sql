@@ -126,6 +126,19 @@ CREATE TABLE manuscript_versions (
     CONSTRAINT unique_version_per_manuscript UNIQUE (manuscript_id, version_number)
 );
 
+
+CREATE TABLE manuscript_co_authors (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    manuscript_id UUID NOT NULL REFERENCES manuscripts(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+    invited_by UUID NOT NULL REFERENCES users(uuid),
+    status VARCHAR(50) DEFAULT 'pending', -- pending, accepted, rejected
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(manuscript_id, user_id)
+);
+
+
+
 CREATE TABLE manuscript_authors (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     manuscript_id UUID NOT NULL REFERENCES manuscripts(id) ON DELETE CASCADE,
@@ -229,4 +242,3 @@ CREATE TABLE jm_audit_logs (
     entity_id UUID,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-

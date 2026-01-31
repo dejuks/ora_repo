@@ -1,18 +1,41 @@
+// import jwt from "jsonwebtoken";
+
+// export const authenticate = (req, res, next) => {
+//   const header = req.headers.authorization;
+
+//   if (!header)
+//     return res.status(401).json({ message: "No token provided" });
+
+//   const token = header.split(" ")[1];
+
+//   try {
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//     req.user = decoded;
+//     next();
+//   } catch {
+//     res.status(401).json({ message: "Invalid token" });
+//   }
+// };
+
+// auth.middleware.js
 import jwt from "jsonwebtoken";
 
 export const authenticate = (req, res, next) => {
-  const header = req.headers.authorization;
+  const authHeader = req.headers.authorization;
 
-  if (!header)
-    return res.status(401).json({ message: "No token provided" });
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
 
-  const token = header.split(" ")[1];
+  const token = authHeader.split(" ")[1];
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    // attach user info to req.user
+    req.user = { uuid: decoded.uuid, email: decoded.email, name: decoded.name };
     next();
-  } catch {
-    res.status(401).json({ message: "Invalid token" });
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid token" });
   }
 };
+

@@ -29,6 +29,23 @@ import ManuscriptEdit from "./pages/journals/manuscriptions/pages/ManuscriptEdit
 import CreateManuscript from "./pages/journals/manuscriptions/pages/CreateManuscript";
 import DraftManuscription from "./pages/journals/manuscriptions/pages/DraftManuscription";
 import RevisionRequiredManuscription from "./pages/journals/manuscriptions/pages/RevisionRequiredManuscription";
+import MyInvitedCoAuthors from "./pages/journals/manuscriptions/pages/MyInvitedCoAuthors";
+import RepositoryAuthorDashboard from "./pages/dashboards/repository/RepositoryAuthorDashboard";
+import RepositoryList from "./pages/repository/RepositoryList";
+import RepositoryCreate from "./pages/repository/RepositoryCreate";
+import RepositoryShow from "./pages/repository/RepositoryShow";
+import RepositoryEdit from "./pages/repository/RepositoryEdit";
+import CuratorDashboard from "./pages/dashboards/repository/CuratorDashboard";
+import CuratorRepositoryList from "./pages/repository/CuratorRepositoryList";
+import CuratorRepositoryReview from "./pages/repository/CuratorRepositoryReview";
+import InProgress from "./pages/repository/InProgress";
+import ReadyToApprove from "./pages/repository/ReadyToApprove";
+import ReturnToRevision from "./pages/repository/ReturnToRevision";
+import DraftRepository from "./pages/repository/DraftRepository";
+import DepositsUnderReview from "./pages/repository/DepositsUnderReview";
+import DepositsReturned from "./pages/repository/DepositsReturned";
+import ApprovedDeposits from "./pages/repository/ApprovedDeposits";
+import RepositorySearch from "./pages/repository/RepositorySearch";
 
 function App() {
   return (
@@ -109,7 +126,7 @@ function App() {
           }
         />
         <Route path="/library-dashboard" element={<LibraryDashboard />} />
-        <Route path="/repository-dashboard" element={<RepositoryDashboard />} />
+
         <Route path="/wikipedia-dashboard" element={<WikipediaDashboard />} />
         <Route
           path="/researcher-dashboard"
@@ -126,6 +143,8 @@ function App() {
           }
         />
 
+        {/* /repository/users */}
+
         {/* Journal Users */}
         <Route
           path="/journal/users"
@@ -135,6 +154,138 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* //Repository Authors */}
+        <Route path="/repository-dashboard" element={<RepositoryDashboard />} />
+
+        {/* /repository/author/dashboard */}
+        <Route
+          path="/repository/author/dashboard"
+          element={
+            <ProtectedRoute>
+              <RepositoryAuthorDashboard />
+            </ProtectedRoute>
+          }
+        />
+        {/* repository/curator/dashboard */}
+ <Route
+          path="/repository/curator/dashboard"
+          element={
+            <ProtectedRoute>
+              <CuratorDashboard />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/repository/curator/queue/new"
+          element={
+            <ProtectedRoute>
+              <CuratorRepositoryList />
+            </ProtectedRoute>
+          }
+        />
+
+         <Route
+          path="repository/author/deposits/drafts"
+          element={
+            <ProtectedRoute>
+              <DraftRepository />
+            </ProtectedRoute>
+          }
+        />
+        
+        
+           <Route
+          path="repository/curator/review/:uuid"
+          element={
+            <ProtectedRoute>
+              <CuratorRepositoryReview />
+            </ProtectedRoute>
+          }
+        />
+
+           <Route
+          path="/repository/author/deposits/review"
+          element={
+            <ProtectedRoute>
+              <DepositsUnderReview />
+            </ProtectedRoute>
+          }
+        />
+
+            <Route
+          path="/repository/author/deposits/returned"
+          element={
+            <ProtectedRoute>
+              <DepositsReturned />
+            </ProtectedRoute>
+          }
+        />
+       
+
+        <Route path="repository/curator/queue/in-progress" element={<InProgress />} />
+<Route path="repository/curator/queue/ready" element={<ReadyToApprove />} />
+<Route path="/repository/curator/queue/returned" element={<ReturnToRevision />} />
+        <Route
+          path="/repository/users"
+          element={
+            <ProtectedRoute>
+              <JournalUserList />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/repository/author/submit/list"
+          element={
+            <ProtectedRoute>
+              <RepositoryList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/create"
+          element={
+            <ProtectedRoute>
+              <RepositoryCreate />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/show/:uuid"
+          element={
+            <ProtectedRoute>
+              <RepositoryShow />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/edit/:uuid"
+          element={
+            <ProtectedRoute>
+              <RepositoryEdit />
+            </ProtectedRoute>
+          }
+        />
+<Route
+          path="/repository/author/deposits/approved"
+          element={
+            <ProtectedRoute>
+              <ApprovedDeposits />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/repository/search"
+          element={
+            <ProtectedRoute>
+              <RepositorySearch />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/module/users/add"
           element={
@@ -172,13 +323,22 @@ function App() {
 
         {/* Manuscription Routes */}
 
-   <Route
+        <Route
           path="/journal/manuscraipts/create"
           element={
             <ProtectedRoute>
               <CreateManuscript />
             </ProtectedRoute>
-          } 
+          }
+        />
+
+        <Route
+          path="/journal/coauthors/my-invitations"
+          element={
+            <ProtectedRoute>
+              <MyInvitedCoAuthors />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/journal/manuscripts"
@@ -197,7 +357,7 @@ function App() {
           }
         />
 
-         <Route
+        <Route
           path="/journal/draft-manuscript"
           element={
             <ProtectedRoute>
@@ -213,16 +373,15 @@ function App() {
             </ProtectedRoute>
           }
         />
-<Route
-  path="/journal/manuscripts/edit/:id"
-  element={<ManuscriptEdit />}
-/>
+        <Route
+          path="/journal/manuscripts/edit/:id"
+          element={<ManuscriptEdit />}
+        />
 
-   
-<Route
-  path="/journal/manuscripts/show/:id"
-  element={<ManuscriptShow />}
-/>
+        <Route
+          path="/journal/manuscripts/show/:id"
+          element={<ManuscriptShow />}
+        />
         <Route
           path="/library/users"
           element={
