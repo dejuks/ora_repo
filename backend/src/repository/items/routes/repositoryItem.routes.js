@@ -19,7 +19,11 @@ import {
   submitDraftItem,
   getAuthorDepositsUnderReview,
   getReturnedDeposits,
-  getApprovedDeposits,searchRepositoryItems
+  getApprovedDeposits,
+  searchRepositoryItems,
+  getReviewerNewQueue,
+  claimItem,
+  bulkClaimItems,getReviewerItemDetail
 } from "../controllers/repositoryItem.controller.js";
 
 const router = express.Router();
@@ -95,4 +99,35 @@ router.get("/author/deposits/returned",authenticate,getReturnedDeposits);
 router.get("/repository/author/deposits/approved",authenticate,getApprovedDeposits);
 
 router.get("/search", authenticate, searchRepositoryItems);
+
+
+/* ===============================
+   REVIEWER QUEUE
+=============================== */
+router.get("/reviewer/queue/new",authenticate,getReviewerNewQueue);
+
+router.patch("/:id/claim",authenticate,claimItem);
+
+router.patch(
+  "/reviewer/queue/claim",
+  authenticate,
+  bulkClaimItems
+);
+
+/* Reviewer queue */
+router.get(
+  "/reviewer/queue/new",
+  authenticate,
+  getReviewerNewQueue
+);
+
+/* Reviewer detail view */
+router.get(
+  "/reviewer/:uuid",
+  authenticate,
+  getReviewerItemDetail
+);
+
+
+
 export default router;

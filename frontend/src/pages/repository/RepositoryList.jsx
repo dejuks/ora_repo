@@ -169,7 +169,7 @@ export default function RepositoryList() {
                         )}
                       </td>
                       <td>
-                        <Link to={`/repository/show/${item.uuid}`}
+                        <Link to={`/repository/author/show/${item.uuid}`}
                           className="btn btn-sm btn-secondary mr-1"
                         >
                           <i className="fas fa-eye"></i>

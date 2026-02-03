@@ -646,48 +646,44 @@ export default function Sidebar() {
       },
     ],
   },
-  {
-    name: "Curation Tools",
-    icon: "fas fa-tools",
-    roles: [ROLES.REPOSITORY_CURATOR],
-    subMenu: [
-      {
-        name: "Metadata Enhancement",
-        path: "/repository/curator/tools/metadata",
-        icon: "fas fa-edit",
-      },
-      {
-        name: "Vocabulary Assignment",
-        path: "/repository/curator/tools/vocabulary",
-        icon: "fas fa-tags",
-      },
-      {
-        name: "Copyright Check",
-        path: "/repository/curator/tools/copyright",
-        icon: "fas fa-copyright",
-      },
-      {
-        name: "Related Items",
-        path: "/repository/curator/tools/relations",
-        icon: "fas fa-link",
-      },
-      {
-        name: "Batch Processing",
-        path: "/repository/curator/tools/batch",
-        icon: "fas fa-object-group",
-      },
-    ],
-  },
+  // {
+  //   name: "Curation Tools",
+  //   icon: "fas fa-tools",
+  //   roles: [ROLES.REPOSITORY_CURATOR],
+  //   subMenu: [
+  //     {
+  //       name: "Metadata Enhancement",
+  //       path: "/repository/curator/tools",
+  //       icon: "fas fa-edit",
+  //     },
+  //     {
+  //       name: "Vocabulary Assignment",
+  //       path: "/repository/curator/tools/vocabulary",
+  //       icon: "fas fa-tags",
+  //     },
+  //     {
+  //       name: "Copyright Check",
+  //       path: "/repository/curator/tools/copyright",
+  //       icon: "fas fa-copyright",
+  //     },
+  //     {
+  //       name: "Related Items",
+  //       path: "/repository/curator/tools/relations",
+  //       icon: "fas fa-link",
+  //     },
+  //     {
+  //       name: "Batch Processing",
+  //       path: "/repository/curator/tools/batch",
+  //       icon: "fas fa-object-group",
+  //     },
+  //   ],
+  // },
   {
     name: "Collections",
     icon: "fas fa-folder-open",
     roles: [ROLES.REPOSITORY_CURATOR],
     subMenu: [
-      {
-        name: "By Department",
-        path: "/repository/collections/department",
-        icon: "fas fa-building",
-      },
+    
       {
         name: "By Author",
         path: "/repository/collections/author",
@@ -698,12 +694,42 @@ export default function Sidebar() {
         path: "/repository/collections/type",
         icon: "fas fa-th-large",
       },
-      {
-        name: "By Subject",
-        path: "/repository/collections/subject",
-        icon: "fas fa-bookmark",
-      },
+
     ],
+    
+  },
+  {
+    name: "Reports",
+    icon: "fas fa-chart-bar",
+    roles: [
+      ROLES.REPOSITORY_CURATOR
+    ],
+  subMenu: [
+  {
+    name: "Submission Trends",
+    path: "/repository/reports/trends",
+    icon: "fas fa-chart-bar",
+    roles: [ROLES.REPOSITORY_CURATOR],
+  },
+  {
+    name: "Processing Times",
+    path: "/repository/reports/timelines",
+    icon: "fas fa-clock",             
+    roles: [ROLES.REPOSITORY_CURATOR],
+  },
+  {
+    name: "Curator Performance",
+    path: "/repository/reports/curator-performance",
+    icon: "fas fa-user-check",  
+    roles: [ROLES.REPOSITORY_CURATOR],
+  },
+  {
+    name: "My Analytics",
+    path: "/repository/reports/my-analytics",
+    icon: "fas fa-chart-pie",            // ✅ correct
+    roles: [ROLES.REPOSITORY_CURATOR],
+  },
+]
   },
 
   /* ===============================
@@ -938,7 +964,6 @@ export default function Sidebar() {
     icon: "fas fa-chart-bar",
     roles: [
       ROLES.REPOSITORY_ADMIN,
-      ROLES.REPOSITORY_CURATOR,
       ROLES.REPOSITORY_CONTENT_REVIEWER,
     ],
     subMenu: [
@@ -946,13 +971,13 @@ export default function Sidebar() {
         name: "📈 Submission Trends",
         path: "/repository/reports/trends",
         icon: "fas fa-chart-line",
-        roles: [ROLES.REPOSITORY_ADMIN, ROLES.REPOSITORY_CURATOR],
+        roles: [ROLES.REPOSITORY_ADMIN],
       },
       {
         name: "⏱️ Processing Times",
         path: "/repository/reports/timelines",
         icon: "fas fa-stopwatch",
-        roles: [ROLES.REPOSITORY_ADMIN, ROLES.REPOSITORY_CURATOR],
+        roles: [ROLES.REPOSITORY_ADMIN],
       },
       {
         name: "📊 Curator Performance",
@@ -964,7 +989,7 @@ export default function Sidebar() {
         name: "👁️ My Analytics",
         path: "/repository/reports/my-analytics",
         icon: "fas fa-chart-pie",
-        roles: [ROLES.REPOSITORY_CURATOR, ROLES.REPOSITORY_CONTENT_REVIEWER],
+        roles: [ROLES.REPOSITORY_CURATOR],
       },
     ],
   },

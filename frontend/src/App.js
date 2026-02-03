@@ -46,6 +46,23 @@ import DepositsUnderReview from "./pages/repository/DepositsUnderReview";
 import DepositsReturned from "./pages/repository/DepositsReturned";
 import ApprovedDeposits from "./pages/repository/ApprovedDeposits";
 import RepositorySearch from "./pages/repository/RepositorySearch";
+import RepositoryShowAuthor from "./pages/repository/RepositoryShowAuthor";
+import CuratorTool from "./pages/repository/curators/CuratorTool";
+import CollectionsByAuthor from "./pages/repository/curators/CollectionsByAuthor";
+import CollectionsByType from "./pages/repository/curators/CollectionsByType";
+import RepositoryTrends from "./pages/repository/curators/RepositoryTrends";
+import RepositoryTimelinessReport from "./pages/repository/curators/RepositoryTimelinessReport";
+import CuratorPerformanceReport from "./pages/repository/curators/CuratorPerformanceReport";
+import ReviewerDashboard from "./pages/repository/reviewer/ReviewerDashboard";
+import ReviewerQueueNew from "./pages/repository/reviewer/ReviewerQueueNew";
+import ReviewerItemDetail from "./pages/repository/reviewer/ReviewerItemDetail";
+import PublicRepository from "./pages/repository/publicUsers/PublicRepository";
+import PublicRepositoryDetail from "./pages/repository/publicUsers/PublicRepositoryDetail";
+import PublicLogin from "./pages/repository/publicUsers/PublicLogin";
+import PublicRegister from "./pages/publicusers/PublicRegister";
+import PublicLayout from "./components/layout/PublicLayout";
+import PublicSearch from "./pages/publicusers/PublicSearch";
+import PublicDashboard from "./pages/publicusers/PublicDashboard";
 
 function App() {
   return (
@@ -195,6 +212,82 @@ function App() {
           }
         />
         
+        <Route
+          path="/repository/collections/author"
+          element={
+            <ProtectedRoute>
+              <CollectionsByAuthor />
+            </ProtectedRoute>
+          }
+        />
+
+ <Route
+          path="/repository/reports/curator-performance"
+          element={
+            <ProtectedRoute>
+              <CuratorPerformanceReport />
+            </ProtectedRoute>
+          }
+        />
+
+         <Route
+          path="/repository/reviewer/dashboard"
+          element={
+            <ProtectedRoute>
+              <ReviewerDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+
+<Route
+          path="/repository/reviewer/queue/new"
+          element={
+            <ProtectedRoute>
+              <ReviewerQueueNew />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/reviewer/review/:uuid"
+          element={
+            <ProtectedRoute>
+              <ReviewerItemDetail />
+            </ProtectedRoute>
+          }
+        />
+       <Route path="/repository/public" element={<PublicRepository />} />
+        <Route path="/repository/:uuid" element={<PublicRepositoryDetail />} />
+
+
+          <Route
+          path="/register"
+          element={<PublicRegister />}
+        />
+      <Route path="/public/login" element={<PublicLogin />} />
+      <Route path="/public/dashboard" element={<PublicDashboard />} />
+
+
+      <Route path="/repository/public" element={<PublicLayout />}>
+        <Route path="search" element={<PublicSearch />} />
+      </Route>
+
+        <Route
+          path="/repository/collections/type"
+          element={
+            <ProtectedRoute>
+              <CollectionsByType />
+            </ProtectedRoute>
+          }
+        />
+ <Route
+          path="/repository/reports/trends"
+          element={
+            <ProtectedRoute>
+              <RepositoryTrends />
+            </ProtectedRoute>
+          }
+        />
         
            <Route
           path="repository/curator/review/:uuid"
@@ -257,6 +350,24 @@ function App() {
           element={
             <ProtectedRoute>
               <RepositoryShow />
+            </ProtectedRoute>
+          }
+        />
+
+<Route
+          path="/repository/curator/tools"
+          element={
+            <ProtectedRoute>
+              <CuratorTool />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/repository/author/show/:uuid"
+          element={
+            <ProtectedRoute>
+              <RepositoryShowAuthor />
             </ProtectedRoute>
           }
         />

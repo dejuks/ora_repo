@@ -5,8 +5,6 @@ import MainLayout from "../../components/layout/MainLayout";
 import { createItem } from "../../api/repository.api";
 
 // CKEditor
-import { CKEditor } from "@ckeditor/ckeditor5-react";
-import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 
 export default function RepositoryCreate() {
   const navigate = useNavigate();
@@ -130,14 +128,13 @@ export default function RepositoryCreate() {
                 {/* ABSTRACT WITH CKEDITOR */}
                 <div className="form-group">
                   <label>Abstract</label>
-                  <CKEditor
-                    editor={ClassicEditor}
-                    data={form.abstract}
-                    onChange={(event, editor) => {
-                      const data = editor.getData();
-                      setForm((prev) => ({ ...prev, abstract: data }));
-                    }}
-                  />
+                  <textarea
+                    name="abstract"
+                    className="form-control"
+                    rows="5"
+                    value={form.abstract}
+                    onChange={handleChange}
+                  ></textarea>
                 </div>
 
                 {/* STATUS */}

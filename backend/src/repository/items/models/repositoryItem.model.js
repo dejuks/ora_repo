@@ -209,4 +209,64 @@ search: async ({ query = "", filterLetter = "", page = 1, limit = 10 }) => {
     throw err;
   }
 },
+findByUUID(uuid) {
+  return pool.query(
+    `
+    SELECT
+      uuid,
+      title,
+      abstract,
+      item_type,
+      status,
+      file_path,
+      created_at,
+      submitter_id
+    FROM repository_items
+    WHERE uuid = $1
+    `,
+    [uuid]
+  );
+},
+
+
+  /* ---------- REVIEWER ---------- */
+  getReviewerNewQueue() {
+    return pool.query(
+      `
+      SELECT uuid, title, abstract, item_type, created_at
+      FROM repository_items
+      WHERE status = 'submitted'
+      ORDER BY created_at DESC
+      `
+    );
+  },
+
+  claim(uuid, reviewerId) {
+    return pool.query(
+      `
+      UPDATE repository_items
+      SET status = 'under_review',
+          reviewer_id = $2,
+          claimed_at = NOW()
+      WHERE uuid = $1 AND status = 'submitted'
+      RETURNING *
+      `,
+      [uuid, reviewerId]
+    );
+  },
+
+  bulkClaim(uuids, reviewerId) {
+    return pool.query(
+      `
+      UPDATE repository_items
+      SET status = 'under_review',
+          reviewer_id = $2,
+          claimed_at = NOW()
+      WHERE uuid = ANY($1)
+        AND status = 'submitted'
+      RETURNING uuid
+      `,
+      [uuids, reviewerId]
+    );
+  },
 };

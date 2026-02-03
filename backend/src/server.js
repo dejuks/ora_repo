@@ -16,7 +16,9 @@ import journalSectionRoutes from "./journals/journalsection/routes/journalSectio
 
 import manuscriptStatusRoutes from "./manuscription/status/routes/manuscriptStatus.routes.js";
 import manuscriptRoutes from "./manuscription/routes/manuscript.routes.js";
+import publicRepositoryRoutes from "./repository/items/routes/publicRepository.routes.js";
 
+import publicUserRoutes from "./publicUsers/routes/publicUser.routes.js";
 dotenv.config();
 
 const app = express();
@@ -68,11 +70,12 @@ app.use("/api", journalSectionRoutes);
 
 app.use("/api/manuscript-statuses", manuscriptStatusRoutes);
 app.use("/api/manuscripts", manuscriptRoutes);
-
 app.use("/api/repository-items", repositoryRoutes);
 app.use("/uploads", express.static("uploads"));
 
+app.use("/api/repository/public", publicRepositoryRoutes);
 
+app.use("/api/public-users", publicUserRoutes);
 /* =======================
    SERVER START
 ======================= */

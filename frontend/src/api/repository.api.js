@@ -31,6 +31,7 @@ export const getDraftItems = async () => {
   return API.get("/author/drafts"); // Backend endpoint
 };
 
+
 export const deleteDraft = async (uuid) => {
   return API.delete(`/${uuid}`);
 };
@@ -51,6 +52,16 @@ export const getApprovedDeposits = () =>{
 return  API.get("/repository/author/deposits/approved");
 
 }
+
+export const enhanceMetadata = (id, metadata) =>
+  API.put(`/${id}/metadata`, { metadata });
+
+export const assignVocabulary = (id, vocabulary) =>
+  API.put(`/${id}/vocabulary`, { vocabulary });
+
+export const checkCopyright = (id, status, notes) =>
+  API.put(`/${id}/copyright`, { status, notes });
+
 export const searchRepositoryItems = async ({
   query = "",
   filterLetter = "",
@@ -58,7 +69,7 @@ export const searchRepositoryItems = async ({
 }) => {
   const token = localStorage.getItem("token"); // or from context
 
-  const response = await axios.get(
+  const response = await API.get(
     "http://localhost:5000/api/repository-items/search",
     {
       params: { query, filterLetter, page },
@@ -71,4 +82,15 @@ export const searchRepositoryItems = async ({
   return response.data;
 };
 
+export const getReviewerNewQueue = () =>
+  API.get("/reviewer/queue/new");
+
+export const claimItemForReview = (id) =>
+  API.patch(`/${id}/claim`);
+
+export const bulkClaimItems = (ids) =>
+  API.patch("/reviewer/queue/claim", { ids });
+
+export const getReviewerItemDetail = (uuid) =>
+  API.get(`/reviewer/${uuid}`);
 export default API;
