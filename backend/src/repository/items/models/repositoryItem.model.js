@@ -43,32 +43,36 @@ export const RepositoryItem = {
     return pool.query(`SELECT * FROM repository_items WHERE uuid = $1`, [uuid]);
   },
 
-  update(id, data) {
-    return pool.query(
-      `UPDATE repository_items SET
-        title = $1,
-        abstract = $2,
-        item_type = $3,
-        language = $4,
-        access_level = $5,
-        status = $6,
-        embargo_until = $7,
-        file_path = $8
-      WHERE id = $9
-      RETURNING *`,
-      [
-        data.title,
-        data.abstract,
-        data.item_type,
-        data.language,
-        data.access_level,
-        data.status,
-        data.embargo_until || null,
-        data.file_path || null,
-        id
-      ]
-    );
-  },
+   update(uuid, data) {
+  return pool.query(
+    `UPDATE repository_items SET
+      title = $1,
+      abstract = $2,
+      item_type = $3,
+      language = $4,
+      access_level = $5,
+      status = $6,
+      embargo_until = $7,
+      file_path = $8,
+      correction_note = $9,
+      updated_at = NOW()
+    WHERE uuid = $10
+    RETURNING *`,
+    [
+      data.title,
+      data.abstract,
+      data.item_type,
+      data.language,
+      data.access_level,
+      data.status,
+      data.embargo_until || null,
+      data.file_path || null,
+      data.correction_note || null,
+      uuid,
+    ]
+  );
+}
+,
 findByStatusAndUser(status, userId) {
   return pool.query(
     `SELECT * FROM repository_items WHERE status=$1 AND submitter_id=$2 ORDER BY created_at DESC`,
@@ -269,4 +273,28 @@ findByUUID(uuid) {
       [uuids, reviewerId]
     );
   },
+  // Check status
+ getStatusByUUID(uuid) {
+  return pool.query(
+    `SELECT status FROM repository_items WHERE uuid = $1`,
+    [uuid]
+  );
+}
+,
+// Update revision comment only
+ updateRevisionComment(uuid, comment, userId) {
+  return pool.query(
+    `
+    UPDATE repository_items
+    SET curator_comment = $1,
+        updated_by = $2,
+        updated_at = NOW()
+    WHERE uuid = $3
+    RETURNING *
+    `,
+    [comment, userId, uuid]
+  );
+}
+
 };
+

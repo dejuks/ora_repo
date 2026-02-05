@@ -23,7 +23,7 @@ import {
   searchRepositoryItems,
   getReviewerNewQueue,
   claimItem,
-  bulkClaimItems,getReviewerItemDetail
+  bulkClaimItems,getReviewerItemDetail,updateRevisionComment
 } from "../controllers/repositoryItem.controller.js";
 
 const router = express.Router();
@@ -127,6 +127,9 @@ router.get(
   authenticate,
   getReviewerItemDetail
 );
+// Update revision comment only
+router.patch("/:uuid/edit-revision", authenticate, upload.single("file"), updateRevisionComment);
+
 
 
 

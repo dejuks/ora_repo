@@ -22,7 +22,7 @@ export const approveItem = (uuid) => {
 };
 export const rejectItem = (uuid, reason) => API.post(`/${uuid}/reject`, { reason });
 export const requestRevision = (uuid, comment) =>
-  API.post(`/${uuid}/revision`, { comment });
+  API.patch(`/${uuid}/revision`, { comment });
 
 // QUEUE
 export const getCuratorNewQueue = () => API.get("/curator/queue/new");
@@ -94,3 +94,13 @@ export const bulkClaimItems = (ids) =>
 export const getReviewerItemDetail = (uuid) =>
   API.get(`/reviewer/${uuid}`);
 export default API;
+// repository.api.js
+export const updateRevisionComment = (uuid, data) =>
+  API.patch(`/${uuid}/revision-comment`, data);
+// Update revision comment with optional file
+export const updateRevisionCommentWithFile = (uuid, formData) => {
+  return API.patch(`/${uuid}/edit-revision`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
+

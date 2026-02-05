@@ -63,6 +63,12 @@ import PublicRegister from "./pages/publicusers/PublicRegister";
 import PublicLayout from "./components/layout/PublicLayout";
 import PublicSearch from "./pages/publicusers/PublicSearch";
 import PublicDashboard from "./pages/publicusers/PublicDashboard";
+import ArticleList from "./pages/wiki/ArticleList";
+import ArticleCreate from "./pages/wiki/ArticleCreate";
+import ArticleEdit from "./pages/wiki/ArticleEdit";
+import ArticleDraftList from "./pages/wiki/ArticleDraftList";
+import WikiCategoryList from "./pages/wikicategory/WikiCategoryList";
+import WikiCategoryForm from "./pages/wikicategory/WikiCategoryForm";
 
 function App() {
   return (
@@ -173,7 +179,7 @@ function App() {
         />
 
         {/* //Repository Authors */}
-        <Route path="/repository-dashboard" element={<RepositoryDashboard />} />
+        <Route path="/repository/admin/dashboard" element={<RepositoryDashboard />} />
 
         {/* /repository/author/dashboard */}
         <Route
@@ -267,7 +273,15 @@ function App() {
       <Route path="/public/login" element={<PublicLogin />} />
       <Route path="/public/dashboard" element={<PublicDashboard />} />
 
-
+ {/* Journal Users */}
+        <Route
+          path="/wiki/users"
+          element={
+            <ProtectedRoute>
+              <JournalUserList />
+            </ProtectedRoute>
+          }
+        />
       <Route path="/repository/public" element={<PublicLayout />}>
         <Route path="search" element={<PublicSearch />} />
       </Route>
@@ -501,6 +515,18 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* // wikipedia articles routes can be added here */}
+        <Route path="/wiki/articles" element={<ArticleList />} />
+        <Route path="/wiki/articles/create" element={<ArticleCreate />} />
+        <Route path="/wiki/articles/edit/:id" element={<ArticleEdit />} />
+        <Route path="/wiki/articles/drafts" element={<ArticleDraftList />} />
+
+        {/* ================= Wiki Categories ================= */}
+      <Route path="/wiki/categories" element={<WikiCategoryList />} />
+      <Route path="/wiki/categories/create" element={<WikiCategoryForm />} />
+      <Route path="/wiki/categories/edit/:id" element={<WikiCategoryForm />} />
+
       </Routes>
     </BrowserRouter>
   );

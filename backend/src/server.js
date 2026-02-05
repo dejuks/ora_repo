@@ -19,6 +19,9 @@ import manuscriptRoutes from "./manuscription/routes/manuscript.routes.js";
 import publicRepositoryRoutes from "./repository/items/routes/publicRepository.routes.js";
 
 import publicUserRoutes from "./publicUsers/routes/publicUser.routes.js";
+
+import wikiArticleRoutes from "./wiki/routes/wikiArticle.routes.js";
+import wikiCategoryRoutes from "./wiki/categories/routes/wikiCategory.routes.js";
 dotenv.config();
 
 const app = express();
@@ -76,6 +79,12 @@ app.use("/uploads", express.static("uploads"));
 app.use("/api/repository/public", publicRepositoryRoutes);
 
 app.use("/api/public-users", publicUserRoutes);
+
+
+// Wiki routes
+
+app.use("/api/wiki/articles", wikiArticleRoutes);
+app.use("/api/wiki/categories", wikiCategoryRoutes);
 /* =======================
    SERVER START
 ======================= */

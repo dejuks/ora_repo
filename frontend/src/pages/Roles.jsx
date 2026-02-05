@@ -23,14 +23,16 @@ export default function Roles() {
   const [modules, setModules] = useState([]);
   const [permissions, setPermissions] = useState([]);
   const [rolePerms, setRolePerms] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
+  const [loading, setLoading] = useState(true);
+
+  /* ROLE MODAL */
   const [showModal, setShowModal] = useState(false);
+  const [editingRole, setEditingRole] = useState(null);
   const [roleName, setRoleName] = useState("");
   const [moduleId, setModuleId] = useState("");
-  const [editingRole, setEditingRole] = useState(null);
 
+  /* PERMISSION MODAL */
   const [showPermModal, setShowPermModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
   const [savingPerms, setSavingPerms] = useState(false);
@@ -42,42 +44,24 @@ export default function Roles() {
 
   const fetchRoles = async () => {
     setLoading(true);
-    setError(null);
-    try {
-      const res = await getRoles();
-      setRoles(res.data || []);
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to fetch roles");
-    } finally {
-      setLoading(false);
-    }
+    const res = await getRoles();
+    setRoles(res.data || []);
+    setLoading(false);
   };
 
   const fetchModules = async () => {
-    try {
-      const res = await getModules();
-      setModules(res.data || []);
-    } catch {
-      Swal.fire("Error", "Failed to fetch modules", "error");
-    }
+    const res = await getModules();
+    setModules(res.data || []);
   };
 
   const fetchPermissions = async () => {
-    try {
-      const res = await getPermissions();
-      setPermissions(res.data || []);
-    } catch {
-      Swal.fire("Error", "Failed to fetch permissions", "error");
-    }
+    const res = await getPermissions();
+    setPermissions(res.data || []);
   };
 
   const fetchRolePermissions = async (roleId) => {
-    try {
-      const res = await getRolePermissions(roleId);
-      setRolePerms(res.data || []);
-    } catch {
-      Swal.fire("Error", "Failed to fetch role permissions", "error");
-    }
+    const res = await getRolePermissions(roleId);
+    setRolePerms(res.data || []);
   };
 
   useEffect(() => {
@@ -121,13 +105,17 @@ export default function Roles() {
   };
 
   const saveRole = async () => {
-    if (!roleName.trim()) return;
+    if (!roleName.trim()) {
+      Swal.fire("Error", "Role name is required", "error");
+      return;
+    }
 
     try {
       if (editingRole) {
-        await updateRole(editingRole.uuid, roleName, moduleId || null);
+        await updateRole(editingRole.uuid, roleName, moduleId || null)
+
       } else {
-        await createRole(roleName, moduleId || null);
+       await createRole(roleName, moduleId || null);
       }
 
       Swal.fire("Success", "Role saved successfully", "success");
@@ -145,15 +133,14 @@ export default function Roles() {
   const removeRole = async (id) => {
     const result = await Swal.fire({
       title: "Are you sure?",
-      text: "This role will be deleted!",
       icon: "warning",
       showCancelButton: true,
     });
 
     if (result.isConfirmed) {
       await deleteRole(id);
-      Swal.fire("Deleted", "Role deleted successfully", "success");
       fetchRoles();
+      Swal.fire("Deleted", "Role deleted", "success");
     }
   };
 
@@ -163,7 +150,7 @@ export default function Roles() {
 
   const openPermissionModal = (role) => {
     setSelectedRole(role);
-    setPermSearch(""); // reset search
+    setPermSearch("");
     fetchRolePermissions(role.uuid);
     setShowPermModal(true);
   };
@@ -173,18 +160,17 @@ export default function Roles() {
     const assigned = rolePerms.find((rp) => rp.uuid === permId);
 
     try {
-      if (assigned) await removePermission(selectedRole.uuid, permId);
-      else await assignPermission(selectedRole.uuid, permId);
-
+      if (assigned) {
+        await removePermission(selectedRole.uuid, permId);
+      } else {
+        await assignPermission(selectedRole.uuid, permId);
+      }
       fetchRolePermissions(selectedRole.uuid);
-    } catch {
-      Swal.fire("Error", "Failed to update permission", "error");
     } finally {
       setSavingPerms(false);
     }
   };
 
-  // Filtered permissions based on search
   const filteredPermissions = permissions.filter((p) =>
     p.name.toLowerCase().includes(permSearch.toLowerCase())
   );
@@ -205,14 +191,13 @@ export default function Roles() {
             </button>
           </div>
 
-          {/* ROLES TABLE */}
-          <div className="card card-outline card-primary">
-            <div className="card-body p-0 table-responsive">
+          <div className="card">
+            <div className="card-body table-responsive p-0">
               <table className="table table-hover">
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>Name</th>
+                    <th>Role</th>
                     <th>Module</th>
                     <th>Actions</th>
                   </tr>
@@ -221,12 +206,8 @@ export default function Roles() {
                   {Object.values(groupedRoles).map((group, gi) => (
                     <React.Fragment key={gi}>
                       <tr className="bg-light font-weight-bold">
-                        <td colSpan="4">
-                          <i className="fas fa-layer-group mr-2"></i>
-                          {group.module_name}
-                        </td>
+                        <td colSpan="4">{group.module_name}</td>
                       </tr>
-
                       {group.roles.map((r, i) => (
                         <tr key={r.uuid}>
                           <td>{i + 1}</td>
@@ -249,7 +230,7 @@ export default function Roles() {
                               className="btn btn-sm btn-info"
                               onClick={() => openPermissionModal(r)}
                             >
-                              <i className="fas fa-key"></i> Permissions
+                              <i className="fas fa-key"></i>
                             </button>
                           </td>
                         </tr>
@@ -261,46 +242,95 @@ export default function Roles() {
             </div>
           </div>
 
-          {/* PERMISSIONS MODAL WITH STICKY SEARCH */}
+          {/* ROLE MODAL */}
+          {showModal && (
+            <>
+              <div className="modal fade show" style={{ display: "block" }}>
+                <div className="modal-dialog">
+                  <div className="modal-content">
+
+                    <div className="modal-header">
+                      <h5 className="modal-title">
+                        {editingRole ? "Edit Role" : "Add Role"}
+                      </h5>
+                      <button className="close" onClick={() => setShowModal(false)}>
+                        <span>&times;</span>
+                      </button>
+                    </div>
+
+                    <div className="modal-body">
+                      <div className="form-group">
+                        <label>Role Name</label>
+                        <input
+                          className="form-control"
+                          value={roleName}
+                          onChange={(e) => setRoleName(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label>Module</label>
+                        <select
+                          className="form-control"
+                          value={moduleId}
+                          onChange={(e) => setModuleId(e.target.value)}
+                        >
+                          <option value="">No Module</option>
+                          {modules.map((m) => (
+                            <option key={m.uuid} value={m.uuid}>
+                              {m.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="modal-footer">
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() => setShowModal(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button className="btn btn-primary" onClick={saveRole}>
+                        Save
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+              <div className="modal-backdrop fade show"></div>
+            </>
+          )}
+
+          {/* PERMISSION MODAL (unchanged, working) */}
           {showPermModal && selectedRole && (
             <>
               <div className="modal fade show" style={{ display: "block" }}>
                 <div className="modal-dialog modal-lg">
                   <div className="modal-content">
-
                     <div className="modal-header">
-                      <h5 className="modal-title">
-                        Permissions for {selectedRole.name}
-                      </h5>
-                      <button
-                        className="close"
-                        onClick={() => setShowPermModal(false)}
-                      >
+                      <h5>Permissions – {selectedRole.name}</h5>
+                      <button className="close" onClick={() => setShowPermModal(false)}>
                         <span>&times;</span>
                       </button>
                     </div>
 
-                    {/* Sticky search */}
-                    <div className="p-2 bg-light border-bottom sticky-top">
+                    <div className="p-2 bg-light">
                       <input
-                        type="text"
                         className="form-control"
-                        placeholder="Search permissions..."
+                        placeholder="Search permission..."
                         value={permSearch}
                         onChange={(e) => setPermSearch(e.target.value)}
                       />
                     </div>
 
-                    <div
-                      className="modal-body p-0"
-                      style={{ maxHeight: "60vh", overflowY: "auto" }}
-                    >
-                      <table className="table table-sm table-hover mb-0">
+                    <div className="modal-body p-0" style={{ maxHeight: "60vh", overflowY: "auto" }}>
+                      <table className="table table-sm">
                         <tbody>
-                          {filteredPermissions.map((p, i) => {
-                            const assigned = rolePerms.find(
-                              (rp) => rp.uuid === p.uuid
-                            );
+                          {filteredPermissions.map((p) => {
+                            const assigned = rolePerms.find(rp => rp.uuid === p.uuid);
                             return (
                               <tr key={p.uuid}>
                                 <td>{p.name}</td>
@@ -317,15 +347,6 @@ export default function Roles() {
                           })}
                         </tbody>
                       </table>
-                    </div>
-
-                    <div className="modal-footer">
-                      <button
-                        className="btn btn-secondary"
-                        onClick={() => setShowPermModal(false)}
-                      >
-                        Close
-                      </button>
                     </div>
 
                   </div>

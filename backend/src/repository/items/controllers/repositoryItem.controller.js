@@ -6,6 +6,18 @@ import fs from "fs";
 import natural from "natural";
 import sw from "stopword";
 import stringSimilarity from "string-similarity";
+import multer from "multer";
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "public/uploads/repository/items");
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + "-" + file.originalname;
+    cb(null, uniqueName);
+  }
+});
+export const upload = multer({ storage });
+
 
 /* ===============================
    CREATE ITEM
@@ -302,4 +314,62 @@ export const checkCopyright = async (req, res) => {
   });
 
   res.json({ similarity_score: max });
+};
+
+
+
+export const updateRevisionComment = async (req, res) => {
+  try {
+    const { uuid } = req.params;
+    const { curator_comment, title, abstract, item_type, language, access_level } = req.body;
+    const userId = req.user.uuid;
+
+    if (!curator_comment || !curator_comment.trim()) {
+      return res.status(400).json({ message: "Revision comment is required" });
+    }
+
+    // Check status
+    const statusCheck = await RepositoryItem.getStatusByUUID(uuid);
+    if (!statusCheck.rows.length)
+      return res.status(404).json({ message: "Item not found" });
+
+    if (statusCheck.rows[0].status !== "revision_required") {
+      return res.status(400).json({ message: "Only revision_required items can be edited" });
+    }
+
+    // Handle file upload
+    let filePath = statusCheck.rows[0].file_path;
+    if (req.file) {
+      filePath = `/uploads/repository/items/${req.file.filename}`;
+
+      // Delete old file
+      if (statusCheck.rows[0].file_path) {
+        const oldPath = path.join(process.cwd(), "public", statusCheck.rows[0].file_path);
+        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+      }
+    }
+
+    // Validate required fields for NOT NULL columns
+    const safeTitle = title?.trim() || statusCheck.rows[0].title || "Untitled";
+    const safeType = item_type?.trim() || statusCheck.rows[0].item_type || "Unknown";
+
+    const result = await RepositoryItem.update(uuid, {
+      title: safeTitle,
+      abstract: abstract ?? statusCheck.rows[0].abstract ?? "",
+      item_type: safeType,
+      language: language ?? statusCheck.rows[0].language ?? "English",
+      access_level: access_level ?? statusCheck.rows[0].access_level ?? "public",
+      status: statusCheck.rows[0].status,
+      embargo_until: statusCheck.rows[0].embargo_until,
+      file_path: filePath,
+      correction_note: curator_comment,
+      updated_by: userId,
+      updated_at: new Date(),
+    });
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Update revision with file error:", error);
+    res.status(500).json({ message: "Failed to update revision", error: error.message });
+  }
 };

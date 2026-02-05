@@ -200,7 +200,7 @@ function RepositoryEdit() {
                         }
                       >
                         <option value="draft">Draft</option>
-                        <option value="published">Published</option>
+                        <option value="submitted">Submit</option>
                       </select>
                     </div>
                   </div>
