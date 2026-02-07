@@ -385,9 +385,9 @@ const handleSubmit = async (e) => {
                     </div>
 
                     <div className="form-row">
-                    {/* Status */}
+                    {/* Status  not display all it only display draft and submitted other must be hidden */}
                     <div className="form-group col-md-6">
-                        <label>Status *</label>
+                        <label>Status</label>
                         <select
                         className="form-control"
                         name="status_id"
@@ -397,10 +397,12 @@ const handleSubmit = async (e) => {
                         >
                         <option value="">Select Status</option>
                         {statuses && statuses.length > 0 ? (
-                            statuses.map((s) => (
-                            <option key={s.id} value={s.id}>
-                                {s.label || s.name || s.status || `Status ${s.id}`}
-                            </option>
+                            statuses
+                            .filter((s) => ["Draft", "Submitted"].includes(s.label))
+                            .map((s) => (
+                                <option key={s.id} value={s.id}>
+                                {s.label || s.label || `Status ${s.id}`}
+                                </option>
                             ))
                         ) : (
                             <option value="" disabled>

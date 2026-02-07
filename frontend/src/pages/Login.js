@@ -26,7 +26,7 @@ export default function Login() {
         "ebook publishing": "/ebook-dashboard",
         "journal management": "/journal-dashboard",
         "library management": "/library-dashboard",
-        "ora repository management": "/repository-dashboard",
+        "ora repository management": "/repository/admin/dashboard",
         "oromo wikipedia": "/wikipedia-dashboard",
         "researchers' network": "/researcher-dashboard",
       };
