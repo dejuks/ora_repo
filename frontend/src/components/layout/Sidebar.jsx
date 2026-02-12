@@ -28,6 +28,8 @@ const ROLES = {
   JOURNAL_AUTHOR: "1d67d32d-dcee-4302-8369-26ca00385a09",
   REVIEWER: "5c6f2f3e-8f4b-4d3a-9f7a-2e5e8b6c4d2b",
   JOURNAL_EIC: "ad657069-0dd4-4bd1-8a19-ee6733dd303d",
+  JOURNAL_ASSOCIATE_EDITOR: "45494844-658a-4837-8df6-f6fc61348bbb",
+  JOURNAL_REFREE: "30d22914-dc7f-4532-ba19-31be2beb2e9d",
 
 
   // Repository Roles (Updated to match SRS terminology)
@@ -316,6 +318,84 @@ export default function Sidebar() {
 }
 ,
 
+// ---Associate Editor---
+{
+  name: "Manuscript Handling",
+  icon: "fas fa-user-edit",
+  roles: [ROLES.JOURNAL_ASSOCIATE_EDITOR], // "45494844-658a-4837-8df6-f6fc61348bbb"
+  subMenu: [
+    {
+      name: "Assigned Manuscripts",
+      path: "/journal/ae/assigned-manuscripts",
+      icon: "fas fa-folder-open",
+    },
+    {
+      name: "Initial Screening",
+      path: "/journal/ae/screening",
+      icon: "fas fa-search",
+    },
+    {
+      name: "Review Evaluation",
+      path: "/journal/ae/review-evaluation",
+      icon: "fas fa-check-circle",
+    },
+    {
+      name: "Recommendations to EIC",
+      path: "/journal/ae/recommendations",
+      icon: "fas fa-gavel",
+    },
+    {
+      name: "Ethics & Compliance",
+      path: "/journal/ae/ethics",
+      icon: "fas fa-balance-scale",
+    },
+    {
+      name: "Production Tracking",
+      path: "/journal/ae/production",
+      icon: "fas fa-industry",
+    },
+  ],
+}
+,
+/* ================= REVIEWER / REFEREE ================= */
+{
+  name: "Peer Review",
+  icon: "fas fa-user-check",
+  roles: [ROLES.JOURNAL_REFREE], // "30d22914-dc7f-4532-ba19-31be2beb2e9d"
+  subMenu: [
+    {
+      name: "Assigned Reviews",
+      path: "/journal/reviewer/assigned",
+      icon: "fas fa-inbox",
+    },
+    {
+      name: "Review Workspace",
+      path: "/journal/reviewer/workspace",
+      icon: "fas fa-file-alt",
+    },
+    {
+      name: "Submit Review Report",
+      path: "/journal/reviewer/submit-review",
+      icon: "fas fa-paper-plane",
+    },
+    {
+      name: "Blind Review Files",
+      path: "/journal/reviewer/files",
+      icon: "fas fa-user-secret",
+    },
+    {
+      name: "Ethics & COPE Compliance",
+      path: "/journal/reviewer/ethics",
+      icon: "fas fa-balance-scale",
+    },
+    {
+      name: "Completed Reviews",
+      path: "/journal/reviewer/completed",
+      icon: "fas fa-check-circle",
+    },
+  ],
+}
+,
       /* ================= REVIEWS ================= */
       {
         name: "Reviews",

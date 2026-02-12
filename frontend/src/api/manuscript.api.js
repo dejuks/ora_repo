@@ -111,3 +111,10 @@ export const getDecisionsAPI = async () => {
   const res = await API.get("/manuscripts/eic/decisions");
   return res.data;
 };
+
+export const getAEAssignedManuscriptsAPI = async () => {
+  const res = await API.get("/manuscripts/ae/assigned-manuscripts");
+  return res.data;
+};
+
+

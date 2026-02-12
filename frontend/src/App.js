@@ -78,6 +78,23 @@ import FinalDecisions from "./pages/journals/eic/FinalDecisions";
 import EICManuscriptDetails from "./pages/journals/eic/EICManuscriptDetails";
 import EthicsScreen from "./pages/journals/eic/EthicsScreen";
 import ProductionScreen from "./pages/journals/eic/ProductionScreen";
+import AssignedManuscripts from "./pages/journals/ae/AssignedManuscripts";
+import InitialScreening from "./pages/journals/ae/InitialScreening";
+import Recommendations from "./pages/journals/ae/Recommendations";
+import Ethics from "./pages/journals/ae/Ethics";
+import ReviewEvaluation from "./pages/journals/ae/ReviewEvaluation";
+import Production from "./pages/journals/ae/Production";
+import AssignedReviews from "./pages/journals/reviewer/AssignedReviews";
+import ReviewerWorkspace from "./pages/journals/reviewer/ReviewerWorkspace";
+import SubmitReview from "./pages/journals/reviewer/SubmitReview";
+import ResearcherRegister from "./pages/researcher/ResearcherRegister";
+import ResearcherProfile from "./pages/researcher/ResearcherProfile";
+import PublicHome from "./pages/researcher/PublicHome";
+import ResearcherLogin from "./pages/researcher/ResearcherLogin";
+import ResearcherDashboard from "./components/researcher/ResearcherDashboard";
+import ProfileOnboarding from "./pages/researcher/ProfileOnboarding";
+import Groups from "./pages/researcher/Groups";
+import GroupForm from "./pages/researcher/GroupForm";
 
 function App() {
   return (
@@ -323,6 +340,25 @@ function App() {
         <Route path="/journal/eic/assign-editors" element={<AssignEditors />} />
         <Route path="/journal/eic/ethics" element={<EthicsScreen />} />
         <Route path="/journal/eic/ethics" element={<EthicsScreen />} />
+        <Route path="/journal/eic/ethics" element={<EthicsScreen />} />
+        <Route path="/journal/ae/assigned-manuscripts" element={<AssignedManuscripts />} />
+        <Route path="/journal/ae/screening" element={<InitialScreening />} />
+
+        <Route path="/journal/ae/recommendations" element={<Recommendations />} />
+        
+<Route
+ path="/journal/reviewer/submit-review"
+ element={<SubmitReview />}
+/>
+        <Route path="/journal/reviewer/workspace" element={<ReviewerWorkspace />} />
+
+        <Route path="/journal/ae/ethics" element={<Ethics />} />
+
+        <Route path="/journal/ae/production" element={<Production />} />
+
+        <Route path="/journal/reviewer/assigned" element={<AssignedReviews />} />
+
+        <Route path="/journal/ae/review-evaluation" element={<ReviewEvaluation />} />
 
         <Route path="/journal/eic/production" element={<ProductionScreen />} />
         <Route path="/eic/manuscripts/:id" element={<EICManuscriptDetails />} />
@@ -591,6 +627,19 @@ function App() {
           path="/wiki/categories/edit/:id"
           element={<WikiCategoryForm />}
         />
+
+        <Route path="/researcher/register" element={<ResearcherRegister />} />
+        <Route path="/researcher/" element={<PublicHome />} />
+         <Route path="/researcher/login" element={<ResearcherLogin />} />
+         
+         <Route path="/researcher/dashboard" element={<ResearcherDashboard />} />
+<Route path="/researcher/onboarding" element={<ProfileOnboarding />} />
+
+        <Route path="/researcher/profile/:userId" element={<ResearcherProfile />} />
+
+         <Route path="/researcher/groups" element={<Groups />} />
+        <Route path="/researcher/groups/create" element={<GroupForm />} />
+        <Route path="/researcher/groups/edit/:uuid" element={<GroupForm />} />
       </Routes>
     </BrowserRouter>
   );

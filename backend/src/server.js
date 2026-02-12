@@ -22,6 +22,15 @@ import publicUserRoutes from "./publicUsers/routes/publicUser.routes.js";
 
 import wikiArticleRoutes from "./wiki/routes/wikiArticle.routes.js";
 import wikiCategoryRoutes from "./wiki/categories/routes/wikiCategory.routes.js";
+import manuscriptAERoutes from "./manuscription/routes/associateEditor.routes.js";
+import manuscriptReviewerRoutes from "./manuscription/routes/reviewer.routes.js";
+
+import adminRoutes from "./researcher/routes/admin.routes.js";
+import researcherRoutes from "./researcher/routes/researcher.routes.js";
+
+import groupResearcherRoutes from "./researcher/groups/routes/group.routes.js";
+import connectionRoutes from "./researcher/routes/connection.route.js";
+
 dotenv.config();
 
 const app = express();
@@ -73,6 +82,10 @@ app.use("/api", journalSectionRoutes);
 
 app.use("/api/manuscript-statuses", manuscriptStatusRoutes);
 app.use("/api/manuscripts", manuscriptRoutes);
+app.use("/api/manuscripts/ae", manuscriptAERoutes);
+app.use("/api/manuscripts/reviewer", manuscriptReviewerRoutes);
+
+
 app.use("/api/repository-items", repositoryRoutes);
 app.use("/uploads", express.static("uploads"));
 
@@ -85,6 +98,22 @@ app.use("/api/public-users", publicUserRoutes);
 
 app.use("/api/wiki/articles", wikiArticleRoutes);
 app.use("/api/wiki/categories", wikiCategoryRoutes);
+
+
+
+//Routes research network
+
+// --- API Routes ---
+app.use("/api/researcher", researcherRoutes);
+
+app.use("/api/researcher/groups", groupResearcherRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/researcher/connections", connectionRoutes);
+
+// Default route
+app.get("/api/ora-researcher", (req, res) => {
+  res.send("Researcher Network Platform API running...");
+});
 /* =======================
    SERVER START
 ======================= */
