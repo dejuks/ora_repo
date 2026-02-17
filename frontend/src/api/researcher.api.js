@@ -6,12 +6,38 @@ const API = axios.create({
 
 /* 🔐 AUTO ATTACH TOKEN */
 API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  // Try multiple possible token keys for compatibility
+  const token = localStorage.getItem("researcherToken") || 
+                localStorage.getItem("token") || 
+                localStorage.getItem("authToken");
+  
+  console.log("Request URL:", config.url);
+  console.log("Token found:", !!token);
+  
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
+
+// Add response interceptor for better error handling
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      console.log("Unauthorized - clearing tokens");
+      localStorage.removeItem("researcherToken");
+      localStorage.removeItem("token");
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("user");
+      
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 const API_BASE = "/researcher";
 
@@ -24,8 +50,23 @@ export const registerResearcher = async (formData) => {
 };
 
 export const loginResearcher = async (credentials) => {
-  const res = await API.post("/auth/login", credentials);
-  return res.data;
+  try {
+    const res = await API.post("/auth/login", credentials);
+    
+    if (res.data.token) {
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("researcherToken", res.data.token);
+      
+      if (res.data.user) {
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+      }
+    }
+    
+    return res.data;
+  } catch (error) {
+    console.error("Login error:", error.response?.data || error.message);
+    throw error;
+  }
 };
 
 export const getMyProfile = async () => {
@@ -33,39 +74,19 @@ export const getMyProfile = async () => {
   return res.data;
 };
 
-// In researcher.api.js
 export const updateMyProfile = async (profileData) => {
-  const formData = new FormData();
-
-  Object.entries(profileData).forEach(([key, value]) => {
-    if (value !== null && value !== undefined) {
-      formData.append(key, value);
-    }
-  });
-
-  const res = await API.put("/researcher/profile", formData);
-  return res.data;
-};
-
-export const getMembershipStatus = async () => {
   try {
-    // This will get the current user's profile which contains member_ship_status
-    const response = await API.get('/researcher/me');
-    return { 
-      status: response.data.member_ship_status || 'none' 
-    };
+    const response = await API.put(`${API_BASE}/profile`, profileData, {
+      headers: {
+        ...(profileData instanceof FormData ? {} : { 'Content-Type': 'application/json' })
+      }
+    });
+    return response.data;
   } catch (error) {
-    console.error('Error getting membership status:', error);
+    console.error('Error updating profile:', error);
     throw error;
   }
 };
-
-// cancelMembershipRequest
-export const cancelMembershipRequest= async()=>{
-  
-}
-
-
 
 export const getResearchers = async () => {
   const res = await API.get(`${API_BASE}/all`);
@@ -78,191 +99,7 @@ export const searchResearchers = async (query) => {
 };
 
 /* ==============================
-   PUBLICATIONS
-============================== */
-export const getMyPublications = async () => {
-  const res = await API.get(`${API_BASE}/publications`);
-  return res.data;
-};
-
-export const createPublication = async (publicationData) => {
-  const formData = new FormData();
-  Object.entries(publicationData).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      formData.append(key, value);
-    }
-  });
-  const res = await API.post(`${API_BASE}/publications`, formData);
-  return res.data;
-};
-
-export const updatePublication = async (publicationId, publicationData) => {
-  const formData = new FormData();
-  Object.entries(publicationData).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      formData.append(key, value);
-    }
-  });
-  const res = await API.put(`${API_BASE}/publications/${publicationId}`, formData);
-  return res.data;
-};
-
-export const deletePublication = async (publicationId) => {
-  const res = await API.delete(`${API_BASE}/publications/${publicationId}`);
-  return res.data;
-};
-
-export const getAllPublications = async () => {
-  const res = await API.get(`${API_BASE}/publications/all`);
-  return res.data;
-};
-
-export const getPublicationsByUser = async (userId) => {
-  const res = await API.get(`${API_BASE}/publications/user/${userId}`);
-  return res.data;
-};
-
-export const likePublication = async (publicationId) => {
-  const res = await API.post(`${API_BASE}/publications/${publicationId}/like`);
-  return res.data;
-};
-
-export const unlikePublication = async (publicationId) => {
-  const res = await API.delete(`${API_BASE}/publications/${publicationId}/like`);
-  return res.data;
-};
-
-export const commentOnPublication = async (publicationId, content) => {
-  const res = await API.post(`${API_BASE}/publications/${publicationId}/comments`, { content });
-  return res.data;
-};
-
-export const getPublicationComments = async (publicationId) => {
-  const res = await API.get(`${API_BASE}/publications/${publicationId}/comments`);
-  return res.data;
-};
-
-/* ==============================
-   MESSAGING
-============================== */
-export const getConversations = async () => {
-  const res = await API.get(`${API_BASE}/messages/conversations`);
-  return res.data;
-};
-
-export const getMessages = async (conversationId) => {
-  const res = await API.get(`${API_BASE}/messages/${conversationId}`);
-  return res.data;
-};
-
-export const sendMessage = async (receiverId, content) => {
-  const res = await API.post(`${API_BASE}/messages`, { receiver_id: receiverId, content });
-  return res.data;
-};
-
-export const markMessagesAsRead = async (conversationId) => {
-  const res = await API.put(`${API_BASE}/messages/${conversationId}/read`);
-  return res.data;
-};
-
-export const deleteMessage = async (messageId) => {
-  const res = await API.delete(`${API_BASE}/messages/${messageId}`);
-  return res.data;
-};
-
-export const getUnreadMessageCount = async () => {
-  const res = await API.get(`${API_BASE}/messages/unread/count`);
-  return res.data;
-};
-
-
-export const createGroupPost = async (groupId, content) => {
-  try {
-    // Send as JSON, not FormData
-    const res = await API.post(`/researcher/groups/${groupId}/posts`, 
-      { content },
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-    return res.data;
-  } catch (error) {
-    console.error("Error creating group post:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-// Get group posts
-export const getGroupPosts = async (groupId) => {
-  try {
-    const res = await API.get(`/researcher/groups/${groupId}/posts`);
-    return res.data;
-  } catch (error) {
-    console.error("Error getting group posts:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-// Delete group post
-export const deleteGroupPost = async (postId) => {
-  try {
-    const res = await API.delete(`/researcher/posts/${postId}`);
-    return res.data;
-  } catch (error) {
-    console.error("Error deleting group post:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-// Like post
-export const likePost = async (postId) => {
-  try {
-    const res = await API.post(`/researcher/posts/${postId}/like`);
-    return res.data;
-  } catch (error) {
-    console.error("Error liking post:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-// Unlike post
-export const unlikePost = async (postId) => {
-  try {
-    const res = await API.delete(`/researcher/posts/${postId}/like`);
-    return res.data;
-  } catch (error) {
-    console.error("Error unliking post:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-// Comment on post
-export const commentOnPost = async (postId, content) => {
-  try {
-    const res = await API.post(`/researcher/posts/${postId}/comments`, { content });
-    return res.data;
-  } catch (error) {
-    console.error("Error commenting on post:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-// Get post comments
-export const getPostComments = async (postId) => {
-  try {
-    const res = await API.get(`/researcher/posts/${postId}/comments`);
-    return res.data;
-  } catch (error) {
-    console.error("Error getting post comments:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-
-/* ==============================
-   GROUPS
+   GROUPS - All group related functions
 ============================== */
 export const getMyGroups = async () => {
   const res = await API.get(`${API_BASE}/my-groups`);
@@ -324,51 +161,271 @@ export const deleteGroup = async (groupId) => {
 };
 
 /* ==============================
-   CONNECTIONS
+   GROUP POSTS / FORUM
 ============================== */
-export const sendConnectionRequest = async (researcherId) => {
-  const res = await API.post(`${API_BASE}/connect/${researcherId}`);
+export const getGroupPosts = async (groupId) => {
+  try {
+    const res = await API.get(`/researcher/groups/${groupId}/posts`);
+    return res.data;
+  } catch (error) {
+    console.error("Error getting group posts:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const createGroupPost = async (groupId, content) => {
+  try {
+    const res = await API.post(`/researcher/groups/${groupId}/posts`, 
+      { content },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error creating group post:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const deleteGroupPost = async (postId) => {
+  try {
+    const res = await API.delete(`/researcher/posts/${postId}`);
+    return res.data;
+  } catch (error) {
+    console.error("Error deleting group post:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const likePost = async (postId) => {
+  try {
+    const res = await API.post(`/researcher/posts/${postId}/like`);
+    return res.data;
+  } catch (error) {
+    console.error("Error liking post:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const unlikePost = async (postId) => {
+  try {
+    const res = await API.delete(`/researcher/posts/${postId}/like`);
+    return res.data;
+  } catch (error) {
+    console.error("Error unliking post:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const commentOnPost = async (postId, content) => {
+  try {
+    const res = await API.post(`/researcher/posts/${postId}/comments`, { content });
+    return res.data;
+  } catch (error) {
+    console.error("Error commenting on post:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const getPostComments = async (postId) => {
+  try {
+    const res = await API.get(`/researcher/posts/${postId}/comments`);
+    return res.data;
+  } catch (error) {
+    console.error("Error getting post comments:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+/* ==============================
+   PUBLICATIONS
+============================== */
+export const getMyPublications = async () => {
+  const res = await API.get(`${API_BASE}/publications/`);
   return res.data;
 };
 
+export const createPublication = async (publicationData) => {
+  const formData = new FormData();
+  Object.entries(publicationData).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      formData.append(key, value);
+    }
+  });
+  const res = await API.post(`${API_BASE}/publications/`, formData);
+  return res.data;
+};
+
+export const updatePublication = async (publicationId, publicationData) => {
+  const formData = new FormData();
+  Object.entries(publicationData).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      formData.append(key, value);
+    }
+  });
+  const res = await API.put(`${API_BASE}/publications/${publicationId}`, formData);
+  return res.data;
+};
+
+export const deletePublication = async (publicationId) => {
+  const res = await API.delete(`${API_BASE}/publications/${publicationId}`);
+  return res.data;
+};
+
+export const getAllPublications = async () => {
+  const res = await API.get(`${API_BASE}/publications/all`);
+  return res.data;
+};
+
+export const getPublicationsByUser = async (userId) => {
+  const res = await API.get(`${API_BASE}/publications/user/${userId}`);
+  return res.data;
+};
+
+export const likePublication = async (publicationId) => {
+  const res = await API.post(`${API_BASE}/publications/${publicationId}/like`);
+  return res.data;
+};
+
+export const unlikePublication = async (publicationId) => {
+  const res = await API.delete(`${API_BASE}/publications/${publicationId}/like`);
+  return res.data;
+};
+
+export const commentOnPublication = async (publicationId, content) => {
+  const res = await API.post(`${API_BASE}/publications/${publicationId}/comments`, { content });
+  return res.data;
+};
+
+export const getPublicationComments = async (publicationId) => {
+  const res = await API.get(`${API_BASE}/publications/${publicationId}/comments`);
+  return res.data;
+};
+
+/* ==============================
+   CONNECTIONS
+============================== */
+export const getMyConnections = async () => {
+  const res = await API.get(`${API_BASE}/connections/`);
+  return res.data;
+};
+
+export const sendConnectionRequest = async (researcherId) => {
+  try {
+    console.log("Sending connection request to researcher:", researcherId);
+    const res = await API.post(`${API_BASE}/connect/${researcherId}`);
+    return res.data;
+  } catch (error) {
+    console.error("Error sending connection request:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 export const getPendingConnectionRequests = async () => {
-  const res = await API.get(`${API_BASE}/connections/pending`);
+  const res = await API.get(`${API_BASE}/connections/pending/`);
   return res.data;
 };
 
 export const getSentConnectionRequests = async () => {
-  const res = await API.get(`${API_BASE}/connections/sent`);
+  const res = await API.get(`${API_BASE}/connections/sent/`);
   return res.data;
 };
 
 export const acceptConnectionRequest = async (requestId) => {
-  const res = await API.put(`${API_BASE}/connections/accept/${requestId}`);
+  const res = await API.put(`${API_BASE}/connections/accept/${requestId}/`);
   return res.data;
 };
 
 export const rejectConnectionRequest = async (requestId) => {
-  const res = await API.put(`${API_BASE}/connections/reject/${requestId}`);
-  return res.data;
-};
-
-export const getMyConnections = async () => {
-  const res = await API.get(`${API_BASE}/connections`);
+  const res = await API.put(`${API_BASE}/connections/reject/${requestId}/`);
   return res.data;
 };
 
 export const checkConnectionStatus = async (researcherId) => {
-  const res = await API.get(`${API_BASE}/connections/status/${researcherId}`);
+  const res = await API.get(`${API_BASE}/connections/status/${researcherId}/`);
   return res.data;
 };
 
 export const removeConnection = async (connectionId) => {
-  const res = await API.delete(`${API_BASE}/connections/${connectionId}`);
+  const res = await API.delete(`${API_BASE}/connections/${connectionId}/`);
   return res.data;
 };
 
+/* ==============================
+   MESSAGING - FIXED
+============================== */
+export const getConversations = async () => {
+  try {
+    const res = await API.get(`/messages/conversations/`);
+    return res.data;
+  } catch (error) {
+    console.error("Error getting conversations:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const getMessages = async (conversationId) => {
+  try {
+    const res = await API.get(`/messages/${conversationId}`);
+    return res.data;
+  } catch (error) {
+    console.error("Error getting messages:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const sendMessage = async (receiverId, content) => {
+  try {
+    const res = await API.post(`/messages/`, { 
+      receiver_id: receiverId, 
+      content: content 
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error sending message:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const markMessagesAsRead = async (conversationId) => {
+  try {
+    const res = await API.put(`/messages/${conversationId}/read/`);
+    return res.data;
+  } catch (error) {
+    console.error("Error marking messages as read:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const deleteMessage = async (messageId) => {
+  try {
+    const res = await API.delete(`/messages/${messageId}/`);
+    return res.data;
+  } catch (error) {
+    console.error("Error deleting message:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const getUnreadMessageCount = async () => {
+  try {
+    const res = await API.get(`/messages/unread/count/`);
+    return res.data;
+  } catch (error) {
+    console.error("Error getting unread count:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+
+/* ==============================
+   PROJECT UPDATES
+============================== */
 export const getProjectUpdates = async (groupId) => {
   try {
-    // The correct endpoint is /updates/groups/:groupId (not /groups/:groupId/updates)
     const res = await API.get(`/researcher/updates/groups/${groupId}`);
     return res.data;
   } catch (error) {
@@ -377,13 +434,11 @@ export const getProjectUpdates = async (groupId) => {
   }
 };
 
-// Create project update in a group
 export const createProjectUpdate = async (groupId, updateData) => {
   try {
-    // Send as JSON, not FormData
     const res = await API.post(
       `/researcher/updates/groups/${groupId}`, 
-      updateData,  // Send the object directly, not FormData
+      updateData,
       {
         headers: {
           'Content-Type': 'application/json'
@@ -397,7 +452,6 @@ export const createProjectUpdate = async (groupId, updateData) => {
   }
 };
 
-// Update project update
 export const updateProjectUpdate = async (updateId, updateData) => {
   try {
     const res = await API.put(`/researcher/updates/${updateId}`, updateData);
@@ -408,7 +462,6 @@ export const updateProjectUpdate = async (updateId, updateData) => {
   }
 };
 
-// Delete project update
 export const deleteProjectUpdate = async (updateId) => {
   try {
     const res = await API.delete(`/researcher/updates/${updateId}`);
@@ -419,7 +472,6 @@ export const deleteProjectUpdate = async (updateId) => {
   }
 };
 
-// Get all project updates for user's groups
 export const getAllProjectUpdates = async () => {
   try {
     const res = await API.get(`/researcher/updates/all`);
@@ -428,4 +480,15 @@ export const getAllProjectUpdates = async () => {
     console.error("Error getting all project updates:", error.response?.data || error.message);
     throw error;
   }
+};
+
+/* ==============================
+   LOGOUT FUNCTION
+============================== */
+export const logoutResearcher = () => {
+  localStorage.removeItem("researcherToken");
+  localStorage.removeItem("token");
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("user");
+  window.location.href = '/login';
 };

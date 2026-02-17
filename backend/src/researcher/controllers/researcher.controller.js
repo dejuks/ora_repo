@@ -862,12 +862,52 @@ export const getMyConnections = async (req, res) => {
 };
 
 export const getMyPublications = async (req, res) => {
-  res.json({ 
-    success: true,
-    publications: [] 
-  });
-};
+  try {
+    const userId = req.user.uuid;
 
+    const { rows } = await pool.query(
+      `
+      SELECT 
+        p.uuid,
+        p.title,
+        p.authors,
+        p.journal,
+        p.year,
+        p.doi,
+        p.abstract,
+        p.file_url,
+        p.created_at,
+        p.updated_at,
+        COALESCE(l.like_count, 0) as like_count,
+        COALESCE(c.comment_count, 0) as comment_count
+      FROM publications p
+      LEFT JOIN (
+        SELECT publication_id, COUNT(*) as like_count
+        FROM publication_likes
+        GROUP BY publication_id
+      ) l ON l.publication_id = p.uuid
+      LEFT JOIN (
+        SELECT publication_id, COUNT(*) as comment_count
+        FROM publication_comments
+        GROUP BY publication_id
+      ) c ON c.publication_id = p.uuid
+      WHERE p.user_id = $1
+      ORDER BY p.created_at DESC
+      `,
+      [userId]
+    );
+
+    // Return as array directly
+    res.json(rows);
+
+  } catch (error) {
+    console.error("Error getting my publications:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
 export const getMyEvents = async (req, res) => {
   res.json({ 
     success: true,
@@ -1158,7 +1198,7 @@ export const leaveGroup = async (req, res) => {
 };
 
 /* =====================================================
-   DELETE GROUP
+   DELETE GROUP - FIXED with proper cascade
 ===================================================== */
 export const deleteGroup = async (req, res) => {
   const client = await pool.connect();
@@ -1169,9 +1209,11 @@ export const deleteGroup = async (req, res) => {
     const { groupId } = req.params;
     const userId = req.user.uuid;
 
-    // Check if user is owner
+    console.log("Deleting group:", { groupId, userId });
+
+    // Check if group exists and user is owner
     const groupCheck = await client.query(
-      `SELECT created_by FROM groups WHERE uuid = $1`,
+      `SELECT * FROM groups WHERE uuid = $1`,
       [groupId]
     );
 
@@ -1182,13 +1224,57 @@ export const deleteGroup = async (req, res) => {
       });
     }
 
-    if (groupCheck.rows[0].created_by !== userId) {
+    const group = groupCheck.rows[0];
+
+    // Check if user is the owner
+    if (group.created_by !== userId) {
       return res.status(403).json({ 
         success: false, 
         message: "Only the group owner can delete the group" 
       });
     }
 
+    // 1. Delete all group post comments first
+    await client.query(
+      `
+      DELETE FROM group_post_comments 
+      WHERE post_id IN (
+        SELECT uuid FROM group_posts WHERE group_id = $1
+      )
+      `,
+      [groupId]
+    );
+
+    // 2. Delete all group post likes
+    await client.query(
+      `
+      DELETE FROM group_post_likes 
+      WHERE post_id IN (
+        SELECT uuid FROM group_posts WHERE group_id = $1
+      )
+      `,
+      [groupId]
+    );
+
+    // 3. Delete all group posts
+    await client.query(
+      `DELETE FROM group_posts WHERE group_id = $1`,
+      [groupId]
+    );
+
+    // 4. Delete all group invitations
+    await client.query(
+      `DELETE FROM group_invitations WHERE group_id = $1`,
+      [groupId]
+    );
+
+    // 5. Delete all group members
+    await client.query(
+      `DELETE FROM group_members WHERE group_id = $1`,
+      [groupId]
+    );
+
+    // 6. Finally delete the group
     await client.query(
       `DELETE FROM groups WHERE uuid = $1`,
       [groupId]
@@ -1206,13 +1292,12 @@ export const deleteGroup = async (req, res) => {
     console.error("Error deleting group:", error);
     res.status(500).json({ 
       success: false, 
-      message: error.message 
+      message: error.message || "Failed to delete group"
     });
   } finally {
     client.release();
   }
 };
-
 /* =====================================================
    GROUP POSTS (FORUM)
 ===================================================== */
@@ -1568,3 +1653,1190 @@ export const startReview = async(req,res)=>{
 export const submitReview = async(req,res)=>{
   
 }
+
+// Add these to your researcher.controller.js file
+/* ==============================
+   PUBLICATIONS CONTROLLERS - COMPLETE FIX
+============================== */
+export const createPublication = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query("BEGIN");
+    
+    const userId = req.user.uuid;
+    const { title, authors, journal, year, doi, abstract } = req.body;
+    
+    // Validate required fields
+    if (!title || !title.trim()) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Title is required" 
+      });
+    }
+    
+    if (!authors) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Authors are required" 
+      });
+    }
+
+    // Handle file upload if present
+    let fileUrl = null;
+    if (req.file) {
+      fileUrl = `/uploads/publications/${req.file.filename}`;
+    }
+
+    // Parse authors - handle both string and array
+    let authorsArray = [];
+    if (authors) {
+      if (Array.isArray(authors)) {
+        authorsArray = authors;
+      } else if (typeof authors === 'string') {
+        // Remove any quotes and split by commas
+        const cleanAuthors = authors.replace(/["']/g, '');
+        authorsArray = cleanAuthors.split(',').map(a => a.trim()).filter(a => a.length > 0);
+      }
+    }
+
+    // Parse year
+    let parsedYear = null;
+    if (year) {
+      parsedYear = parseInt(year);
+      if (isNaN(parsedYear)) {
+        parsedYear = null;
+      }
+    }
+
+    // Insert publication into database
+    const result = await client.query(
+      `
+      INSERT INTO publications (
+        uuid,
+        user_id,
+        title,
+        authors,
+        journal,
+        year,
+        doi,
+        abstract,
+        file_url,
+        created_at,
+        updated_at
+      )
+      VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+      RETURNING 
+        uuid,
+        title,
+        authors,
+        journal,
+        year,
+        doi,
+        abstract,
+        file_url,
+        created_at,
+        updated_at
+      `,
+      [
+        userId,
+        title.trim(),
+        authorsArray,
+        journal || null,
+        parsedYear,
+        doi || null,
+        abstract || null,
+        fileUrl
+      ]
+    );
+
+    const publication = result.rows[0];
+
+    // Get user details for response
+    const userResult = await client.query(
+      `
+      SELECT 
+        u.full_name as user_name,
+        u.email as user_email,
+        rp.photo as user_photo,
+        rp.affiliation as user_affiliation
+      FROM users u
+      LEFT JOIN researcher_profiles rp ON rp.user_id = u.uuid
+      WHERE u.uuid = $1
+      `,
+      [userId]
+    );
+
+    await client.query("COMMIT");
+
+    // Combine publication with user details
+    const responseData = {
+      ...publication,
+      user_uuid: userId,
+      user_name: userResult.rows[0]?.user_name,
+      user_email: userResult.rows[0]?.user_email,
+      user_photo: userResult.rows[0]?.user_photo,
+      user_affiliation: userResult.rows[0]?.user_affiliation,
+      like_count: 0,
+      comment_count: 0,
+      is_liked: false
+    };
+
+    res.status(201).json({
+      success: true,
+      message: "Publication created successfully",
+      data: responseData
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error creating publication:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || "Failed to create publication"
+    });
+  } finally {
+    client.release();
+  }
+};
+
+
+export const updatePublication = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query("BEGIN");
+    
+    const { publicationId } = req.params;
+    const userId = req.user.uuid;
+    const { title, authors, journal, year, doi, abstract } = req.body;
+    
+    // Check if publication exists and belongs to user
+    const checkResult = await client.query(
+      `SELECT * FROM publications WHERE uuid = $1 AND user_id = $2`,
+      [publicationId, userId]
+    );
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Publication not found or you don't have permission to edit it" 
+      });
+    }
+
+    // Handle file upload if present
+    let fileUrl = null;
+    if (req.file) {
+      fileUrl = `/uploads/publications/${req.file.filename}`;
+    }
+
+    // Parse authors
+    let authorsArray = null;
+    if (authors) {
+      if (Array.isArray(authors)) {
+        authorsArray = authors;
+      } else if (typeof authors === 'string') {
+        authorsArray = authors.split(',').map(a => a.trim());
+      }
+    }
+
+    // Build dynamic update query
+    const updateFields = [];
+    const updateValues = [];
+    let paramIndex = 1;
+
+    if (title !== undefined) {
+      updateFields.push(`title = $${paramIndex}`);
+      updateValues.push(title.trim());
+      paramIndex++;
+    }
+    if (authorsArray !== null) {
+      updateFields.push(`authors = $${paramIndex}`);
+      updateValues.push(authorsArray);
+      paramIndex++;
+    }
+    if (journal !== undefined) {
+      updateFields.push(`journal = $${paramIndex}`);
+      updateValues.push(journal || null);
+      paramIndex++;
+    }
+    if (year !== undefined) {
+      updateFields.push(`year = $${paramIndex}`);
+      updateValues.push(year ? parseInt(year) : null);
+      paramIndex++;
+    }
+    if (doi !== undefined) {
+      updateFields.push(`doi = $${paramIndex}`);
+      updateValues.push(doi || null);
+      paramIndex++;
+    }
+    if (abstract !== undefined) {
+      updateFields.push(`abstract = $${paramIndex}`);
+      updateValues.push(abstract || null);
+      paramIndex++;
+    }
+    if (fileUrl !== null) {
+      updateFields.push(`file_url = $${paramIndex}`);
+      updateValues.push(fileUrl);
+      paramIndex++;
+    }
+
+    updateFields.push(`updated_at = NOW()`);
+
+    if (updateFields.length > 1) {
+      const query = `
+        UPDATE publications
+        SET ${updateFields.join(', ')}
+        WHERE uuid = $${paramIndex}
+        RETURNING *
+      `;
+      
+      updateValues.push(publicationId);
+      
+      await client.query(query, updateValues);
+    }
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      message: "Publication updated successfully"
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error updating publication:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  } finally {
+    client.release();
+  }
+};
+
+export const deletePublication = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query("BEGIN");
+    
+    const { publicationId } = req.params;
+    const userId = req.user.uuid;
+
+    // Check if publication exists and belongs to user
+    const checkResult = await client.query(
+      `SELECT * FROM publications WHERE uuid = $1 AND user_id = $2`,
+      [publicationId, userId]
+    );
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Publication not found or you don't have permission to delete it" 
+      });
+    }
+
+    // Delete related likes first
+    await client.query(
+      `DELETE FROM publication_likes WHERE publication_id = $1`,
+      [publicationId]
+    );
+
+    // Delete related comments
+    await client.query(
+      `DELETE FROM publication_comments WHERE publication_id = $1`,
+      [publicationId]
+    );
+
+    // Delete publication
+    await client.query(
+      `DELETE FROM publications WHERE uuid = $1`,
+      [publicationId]
+    );
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      message: "Publication deleted successfully"
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error deleting publication:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  } finally {
+    client.release();
+  }
+};
+
+export const getAllPublications = async (req, res) => {
+  try {
+    const userId = req.user.uuid;
+
+    const { rows } = await pool.query(
+      `
+      SELECT 
+        p.uuid,
+        p.title,
+        p.authors,
+        p.journal,
+        p.year,
+        p.doi,
+        p.abstract,
+        p.file_url,
+        p.created_at,
+        p.updated_at,
+        u.uuid as user_uuid,
+        u.full_name as user_name,
+        u.email as user_email,
+        rp.photo as user_photo,
+        rp.affiliation as user_affiliation,
+        COALESCE(l.like_count, 0) as like_count,
+        COALESCE(c.comment_count, 0) as comment_count,
+        CASE WHEN ul.user_id IS NOT NULL THEN true ELSE false END as is_liked
+      FROM publications p
+      JOIN users u ON u.uuid = p.user_id
+      LEFT JOIN researcher_profiles rp ON rp.user_id = p.user_id
+      LEFT JOIN (
+        SELECT publication_id, COUNT(*) as like_count
+        FROM publication_likes
+        GROUP BY publication_id
+      ) l ON l.publication_id = p.uuid
+      LEFT JOIN (
+        SELECT publication_id, COUNT(*) as comment_count
+        FROM publication_comments
+        GROUP BY publication_id
+      ) c ON c.publication_id = p.uuid
+      LEFT JOIN publication_likes ul ON ul.publication_id = p.uuid AND ul.user_id = $1
+      ORDER BY p.created_at DESC
+      `,
+      [userId]
+    );
+
+    // Return as array directly (not wrapped in an object)
+    res.json(rows);
+
+  } catch (error) {
+    console.error("Error getting all publications:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
+export const getPublicationsByUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUserId = req.user.uuid;
+
+    const { rows } = await pool.query(
+      `
+      SELECT 
+        p.uuid,
+        p.title,
+        p.authors,
+        p.journal,
+        p.year,
+        p.doi,
+        p.abstract,
+        p.file_url,
+        p.created_at,
+        p.updated_at,
+        u.full_name as user_name,
+        u.email as user_email,
+        rp.photo as user_photo,
+        rp.affiliation as user_affiliation,
+        COALESCE(l.like_count, 0) as like_count,
+        COALESCE(c.comment_count, 0) as comment_count,
+        CASE WHEN ul.user_id IS NOT NULL THEN true ELSE false END as is_liked
+      FROM publications p
+      JOIN users u ON u.uuid = p.user_id
+      LEFT JOIN researcher_profiles rp ON rp.user_id = p.user_id
+      LEFT JOIN (
+        SELECT publication_id, COUNT(*) as like_count
+        FROM publication_likes
+        GROUP BY publication_id
+      ) l ON l.publication_id = p.uuid
+      LEFT JOIN (
+        SELECT publication_id, COUNT(*) as comment_count
+        FROM publication_comments
+        GROUP BY publication_id
+      ) c ON c.publication_id = p.uuid
+      LEFT JOIN publication_likes ul ON ul.publication_id = p.uuid AND ul.user_id = $2
+      WHERE p.user_id = $1
+      ORDER BY p.created_at DESC
+      `,
+      [userId, currentUserId]
+    );
+
+    res.json({
+      success: true,
+      publications: rows
+    });
+
+  } catch (error) {
+    console.error("Error getting publications by user:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
+export const likePublication = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query("BEGIN");
+    
+    const { publicationId } = req.params;
+    const userId = req.user.uuid;
+
+    // Check if already liked
+    const checkResult = await client.query(
+      `SELECT * FROM publication_likes WHERE publication_id = $1 AND user_id = $2`,
+      [publicationId, userId]
+    );
+
+    if (checkResult.rows.length === 0) {
+      await client.query(
+        `
+        INSERT INTO publication_likes (uuid, publication_id, user_id, created_at)
+        VALUES (gen_random_uuid(), $1, $2, NOW())
+        `,
+        [publicationId, userId]
+      );
+    }
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      message: "Publication liked successfully"
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error liking publication:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  } finally {
+    client.release();
+  }
+};
+
+
+export const unlikePublication = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query("BEGIN");
+    
+    const { publicationId } = req.params;
+    const userId = req.user.uuid;
+
+    await client.query(
+      `DELETE FROM publication_likes WHERE publication_id = $1 AND user_id = $2`,
+      [publicationId, userId]
+    );
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      message: "Publication unliked successfully"
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error unliking publication:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  } finally {
+    client.release();
+  }
+};
+
+export const commentOnPublication = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query("BEGIN");
+    
+    const { publicationId } = req.params;
+    const userId = req.user.uuid;
+    const { content } = req.body;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Comment content is required" 
+      });
+    }
+
+    const result = await client.query(
+      `
+      INSERT INTO publication_comments (uuid, publication_id, user_id, content, created_at)
+      VALUES (gen_random_uuid(), $1, $2, $3, NOW())
+      RETURNING *
+      `,
+      [publicationId, userId, content.trim()]
+    );
+
+    // Get user details for the comment
+    const userResult = await client.query(
+      `
+      SELECT 
+        u.full_name as user_name,
+        u.email as user_email,
+        rp.photo as user_photo
+      FROM users u
+      LEFT JOIN researcher_profiles rp ON rp.user_id = u.uuid
+      WHERE u.uuid = $1
+      `,
+      [userId]
+    );
+
+    await client.query("COMMIT");
+
+    const comment = {
+      ...result.rows[0],
+      user_name: userResult.rows[0]?.user_name,
+      user_email: userResult.rows[0]?.user_email,
+      user_photo: userResult.rows[0]?.user_photo
+    };
+
+    res.status(201).json({
+      success: true,
+      message: "Comment added successfully",
+      comment
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error commenting on publication:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  } finally {
+    client.release();
+  }
+};
+
+
+export const getPublicationComments = async (req, res) => {
+  try {
+    const { publicationId } = req.params;
+
+    const { rows } = await pool.query(
+      `
+      SELECT 
+        pc.uuid,
+        pc.publication_id,
+        pc.user_id,
+        pc.content,
+        pc.created_at,
+        u.full_name as user_name,
+        u.email as user_email,
+        rp.photo as user_photo
+      FROM publication_comments pc
+      JOIN users u ON u.uuid = pc.user_id
+      LEFT JOIN researcher_profiles rp ON rp.user_id = pc.user_id
+      WHERE pc.publication_id = $1
+      ORDER BY pc.created_at ASC
+      `,
+      [publicationId]
+    );
+
+    res.json({
+      success: true,
+      comments: rows
+    });
+
+  } catch (error) {
+    console.error("Error getting publication comments:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
+/* =====================================================
+   SEND CONNECTION REQUEST
+===================================================== */
+export const sendConnectionRequest = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query("BEGIN");
+    
+    const requesterId = req.user.uuid;
+    const { researcherId } = req.params;
+
+    if (!researcherId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Researcher ID is required" 
+      });
+    }
+
+    if (requesterId === researcherId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "You cannot send a connection request to yourself" 
+      });
+    }
+
+    // Check if connection already exists
+    const existingConnection = await client.query(
+      `
+      SELECT * FROM connections 
+      WHERE (requester_id = $1 AND receiver_id = $2)
+         OR (requester_id = $2 AND receiver_id = $1)
+      `,
+      [requesterId, researcherId]
+    );
+
+    if (existingConnection.rows.length > 0) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ 
+        success: false, 
+        message: "Connection already exists or request already sent" 
+      });
+    }
+
+    // Create connection request
+    const result = await client.query(
+      `
+      INSERT INTO connections (uuid, requester_id, receiver_id, status, created_at)
+      VALUES (gen_random_uuid(), $1, $2, 'pending', NOW())
+      RETURNING uuid
+      `,
+      [requesterId, researcherId]
+    );
+
+    // Get receiver details
+    const receiver = await client.query(
+      `
+      SELECT full_name FROM users WHERE uuid = $1
+      `,
+      [researcherId]
+    );
+
+    await client.query("COMMIT");
+
+    res.status(201).json({
+      success: true,
+      message: "Connection request sent successfully",
+      request_id: result.rows[0].uuid,
+      researcher_name: receiver.rows[0]?.full_name || "Researcher"
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error sending connection request:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to send connection request",
+      error: error.message 
+    });
+  } finally {
+    client.release();
+  }
+};
+
+
+/* =====================================================
+   GET PENDING CONNECTION REQUESTS (Received)
+===================================================== */
+export const getPendingConnectionRequests = async (req, res) => {
+  try {
+    const userId = req.user.uuid;
+
+    const { rows } = await pool.query(
+      `
+      SELECT 
+        c.uuid as id,
+        c.requester_id as sender_id,
+        c.status,
+        c.created_at,
+        u.full_name as sender_name,
+        r.affiliation as sender_affiliation,
+        r.photo as sender_photo,
+        u.email as sender_email
+      FROM connections c
+      JOIN users u ON u.uuid = c.requester_id
+      LEFT JOIN researcher_profiles r ON r.user_id = c.requester_id
+      WHERE c.receiver_id = $1 AND c.status = 'pending'
+      ORDER BY c.created_at DESC
+      `,
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      requests: rows
+    });
+
+  } catch (error) {
+    console.error("Error fetching pending requests:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to fetch pending requests",
+      error: error.message 
+    });
+  }
+};
+
+
+/* =====================================================
+   GET SENT CONNECTION REQUESTS
+===================================================== */
+export const getSentConnectionRequests = async (req, res) => {
+  try {
+    const userId = req.user.uuid;
+
+    const { rows } = await pool.query(
+      `
+      SELECT 
+        c.uuid as id,
+        c.receiver_id as receiver_id,
+        c.status,
+        c.created_at,
+        u.full_name as receiver_name,
+        r.affiliation as receiver_affiliation,
+        r.photo as receiver_photo,
+        u.email as receiver_email
+      FROM connections c
+      JOIN users u ON u.uuid = c.receiver_id
+      LEFT JOIN researcher_profiles r ON r.user_id = c.receiver_id
+      WHERE c.requester_id = $1 AND c.status = 'pending'
+      ORDER BY c.created_at DESC
+      `,
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      requests: rows
+    });
+
+  } catch (error) {
+    console.error("Error fetching sent requests:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to fetch sent requests",
+      error: error.message 
+    });
+  }
+};
+
+
+/* =====================================================
+   ACCEPT CONNECTION REQUEST
+===================================================== */
+export const acceptConnectionRequest = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query("BEGIN");
+    
+    const { requestId } = req.params;
+    const userId = req.user.uuid;
+
+    console.log("Accepting request:", { requestId, userId });
+
+    // First check if the request exists and is pending
+    const checkRequest = await client.query(
+      `
+      SELECT * FROM connections 
+      WHERE uuid = $1 AND receiver_id = $2 AND status = 'pending'
+      `,
+      [requestId, userId]
+    );
+
+    if (checkRequest.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ 
+        success: false, 
+        message: "Connection request not found or already processed" 
+      });
+    }
+
+    // Update the connection status to accepted
+    const result = await client.query(
+      `
+      UPDATE connections 
+      SET status = 'accepted', updated_at = NOW()
+      WHERE uuid = $1 AND receiver_id = $2 AND status = 'pending'
+      RETURNING uuid, requester_id, receiver_id, status, created_at, updated_at
+      `,
+      [requestId, userId]
+    );
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      message: "Connection request accepted successfully",
+      connection: result.rows[0]
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error accepting connection request:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to accept connection request",
+      error: error.message 
+    });
+  } finally {
+    client.release();
+  }
+};
+
+/* =====================================================
+   REJECT CONNECTION REQUEST
+===================================================== */
+export const rejectConnectionRequest = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query("BEGIN");
+    
+    const { requestId } = req.params;
+    const userId = req.user.uuid;
+
+    console.log("Rejecting request:", { requestId, userId });
+
+    // Check if the request exists and is pending
+    const checkRequest = await client.query(
+      `
+      SELECT * FROM connections 
+      WHERE uuid = $1 AND receiver_id = $2 AND status = 'pending'
+      `,
+      [requestId, userId]
+    );
+
+    if (checkRequest.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ 
+        success: false, 
+        message: "Connection request not found or already processed" 
+      });
+    }
+
+    // Update the connection status to rejected
+    const result = await client.query(
+      `
+      UPDATE connections 
+      SET status = 'rejected', updated_at = NOW()
+      WHERE uuid = $1 AND receiver_id = $2 AND status = 'pending'
+      RETURNING uuid, requester_id, receiver_id, status, created_at, updated_at
+      `,
+      [requestId, userId]
+    );
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      message: "Connection request rejected successfully",
+      connection: result.rows[0]
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error rejecting connection request:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to reject connection request",
+      error: error.message 
+    });
+  } finally {
+    client.release();
+  }
+};
+/* =====================================================
+   CHECK CONNECTION STATUS
+===================================================== */
+export const checkConnectionStatus = async (req, res) => {
+  try {
+    const userId = req.user.uuid;
+    const { researcherId } = req.params;
+
+    const { rows } = await pool.query(
+      `
+      SELECT *
+      FROM connections
+      WHERE (requester_id = $1 AND receiver_id = $2)
+         OR (requester_id = $2 AND receiver_id = $1)
+      `,
+      [userId, researcherId]
+    );
+
+    let status = null;
+    if (rows.length > 0) {
+      const connection = rows[0];
+      if (connection.status === 'accepted') {
+        status = { 
+          status: 'connected', 
+          since: connection.created_at,
+          connection_id: connection.uuid 
+        };
+      } else if (connection.status === 'pending') {
+        if (connection.requester_id === userId) {
+          status = { 
+            status: 'pending_sent', 
+            since: connection.created_at,
+            request_id: connection.uuid 
+          };
+        } else {
+          status = { 
+            status: 'pending_received', 
+            since: connection.created_at,
+            request_id: connection.uuid 
+          };
+        }
+      } else if (connection.status === 'rejected') {
+        status = { 
+          status: 'rejected', 
+          since: connection.updated_at 
+        };
+      }
+    }
+
+    res.json({
+      success: true,
+      status,
+      connection: rows[0] || null
+    });
+
+  } catch (error) {
+    console.error("Error checking connection status:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to check connection status",
+      error: error.message 
+    });
+  }
+};
+
+
+/* =====================================================
+   REMOVE CONNECTION
+===================================================== */
+export const removeConnection = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query("BEGIN");
+    
+    const { connectionId } = req.params;
+    const userId = req.user.uuid;
+
+    // Verify the connection belongs to the user
+    const checkResult = await client.query(
+      `
+      SELECT * FROM connections 
+      WHERE uuid = $1 AND (requester_id = $2 OR receiver_id = $2)
+      `,
+      [connectionId, userId]
+    );
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Connection not found" 
+      });
+    }
+
+    await client.query(
+      `DELETE FROM connections WHERE uuid = $1`,
+      [connectionId]
+    );
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      message: "Connection removed successfully"
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error removing connection:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to remove connection",
+      error: error.message 
+    });
+  } finally {
+    client.release();
+  }
+};
+
+/* ==============================
+   MESSAGES CONTROLLERS
+============================== */
+export const getConversations = async (req, res) => {
+  try {
+    const userId = req.user.uuid;
+    // TODO: Implement get conversations logic
+    res.json({ 
+      success: true, 
+      conversations: [] 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getMessages = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    // TODO: Implement get messages logic
+    res.json({ 
+      success: true, 
+      messages: [] 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const sendMessage = async (req, res) => {
+  try {
+    const { receiver_id, content } = req.body;
+    const sender_id = req.user.uuid;
+    // TODO: Implement send message logic
+    res.status(201).json({ 
+      success: true, 
+      message: "Message sent successfully",
+      data: { sender_id, receiver_id, content }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const markMessagesAsRead = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    // TODO: Implement mark messages as read logic
+    res.json({ 
+      success: true, 
+      message: `Messages in conversation ${conversationId} marked as read` 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const deleteMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    // TODO: Implement delete message logic
+    res.json({ 
+      success: true, 
+      message: `Message ${messageId} deleted` 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getUnreadMessageCount = async (req, res) => {
+  try {
+    const userId = req.user.uuid;
+    // TODO: Implement get unread message count logic
+    res.json({ 
+      success: true, 
+      count: 0 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/* ==============================
+   PROJECT UPDATES CONTROLLERS
+============================== */
+export const getProjectUpdates = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    // TODO: Implement get project updates logic
+    res.json({ 
+      success: true, 
+      updates: [] 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const createProjectUpdate = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const updateData = req.body;
+    // TODO: Implement create project update logic
+    res.status(201).json({ 
+      success: true, 
+      message: "Project update created successfully",
+      data: { groupId, ...updateData }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateProjectUpdate = async (req, res) => {
+  try {
+    const { updateId } = req.params;
+    const updateData = req.body;
+    // TODO: Implement update project update logic
+    res.json({ 
+      success: true, 
+      message: `Project update ${updateId} updated successfully` 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const deleteProjectUpdate = async (req, res) => {
+  try {
+    const { updateId } = req.params;
+    // TODO: Implement delete project update logic
+    res.json({ 
+      success: true, 
+      message: `Project update ${updateId} deleted successfully` 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getAllProjectUpdates = async (req, res) => {
+  try {
+    // TODO: Implement get all project updates logic
+    res.json({ 
+      success: true, 
+      updates: [] 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
