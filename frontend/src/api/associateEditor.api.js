@@ -33,5 +33,29 @@ export const getReviewersByRoleAPI = () =>
 export const assignReviewerAPI = (uuid, reviewers) =>
   API.post(`/assign-reviewer/${uuid}`, { reviewers });
 
-export const recommendAPI = (uuid, data) =>
-  API.put(`/manuscripts/ae/recommend/${uuid}`, data);
+// Recommend decision
+export const recommendAPI = (uuid, decision) =>
+  API.put(`/recommend/${uuid}`, { decision });
+
+/* ============================= */
+/* NEW: Initial Screening & Reject */
+/* ============================= */
+
+
+// Reject a manuscript
+export const rejectManuscriptAPI = (uuid) =>
+  API.put(`/reject/${uuid}`);
+export const fetchInitialScreeningManuscripts = async () => {
+  const res = await API.get("/screening");
+  return res.data;
+};
+
+
+
+export const fetchReviewersAPI = async () => {
+  const res = await API.get("/reviewers");
+  return res.data;
+};
+
+export const assignReviewersAPI = (id, reviewers) =>
+  API.post(`/manuscripts/${id}/assign-reviewers`, { reviewers });
