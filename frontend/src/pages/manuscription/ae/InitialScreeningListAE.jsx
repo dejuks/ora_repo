@@ -4,7 +4,8 @@ import {
   fetchInitialScreeningManuscripts,
   screeningAPI,
   rejectManuscriptAPI,
-  fetchReviewersAPI,assignReviewersAPI
+  fetchReviewersAPI,
+  assignReviewersAPI,
 } from "../../../api/associateEditor.api";
 
 export default function InitialScreeningListAE() {
