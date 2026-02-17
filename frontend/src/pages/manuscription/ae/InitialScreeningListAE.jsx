@@ -70,62 +70,42 @@ export default function InitialScreeningListAE() {
                   <tr>
                     <th>Title</th>
                     <th>Status</th>
-                    <th>Submitted At</th>
-                    <th>Files</th>
-                    <th width="180">Actions</th>
+                    <th>Submitted</th>
+                    <th width="260">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {manuscripts.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className="text-center">
-                        No manuscripts under initial screening
+                  {manuscripts.map((m) => (
+                    <tr key={m.id}>
+                      <td>{m.title}</td>
+                      <td>
+                        <span className="badge bg-info">{m.status}</span>
+                      </td>
+                      <td>{new Date(m.submitted_at).toLocaleString()}</td>
+                      <td>
+                        <button
+                          className="btn btn-success btn-sm me-1"
+                          onClick={() => handleScreen(m.id)}
+                        >
+                          Screen
+                        </button>
+
+                        <button
+                          className="btn btn-primary btn-sm me-1"
+                          onClick={() => openAssignModal(m)}
+                        >
+                          Assign Reviewers
+                        </button>
+
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleReject(m.id)}
+                        >
+                          Reject
+                        </button>
                       </td>
                     </tr>
-                  ) : (
-                    manuscripts.map((m) => (
-                      <tr key={m.id}>
-                        <td>{m.title}</td>
-                        <td>
-                          <span className="badge bg-warning">{m.status}</span>
-                        </td>
-                        <td>{new Date(m.submitted_at).toLocaleString()}</td>
-                        <td>
-                          {m.files?.length > 0 ? (
-                            <ul className="mb-0">
-                              {m.files.map((f) => (
-                                <li key={f.id}>
-                                  <a
-                                    href={`http://localhost:5000/${f.file_path}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                  >
-                                    {f.file_name}
-                                  </a>
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <span className="text-muted">No files</span>
-                          )}
-                        </td>
-                        <td>
-                          <button
-                            className="btn btn-success btn-sm me-1"
-                            onClick={() => handleScreen(m.id)}
-                          >
-                            Screen
-                          </button>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => handleReject(m.id)}
-                          >
-                            Reject
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
+                  ))}
                 </tbody>
               </table>
             )}
