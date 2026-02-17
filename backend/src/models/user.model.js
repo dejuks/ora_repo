@@ -20,11 +20,25 @@ export const User = {
   },
 
   create: async (data) => {
+  try {
+
+    // 1️⃣ Check if email already exists
+    const existingUser = await pool.query(
+      `SELECT uuid FROM users WHERE email = $1`,
+      [data.email]
+    );
+
+    if (existingUser.rows.length > 0) {
+      throw new Error("EMAIL_EXISTS");
+    }
+
+    // 2️⃣ Hash password
     const hash = await bcrypt.hash(data.password, 10);
 
+    // 3️⃣ Insert user
     const res = await pool.query(
       `INSERT INTO users
-      (full_name,email,phone,password,gender,dob,module_id,photo)
+      (full_name, email, phone, password, gender, dob, module_id, photo)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
       RETURNING uuid, full_name, email, phone, gender, dob, module_id, photo`,
       [
@@ -38,8 +52,13 @@ export const User = {
         data.photo,
       ]
     );
+
     return res.rows[0];
-  },
+
+  } catch (error) {
+    throw error;
+  }
+},
 
   update: async (uuid, data) => {
     const res = await pool.query(

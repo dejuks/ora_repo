@@ -9,11 +9,38 @@ export const getUserById = async (req, res) => {
   if (!user) return res.status(404).json({ error: "Not found" });
   res.json(user);
 };
-
 export const createUser = async (req, res) => {
-  const photo = req.file ? `/uploads/users/${req.file.filename}` : null;
-  const user = await User.create({ ...req.body, photo });
-  res.status(201).json(user);
+  try {
+
+    const photo = req.file
+      ? `/uploads/users/${req.file.filename}`
+      : null;
+
+    const user = await User.create({
+      ...req.body,
+      photo,
+    });
+
+    res.status(201).json({
+      message: "User created successfully",
+      user,
+    });
+
+  } catch (error) {
+
+    // 🔥 PostgreSQL duplicate email error
+    if (error.code === "23505") {
+      return res.status(400).json({
+        error: "Email already registered",
+      });
+    }
+
+    console.error(error);
+
+    res.status(500).json({
+      error: "Something went wrong while creating user",
+    });
+  }
 };
 
 export const updateUser = async (req, res) => {

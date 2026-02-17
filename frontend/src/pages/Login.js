@@ -2,10 +2,7 @@ import React, { useState } from "react";
 import { login } from "../api/auth.api";
 
 export default function Login() {
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-  });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
   const submit = async (e) => {
@@ -40,112 +37,170 @@ export default function Login() {
   };
 
   return (
-    <div className="login-page bg-light">
-      {/* 🔧 Inline AdminLTE input color fix */}
-      <style>
-        {`
-          .login-page .form-control {
-            color: #343a40 !important;
-            background-color: #ffffff !important;
+    <div className="ora-login-page">
+      {/* ====== STYLES ====== */}
+      <style>{`
+        .ora-login-page {
+          min-height: 100vh;
+          background: linear-gradient(135deg, #ec93db, #cf61e2, #983da3);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: "Poppins", sans-serif;
+        }
+
+        .ora-login-wrapper {
+          width: 100%;
+          max-width: 1100px;
+          background: rgba(255, 255, 255, 0.95);
+          border-radius: 18px;
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          overflow: hidden;
+        }
+
+        /* LEFT – Illustration */
+        .ora-illustration {
+          background: linear-gradient(135deg, #eef2f3, #dfe9f3);
+          padding: 50px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          text-align: center;
+        }
+
+        .ora-illustration img {
+          max-width: 100%;
+          margin-bottom: 25px;
+        }
+
+        .ora-illustration h2 {
+          font-weight: 700;
+          color: #203a43;
+        }
+
+        .ora-illustration p {
+          color: #555;
+          font-size: 0.95rem;
+        }
+
+        /* RIGHT – Login Card */
+        .ora-login-card {
+          padding: 60px 50px;
+        }
+
+        .ora-logo {
+          font-size: 1.8rem;
+          font-weight: 800;
+          color: #2c5364;
+          text-align: center;
+          margin-bottom: 10px;
+        }
+
+        .ora-subtitle {
+          text-align: center;
+          color: #6c757d;
+          margin-bottom: 35px;
+        }
+
+        .form-control {
+          height: 48px;
+          border-radius: 10px;
+        }
+
+        .btn-ora {
+          background: linear-gradient(135deg, #2c5364, #203a43);
+          border: none;
+          height: 48px;
+          border-radius: 12px;
+          font-weight: 600;
+        }
+
+        .btn-ora:hover {
+          opacity: 0.95;
+        }
+
+        .forgot-link {
+          display: block;
+          text-align: center;
+          margin-top: 18px;
+        }
+
+        /* Mobile */
+        @media (max-width: 900px) {
+          .ora-login-wrapper {
+            grid-template-columns: 1fr;
           }
 
-          .login-page .form-control::placeholder {
-            color: #6c757d !important;
-            opacity: 1;
+          .ora-illustration {
+            display: none;
           }
+        }
+      `}</style>
 
-          .login-page input:-webkit-autofill,
-          .login-page input:-webkit-autofill:hover,
-          .login-page input:-webkit-autofill:focus {
-            -webkit-text-fill-color: #343a40 !important;
-            box-shadow: 0 0 0px 1000px #ffffff inset !important;
-          }
+      {/* ====== CONTENT ====== */}
+      <div className="ora-login-wrapper">
+        {/* LEFT PANEL */}
+        <div className="ora-illustration">
+          <img
+            src="/login.png" width={340}
+            alt="Secure Login Illustration"
+          />
+          <h2>Welcome Back 👋</h2>
+          <p>
+            Access ORA securely.  
+            Research, knowledge, and collaboration — all in one place.
+          </p>
+        </div>
 
-          .login-page .input-group-text {
-            background-color: #e9ecef;
-            color: #495057;
-          }
-        `}
-      </style>
+        {/* RIGHT PANEL */}
+        <div className="ora-login-card">
+          <div className="ora-logo">ORA</div>
+          <p className="ora-subtitle">Sign in to continue</p>
 
-      <div className="login-box">
-        {/* Logo */}
-       
+          <form onSubmit={submit}>
+            {/* Email */}
+            <div className="form-group mb-3">
+              <input
+                type="email"
+                className="form-control"
+                placeholder="Email address"
+                value={form.email}
+                onChange={(e) =>
+                  setForm({ ...form, email: e.target.value })
+                }
+                required
+              />
+            </div>
 
-        {/* Card */}
-        <div className="card card-outline card-primary shadow">
-          <div className="card-header text-center">
-            <h1 className="h4 mb-0">
-              <b>ORA</b> Login
-            </h1>
-          </div>
+            {/* Password */}
+            <div className="form-group mb-4">
+              <input
+                type="password"
+                className="form-control"
+                placeholder="Password"
+                value={form.password}
+                onChange={(e) =>
+                  setForm({ ...form, password: e.target.value })
+                }
+                required
+              />
+            </div>
 
-          <div className="card-body login-card-body">
-            <p className="login-box-msg">
-              Sign in to start your session
-            </p>
+            {/* Button */}
+            <button
+              type="submit"
+              className="btn btn-ora btn-block text-white"
+              disabled={loading}
+            >
+              {loading ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
 
-            <form onSubmit={submit}>
-              {/* Email */}
-              <div className="input-group mb-3">
-                <input
-                  type="email"
-                  className="form-control"
-                  placeholder="Email"
-                  value={form.email}
-                  onChange={(e) =>
-                    setForm({ ...form, email: e.target.value })
-                  }
-                  required
-                />
-                <div className="input-group-append">
-                  <div className="input-group-text">
-                    <span className="fas fa-envelope"></span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Password */}
-              <div className="input-group mb-4">
-                <input
-                  type="password"
-                  className="form-control"
-                  placeholder="Password"
-                  value={form.password}
-                  onChange={(e) =>
-                    setForm({ ...form, password: e.target.value })
-                  }
-                  required
-                />
-                <div className="input-group-append">
-                  <div className="input-group-text">
-                    <span className="fas fa-lock"></span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Submit */}
-              <button
-                type="submit"
-                className="btn btn-primary btn-block"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm mr-2"></span>
-                    Signing in...
-                  </>
-                ) : (
-                  "Sign In"
-                )}
-              </button>
-            </form>
-
-            {/* Footer */}
-            <p className="mt-3 mb-1 text-center">
-              <a href="/forgot-password">I forgot my password</a>
-            </p>
-          </div>
+          <a href="/forgot-password" className="forgot-link">
+            Forgot your password?
+          </a>
         </div>
       </div>
     </div>

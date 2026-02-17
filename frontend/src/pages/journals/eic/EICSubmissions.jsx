@@ -4,7 +4,7 @@ import {
   getEICSubmissions,
   passEICScreening,
   failEICScreening,
-} from "../../../api/manuscript.api";
+} from "../../../api/odl_manuscript.api";
 
 export default function EICSubmissions() {
   const [data, setData] = useState([]);

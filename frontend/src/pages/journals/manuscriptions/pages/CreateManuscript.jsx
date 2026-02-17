@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../../../../components/layout/MainLayout";
 import Swal from "sweetalert2";
-import { createManuscript } from "../../../../api/manuscript.api";
+import { createManuscript } from "../../../../api/odl_manuscript.api.js";
 import { getJournals } from "../../../../api/journalApi.js";
 import { getSections } from "../../../../api/journalSectionApi";
 import { getStatuses } from "../../../../api/manuscriptStatus.api";

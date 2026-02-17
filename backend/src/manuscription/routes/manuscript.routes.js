@@ -1,92 +1,66 @@
 import express from "express";
-import uploadManuscript from "../../middleware/uploadManuscript.js";
-import Manuscript from "../models/manuscript.model.js"; // ✅ Import your model
-
 import {
-  getManuscripts,
-  getManuscript,
+  getAllManuscripts,
+  getManuscriptById,
   createManuscript,
   updateManuscript,
-  updateManuscriptStatus,
   deleteManuscript,
-  inviteCoAuthor,
-  getCoAuthors,
-  updateCoAuthorStatus,
-  getMyInvitedCoAuthors,
-  getEICSubmissions,
-  getManuscriptsForAssignEditors,
-  assignEditor,
-  getEditors,
-  getManuscriptsForFinalDecision,
-  makeFinalDecision,
-  getEICManuscriptDetails,
-  updateScreeningStatus,
-  getEthicsManuscripts,
-  updateEthicsDecision,
-  getProductionManuscripts,
-  updateProduction,getDecisions
+
+  // AUTHOR
+  getDraftManuscripts,
+  submitDraftManuscript,
+
+  // AE / EIC
+  getSubmittedManuscripts,
+  moveToScreening,
+  rejectToAuthor,
+  resubmitManuscript,
+  getInitialScreenedManuscripts,
 } from "../controllers/manuscript.controller.js";
+
 import { authenticate } from "../../middleware/auth.middleware.js";
-import { get } from "http";
+
 const router = express.Router();
 
-router.get("/", getManuscripts);
-router.get("/:uuid", getManuscript);
-router.post("/", uploadManuscript.single("manuscript_file"), createManuscript);
+/* ======================================================
+   AE / EIC ROUTES (MOST SPECIFIC FIRST)
+====================================================== */
 
-router.put(
-  "/:id",
-  uploadManuscript.single("manuscript_file"),
-  updateManuscript,
-);
+// Submitted manuscripts (AE)
+router.get("/submitted", authenticate, getSubmittedManuscripts);
 
-router.patch("/:id/status", updateManuscriptStatus);
+// Initial screened manuscripts (AE)
+router.get("/ae/screening", authenticate, getInitialScreenedManuscripts);
 
-/* 🔹 CO-AUTHORS */
-router.post("/:id/co-authors", authenticate, inviteCoAuthor);
-router.get("/:id/co-authors", getCoAuthors);
-router.patch("/:id/co-authors/:userId", updateCoAuthorStatus);
-router.get("/co-authors/my-invites", authenticate, getMyInvitedCoAuthors);
+// Move to screening
+router.post("/:manuscriptId/screening", authenticate, moveToScreening);
 
-router.delete("/:id", deleteManuscript);
+// Reject to author
+router.post("/:manuscriptId/reject", authenticate, rejectToAuthor);
 
-router.post("/:id/co-authors", authenticate, inviteCoAuthor);
-router.get("/:id/co-authors", getCoAuthors);
-router.patch("/:id/co-authors/:userId", updateCoAuthorStatus);
-router.get("/co-authors/my-invites", authenticate, getMyInvitedCoAuthors);
+// Author resubmission after rejection
+router.post("/:manuscriptId/resubmit", authenticate, resubmitManuscript);
 
-router.delete("/:id", deleteManuscript);
 
-router.get("/user/:uuid", async (req, res) => {
-  const { uuid } = req.params;
-  const manuscripts = await Manuscript.findByUser(uuid);
-  res.json(manuscripts);
-});
+/* ======================================================
+   AUTHOR – DRAFT ROUTES
+====================================================== */
 
-router.get("/eic/submissions", getEICSubmissions);
-router.get("/eic/submissions/:id", getEICManuscriptDetails);
+// Get author drafts
+router.get("/drafts", authenticate, getDraftManuscripts);
 
-// Get manuscripts for EIC to assign editors
-router.get("/eic/assign-editors", getManuscriptsForAssignEditors);
+// Submit draft
+router.post("/:manuscriptId/submit", authenticate, submitDraftManuscript);
 
-// POST to assign editor
-router.post("/eic/assign-editor", assignEditor);
 
-router.get("/eic/editors", getEditors);
+/* ======================================================
+   NORMAL CRUD (LEAST SPECIFIC LAST)
+====================================================== */
 
-router.get("/eic/ethics", getEthicsManuscripts);
-router.post("/eic/ethics/update", updateEthicsDecision);
+router.get("/", authenticate, getAllManuscripts);
+router.get("/:id", authenticate, getManuscriptById);
+router.post("/", authenticate, createManuscript);
+router.put("/:id", authenticate, updateManuscript);
+router.delete("/:id", authenticate, deleteManuscript);
 
-// GET manuscripts ready for final decision
-router.get("/eic/final-decisions", getManuscriptsForFinalDecision);
-
-router.get("/eic/decisions", getDecisions);
-
-// POST make final decision
-router.post("/eic/final-decision", makeFinalDecision);
-
-router.patch("/eic/manuscripts/:id/screening", updateScreeningStatus);
-
-router.get("/eic/production", getProductionManuscripts);
-router.post("/eic/production/update", updateProduction);
 export default router;

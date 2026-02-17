@@ -4,7 +4,7 @@ import {
   getManuscriptsForAssignEditors,
   assignEditorAPI,
   getEditorsAPI,
-} from "../../../api/manuscript.api";
+} from "../../../api/odl_manuscript.api";
 
 export default function AssignEditors() {
   const [data, setData] = useState([]);

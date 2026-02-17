@@ -6,7 +6,7 @@ import MainLayout from "../../../../components/layout/MainLayout";
 import {
   getManuscripts,
   updateManuscript,
-} from "../../../../api/manuscript.api";
+} from "../../../../api/odl_manuscript.api.js";
 import { getJournals } from "../../../../api/journalApi";
 import { getSections } from "../../../../api/journalSectionApi";
 import { getStatuses } from "../../../../api/manuscriptStatus.api";

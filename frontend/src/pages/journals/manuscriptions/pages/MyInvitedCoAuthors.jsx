@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import MainLayout from "../../../../components/layout/MainLayout";
-import { getMyInvitedCoAuthors } from "../../../../api/manuscript.api";
+import { getMyInvitedCoAuthors } from "../../../../api/odl_manuscript.api";
 
 export default function MyInvitedCoAuthors() {
   const [invites, setInvites] = useState([]);

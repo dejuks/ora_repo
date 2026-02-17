@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "../../../components/layout/MainLayout";
-import { getEICManuscriptDetailsAPI } from "../../../api/manuscript.api";
+import { getEICManuscriptDetailsAPI } from "../../../api/odl_manuscript.api";
 
 export default function EICManuscriptDetails() {
   const { id } = useParams();

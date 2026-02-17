@@ -6,6 +6,7 @@ import {
   respondInvitationAPI,
   startReviewAPI
 } from "../../../api/reviewer.api";
+import { Link } from "react-router-dom";
 
 export default function AssignedReviews() {
 
@@ -120,7 +121,14 @@ export default function AssignedReviews() {
                               Start Review
                             </button>
                           )}
-
+{r.status === "in_review" && (
+  <Link
+    to={`/reviewer/assigned/${r.id}`}
+    className="btn btn-primary btn-sm"
+  >
+    View Details
+  </Link>
+)}
                         </td>
                       </tr>
                     ))}

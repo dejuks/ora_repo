@@ -1,26 +1,61 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: "http://localhost:5000/api/manuscripts/ae",
 });
 
-API.interceptors.request.use((req) => {
+// Attach JWT token
+API.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) req.headers.Authorization = `Bearer ${token}`;
-  return req;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
-export const getAEAssignedManuscriptsAPI = async () =>
-  (await API.get("/manuscripts/ae/assigned-manuscripts")).data;
+/* ============================= */
+/* AE API FUNCTIONS */
+/* ============================= */
 
+// Get assigned manuscripts
+export const getAEAssignedManuscriptsAPI = () =>
+  API.get("/assigned-manuscripts");
+
+// Screening manuscript
 export const screeningAPI = (uuid) =>
-  API.put(`/manuscripts/ae/screening/${uuid}`);
+  API.put(`/screening/${uuid}`);
 
-export const getReviewersByRoleAPI = async () =>
-  (await API.get("/manuscripts/ae/reviewers")).data;
+// Get reviewers
+export const getReviewersByRoleAPI = () =>
+  API.get("/reviewers");
 
-export const assignReviewerAPI = (uuid, data) =>
-  API.post(`/manuscripts/ae/assign-reviewer/${uuid}`, data);
+// Assign reviewer
+export const assignReviewerAPI = (uuid, reviewers) =>
+  API.post(`/assign-reviewer/${uuid}`, { reviewers });
 
-export const recommendAPI = (uuid, data) =>
-  API.put(`/manuscripts/ae/recommend/${uuid}`, data);
+// Recommend decision
+export const recommendAPI = (uuid, decision) =>
+  API.put(`/recommend/${uuid}`, { decision });
+
+/* ============================= */
+/* NEW: Initial Screening & Reject */
+/* ============================= */
+
+
+// Reject a manuscript
+export const rejectManuscriptAPI = (uuid) =>
+  API.put(`/reject/${uuid}`);
+export const fetchInitialScreeningManuscripts = async () => {
+  const res = await API.get("/screening");
+  return res.data;
+};
+
+
+
+export const fetchReviewersAPI = async () => {
+  const res = await API.get("/reviewers");
+  return res.data;
+};
+
+export const assignReviewersAPI = (id, reviewers) =>
+  API.post(`/manuscripts/${id}/assign-reviewers`, { reviewers });

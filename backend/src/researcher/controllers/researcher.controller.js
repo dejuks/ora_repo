@@ -345,7 +345,52 @@ export const getResearchers = async (req, res) => {
     });
   }
 };
+export const getAssignmentDetails = async (req, res) => {
+  try {
+    const { assignmentId } = req.params;
 
+    const assignment = await ResearcherModel.getAssignmentDetails(assignmentId);
+
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: "Assignment not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: assignment,
+    });
+
+  } catch (error) {
+    console.error("getAssignmentDetails error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+//getAssignedReviews
+export const getAssignedReviews = async (req, res) => {
+  try {
+    const researcherId = req.user.uuid;
+
+    const reviews = await ResearcherModel.getAssignedReviews(researcherId);
+
+    res.json({
+      success: true,
+      data: reviews,
+    });
+
+  } catch (error) {
+    console.error("getAssignedReviews error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 /* =====================================================
    GET MY GROUPS (PRIVATE) - FIXED
 ===================================================== */
@@ -1014,3 +1059,512 @@ export const rejectGroupInvitation = async (req, res) => {
     client.release();
   }
 };
+
+/* =====================================================
+   SEARCH RESEARCHERS
+===================================================== */
+export const searchResearchers = async (req, res) => {
+  try {
+    const { q } = req.query;
+    const userId = req.user?.uuid || null;
+
+    if (!q) {
+      return res.json([]);
+    }
+
+    const { rows } = await pool.query(
+      `
+      SELECT 
+        u.uuid,
+        u.full_name,
+        u.email,
+        r.affiliation,
+        r.country,
+        r.photo,
+        r.research_interests
+      FROM users u
+      LEFT JOIN researcher_profiles r ON r.user_id = u.uuid
+      WHERE ($1::uuid IS NULL OR u.uuid != $1)
+        AND (
+          u.full_name ILIKE $2 OR
+          u.email ILIKE $2 OR
+          r.affiliation ILIKE $2 OR
+          r.research_interests::text ILIKE $2
+        )
+      ORDER BY u.full_name ASC
+      LIMIT 20
+      `,
+      [userId, `%${q}%`]
+    );
+
+    res.json(rows);
+
+  } catch (error) {
+    console.error("Error searching researchers:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
+/* =====================================================
+   LEAVE GROUP
+===================================================== */
+export const leaveGroup = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query("BEGIN");
+    
+    const { groupId } = req.params;
+    const userId = req.user.uuid;
+
+    // Check if user is owner
+    const groupCheck = await client.query(
+      `SELECT created_by FROM groups WHERE uuid = $1`,
+      [groupId]
+    );
+
+    if (groupCheck.rows.length > 0 && groupCheck.rows[0].created_by === userId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Group owner cannot leave the group. Delete the group instead." 
+      });
+    }
+
+    await client.query(
+      `DELETE FROM group_members WHERE group_id = $1 AND user_id = $2`,
+      [groupId, userId]
+    );
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      message: "Left group successfully"
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error leaving group:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  } finally {
+    client.release();
+  }
+};
+
+/* =====================================================
+   DELETE GROUP
+===================================================== */
+export const deleteGroup = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query("BEGIN");
+    
+    const { groupId } = req.params;
+    const userId = req.user.uuid;
+
+    // Check if user is owner
+    const groupCheck = await client.query(
+      `SELECT created_by FROM groups WHERE uuid = $1`,
+      [groupId]
+    );
+
+    if (groupCheck.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Group not found" 
+      });
+    }
+
+    if (groupCheck.rows[0].created_by !== userId) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Only the group owner can delete the group" 
+      });
+    }
+
+    await client.query(
+      `DELETE FROM groups WHERE uuid = $1`,
+      [groupId]
+    );
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      message: "Group deleted successfully"
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error deleting group:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  } finally {
+    client.release();
+  }
+};
+
+/* =====================================================
+   GROUP POSTS (FORUM)
+===================================================== */
+export const getGroupPosts = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const userId = req.user.uuid;
+
+    // Check if user is member
+    const memberCheck = await pool.query(
+      `SELECT * FROM group_members WHERE group_id = $1 AND user_id = $2`,
+      [groupId, userId]
+    );
+
+    if (memberCheck.rows.length === 0) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "You must be a member to view posts" 
+      });
+    }
+
+    const { rows } = await pool.query(
+      `
+      SELECT 
+        gp.*,
+        u.full_name as author_name,
+        u.email as author_email,
+        r.photo as author_photo,
+        COALESCE(l.like_count, 0) as like_count,
+        COALESCE(c.comment_count, 0) as comment_count,
+        CASE WHEN ul.user_id IS NOT NULL THEN true ELSE false END as is_liked
+      FROM group_posts gp
+      JOIN users u ON u.uuid = gp.user_id
+      LEFT JOIN researcher_profiles r ON r.user_id = gp.user_id
+      LEFT JOIN (
+        SELECT post_id, COUNT(*) as like_count
+        FROM group_post_likes
+        GROUP BY post_id
+      ) l ON l.post_id = gp.uuid
+      LEFT JOIN (
+        SELECT post_id, COUNT(*) as comment_count
+        FROM group_post_comments
+        GROUP BY post_id
+      ) c ON c.post_id = gp.uuid
+      LEFT JOIN group_post_likes ul ON ul.post_id = gp.uuid AND ul.user_id = $1
+      WHERE gp.group_id = $2
+      ORDER BY gp.created_at DESC
+      `,
+      [userId, groupId]
+    );
+
+    res.json(rows);
+
+  } catch (error) {
+    console.error("Error getting group posts:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+/* =====================================================
+   CREATE GROUP POST - FIXED for FormData/JSON
+===================================================== */
+export const createGroupPost = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query("BEGIN");
+    
+    const { groupId } = req.params;
+    const userId = req.user.uuid;
+    
+    // Handle both JSON and FormData
+    let content;
+    
+    if (req.body && typeof req.body === 'object') {
+      // If sent as JSON
+      content = req.body.content;
+    }
+    
+    // If content is still undefined, try to get it from FormData
+    if (!content && req.body) {
+      content = req.body.content;
+    }
+
+    console.log("Creating group post:", { groupId, userId, content });
+
+    if (!content) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Post content is required" 
+      });
+    }
+
+    // Check if user is member
+    const memberCheck = await client.query(
+      `SELECT * FROM group_members WHERE group_id = $1 AND user_id = $2`,
+      [groupId, userId]
+    );
+
+    if (memberCheck.rows.length === 0) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "You must be a member to create posts" 
+      });
+    }
+
+    const result = await client.query(
+      `
+      INSERT INTO group_posts (uuid, group_id, user_id, content, created_at, updated_at)
+      VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())
+      RETURNING *
+      `,
+      [groupId, userId, content]
+    );
+
+    await client.query("COMMIT");
+
+    res.status(201).json({
+      success: true,
+      message: "Post created successfully",
+      post: result.rows[0]
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error creating group post:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  } finally {
+    client.release();
+  }
+};
+
+export const deleteGroupPost = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query("BEGIN");
+    
+    const { postId } = req.params;
+    const userId = req.user.uuid;
+
+    const checkResult = await client.query(
+      `SELECT user_id FROM group_posts WHERE uuid = $1`,
+      [postId]
+    );
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Post not found" 
+      });
+    }
+
+    if (checkResult.rows[0].user_id !== userId) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "You can only delete your own posts" 
+      });
+    }
+
+    await client.query(
+      `DELETE FROM group_posts WHERE uuid = $1`,
+      [postId]
+    );
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      message: "Post deleted successfully"
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error deleting group post:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  } finally {
+    client.release();
+  }
+};
+
+export const likePost = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query("BEGIN");
+    
+    const { postId } = req.params;
+    const userId = req.user.uuid;
+
+    const checkResult = await client.query(
+      `SELECT * FROM group_post_likes WHERE post_id = $1 AND user_id = $2`,
+      [postId, userId]
+    );
+
+    if (checkResult.rows.length === 0) {
+      await client.query(
+        `
+        INSERT INTO group_post_likes (uuid, post_id, user_id, created_at)
+        VALUES (gen_random_uuid(), $1, $2, NOW())
+        `,
+        [postId, userId]
+      );
+    }
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      message: "Post liked successfully"
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error liking post:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  } finally {
+    client.release();
+  }
+};
+
+export const unlikePost = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query("BEGIN");
+    
+    const { postId } = req.params;
+    const userId = req.user.uuid;
+
+    await client.query(
+      `DELETE FROM group_post_likes WHERE post_id = $1 AND user_id = $2`,
+      [postId, userId]
+    );
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      message: "Post unliked successfully"
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error unliking post:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  } finally {
+    client.release();
+  }
+};
+
+export const commentOnPost = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query("BEGIN");
+    
+    const { postId } = req.params;
+    const userId = req.user.uuid;
+    const { content } = req.body;
+
+    if (!content) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Comment content is required" 
+      });
+    }
+
+    const result = await client.query(
+      `
+      INSERT INTO group_post_comments (uuid, post_id, user_id, content, created_at)
+      VALUES (gen_random_uuid(), $1, $2, $3, NOW())
+      RETURNING *
+      `,
+      [postId, userId, content]
+    );
+
+    await client.query("COMMIT");
+
+    res.status(201).json({
+      success: true,
+      message: "Comment added successfully",
+      comment: result.rows[0]
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error commenting on post:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  } finally {
+    client.release();
+  }
+};
+
+export const getPostComments = async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    const { rows } = await pool.query(
+      `
+      SELECT 
+        pc.*,
+        u.full_name as user_name,
+        u.email as user_email,
+        r.photo as user_photo
+      FROM group_post_comments pc
+      JOIN users u ON u.uuid = pc.user_id
+      LEFT JOIN researcher_profiles r ON r.user_id = pc.user_id
+      WHERE pc.post_id = $1
+      ORDER BY pc.created_at ASC
+      `,
+      [postId]
+    );
+
+    res.json(rows);
+
+  } catch (error) {
+    console.error("Error getting post comments:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
+
+export const getReviewerWorkspace = async(req,res)=>{
+
+} 
+
+export const respondInvitation=async(req,res)=>{
+
+}
+export const startReview = async(req,res)=>{
+
+}
+export const submitReview = async(req,res)=>{
+  
+}

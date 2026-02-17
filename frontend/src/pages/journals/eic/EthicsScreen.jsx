@@ -3,7 +3,7 @@ import MainLayout from "../../../components/layout/MainLayout";
 import {
   getEthicsManuscriptsAPI,
   updateEthicsAPI
-} from "../../../api/manuscript.api";
+} from "../../../api/odl_manuscript.api";
 
 export default function EthicsScreen() {
 

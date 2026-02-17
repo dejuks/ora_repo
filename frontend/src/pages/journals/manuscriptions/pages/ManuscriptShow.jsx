@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import MainLayout from "../../../../components/layout/MainLayout";
-import { getManuscripts } from "../../../../api/manuscript.api";
+import { getManuscripts } from "../../../../api/odl_manuscript.api";
 
 /* 🔑 BACKEND BASE URL */
 const API_BASE = "http://localhost:5000";

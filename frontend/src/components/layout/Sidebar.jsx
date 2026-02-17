@@ -45,6 +45,9 @@ const ROLES = {
   ORO_WIKI_BUREAUCRAT: "faa28d6c-de7f-41ce-961a-6c975885f47a",
   ORO_WIKI_OVERSIGHTER: "5d46563f-a72c-433c-9115-4219c9e16a6c",
   ORO_WIKI_PUBLISHER: "8c7747ae-837d-425e-874b-fb97cf7776e6",
+
+  //Researcher Network Roles
+  RESEARCHER_NETWORK_MODERATOR: "ee6bebf7-5961-4917-9752-8ad704d40c77",
 };
 
 export default function Sidebar() {
@@ -181,7 +184,6 @@ export default function Sidebar() {
         icon: "fas fa-tachometer-alt",
         roles: [
           ROLES.JOURNAL_MANAGER,
-          ROLES.JOURNAL_AUTHOR,
           ROLES.EDITOR,
           ROLES.REVIEWER,
         ],
@@ -212,11 +214,7 @@ export default function Sidebar() {
         icon: "fas fa-book",
         roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
         subMenu: [
-          {
-            name: "All Journals",
-            path: "/journal/list",
-            icon: "fas fa-list",
-          },
+         
           {
             name: "Add Journal",
             path: "/journal/create",
@@ -240,12 +238,7 @@ export default function Sidebar() {
   roles: [ROLES.JOURNAL_MANAGER, ROLES.JOURNAL_AUTHOR, ROLES.EDITOR],
   subMenu: [
     /* ----- AUTHOR (OJS Author Role) ----- */
-    {
-      name: "My Journals", // 
-      path: "/journal/list",
-      icon: "fas fa-paperclip",
-      roles: [ROLES.JOURNAL_AUTHOR],
-    },
+    
     
     {
       name: "My Submissions", // 
@@ -255,13 +248,13 @@ export default function Sidebar() {
     },
     {
       name: "New Submission", // 
-      path: "/journal/manuscraipts/create",
+      path: "/manuscripts/create",
       icon: "fas fa-paper-plane",
       roles: [ROLES.JOURNAL_AUTHOR],
     },
     {
       name: "IncompleteSubmissions", // OJS wording
-      path: "/journal/draft-manuscript",
+      path: "/manuscript/draft-manuscript",
       icon: "fas fa-file",
       roles: [ROLES.JOURNAL_AUTHOR],
     },
@@ -325,13 +318,13 @@ export default function Sidebar() {
   roles: [ROLES.JOURNAL_ASSOCIATE_EDITOR], // "45494844-658a-4837-8df6-f6fc61348bbb"
   subMenu: [
     {
-      name: "Assigned Manuscripts",
-      path: "/journal/ae/assigned-manuscripts",
+      name: "Submitted Manuscripts",
+      path: "/manuscript/ae/assigned-manuscripts",
       icon: "fas fa-folder-open",
     },
     {
       name: "Initial Screening",
-      path: "/journal/ae/screening",
+      path: "/manuscription/ae/screening",
       icon: "fas fa-search",
     },
     {
@@ -1127,12 +1120,13 @@ export default function Sidebar() {
         ],
       },
     ],
+
     [MODULES.RESEARCHER_NETWORK]: [
       {
         name: "Dashboard",
         path: "/research-network/dashboard",
         icon: "fas fa-network-wired",
-        roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
+        roles: [ROLES.RESEARCHER_NETWORK_MANAGER, ROLES.RESEARCHER_NETWORK_MODERATOR],
       },
 
       {
@@ -1258,6 +1252,48 @@ export default function Sidebar() {
         icon: "fas fa-cogs",
         roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
       },
+      /* ================= GROUP MODERATOR ================= */
+
+  {
+    name: "Groups & Moderation",
+    icon: "fas fa-users-cog",
+    roles: [
+      ROLES.RESEARCHER_NETWORK_MODERATOR,
+      ROLES.RESEARCHER_NETWORK_MANAGER,
+    ],
+    subMenu: [
+      {
+        name: "Research Groups",
+        path: "/research-network/groups",
+        icon: "fas fa-layer-group",
+      },
+      {
+        name: "Membership Requests",
+        path: "/research-network/groups/requests",
+        icon: "fas fa-user-check",
+      },
+      {
+        name: "Group Discussions",
+        path: "/research-network/groups/discussions",
+        icon: "fas fa-comments",
+      },
+      {
+        name: "Reported Issues",
+        path: "/research-network/groups/reports",
+        icon: "fas fa-flag",
+      },
+      {
+        name: "Conflict Resolution",
+        path: "/research-network/groups/conflicts",
+        icon: "fas fa-balance-scale",
+      },
+      {
+        name: "Community Guidelines",
+        path: "/research-network/guidelines",
+        icon: "fas fa-book",
+      },
+    ],
+  },
     ],
   };
 

@@ -16,7 +16,6 @@ import WikipediaDashboard from "./pages/dashboards/Wikipedia-dashboard";
 import ResearchersDashboard from "./pages/dashboards/Researchers-dashboard";
 import JournalDashboard from "./pages/dashboards/journal-dashboard";
 import Dashboard from "./pages/dashboards/Dashboard";
-import LibraryUserList from "./pages/library/users/pages/userList";
 import JournalUserList from "./pages/journals/users/pages/UserList";
 import JournalAddUser from "./pages/journals/users/pages/AddUser";
 import JournalForm from "./components/journal/JournalForm";
@@ -25,7 +24,7 @@ import JournalList from "./pages/journals/journal/pages/JournalList";
 import ManuscriptionList from "./pages/journals/manuscriptions/pages/ManuscriptionList";
 import ManuscriptStatuses from "./pages/manuscription/ManuscriptStatuses";
 import ManuscriptShow from "./pages/journals/manuscriptions/pages/ManuscriptShow";
-import ManuscriptEdit from "./pages/journals/manuscriptions/pages/ManuscriptEdit";
+import ManuscriptEdit from "./pages/manuscription/ManuscriptEdit";
 import CreateManuscript from "./pages/journals/manuscriptions/pages/CreateManuscript";
 import DraftManuscription from "./pages/journals/manuscriptions/pages/DraftManuscription";
 import RevisionRequiredManuscription from "./pages/journals/manuscriptions/pages/RevisionRequiredManuscription";
@@ -51,7 +50,6 @@ import CuratorTool from "./pages/repository/curators/CuratorTool";
 import CollectionsByAuthor from "./pages/repository/curators/CollectionsByAuthor";
 import CollectionsByType from "./pages/repository/curators/CollectionsByType";
 import RepositoryTrends from "./pages/repository/curators/RepositoryTrends";
-import RepositoryTimelinessReport from "./pages/repository/curators/RepositoryTimelinessReport";
 import CuratorPerformanceReport from "./pages/repository/curators/CuratorPerformanceReport";
 import ReviewerDashboard from "./pages/repository/reviewer/ReviewerDashboard";
 import ReviewerQueueNew from "./pages/repository/reviewer/ReviewerQueueNew";
@@ -95,12 +93,43 @@ import ResearcherDashboard from "./components/researcher/ResearcherDashboard";
 import ProfileOnboarding from "./pages/researcher/ProfileOnboarding";
 import Groups from "./pages/researcher/Groups";
 import GroupForm from "./pages/researcher/GroupForm";
+import AdminGroups from "./pages/researcher/groups/AdminGroups";
+import AdminGroupDetails from "./pages/researcher/groups/AdminGroupDetails";
+import AssignedReviewDetails from "./pages/journals/reviewer/AssignedReviewDetails";
+import Home from "./landing/pages/Home";
+import Repository from "./landing/pages/Repository";
+import Ebooks from "./landing/pages/Ebooks";
+import Network from "./landing/pages/Network";
+import JournalPage from "./landing/pages/JournalPage";
+import LibraryPage from "./landing/pages/LibraryPage";
+import OromoWikipedia from "./landing/pages/OromoWikipedia";
+import JoinForm from "./landing/components/JoinForm";
+import JournalAuthorRegistrationForm from "./pages/journals/authors/JournalAuthorRegistrationForm";
+import WorkflowStages from "./pages/manuscription/workflowstages/WorkflowStages";
+import ManuscriptList from "./pages/manuscription/ManuscriptList";
+import ManuscriptCreate from "./pages/manuscription/ManuscriptCreate";
+import ManuscriptListAE from "./pages/manuscription/ae/ManuscriptListAE";
+import DraftManuscripts from "./pages/manuscription/DraftManuscripts";
+import InitialScreeningListAE from "./pages/manuscription/ae/InitialScreeningListAE";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/join" element={<JoinForm />} />
+        <Route path="/journal" element={<JournalPage />} />
+        <Route
+          path="/journal/author"
+          element={<JournalAuthorRegistrationForm />}
+        />
+        <Route path="/journal/workflow-stages" element={<WorkflowStages />} />
+        <Route path="/repository" element={<Repository />} />
+        <Route path="/ebooks" element={<Ebooks />} />
+        <Route path="/library" element={<LibraryPage />} />
+        <Route path="/network" element={<Network />} />
+        <Route path="/wikipedia" element={<OromoWikipedia />} />
+        <Route path="/auth" element={<Login />} />
         <Route
           path="/users"
           element={
@@ -175,13 +204,11 @@ function App() {
           }
         />
         <Route path="/library-dashboard" element={<LibraryDashboard />} />
-
         <Route path="/wikipedia-dashboard" element={<WikipediaDashboard />} />
         <Route
           path="/researcher-dashboard"
           element={<ResearchersDashboard />}
         />
-
         {/* Journal Dashboard */}
         <Route
           path="/journal-dashboard"
@@ -191,7 +218,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/journal/author-dashboard"
           element={
@@ -200,9 +226,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         {/* /repository/users */}
-
         {/* Journal Users */}
         <Route
           path="/journal/users"
@@ -212,14 +236,12 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         {/* //Repository Authors */}
         <Route
           path="/repository/admin/dashboard"
           element={<RepositoryDashboard />}
         />
         <Route path="/ora" element={<Landing />} />
-
         {/* /repository/author/dashboard */}
         <Route
           path="/repository/author/dashboard"
@@ -238,7 +260,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/repository/curator/queue/new"
           element={
@@ -247,7 +268,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="repository/author/deposits/drafts"
           element={
@@ -256,7 +276,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/repository/collections/author"
           element={
@@ -265,7 +284,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/repository/reports/curator-performance"
           element={
@@ -274,7 +292,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/repository/reviewer/dashboard"
           element={
@@ -283,7 +300,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/repository/reviewer/queue/new"
           element={
@@ -302,11 +318,9 @@ function App() {
         />
         <Route path="/repository/public" element={<PublicRepository />} />
         <Route path="/repository/:uuid" element={<PublicRepositoryDetail />} />
-
         <Route path="/register" element={<PublicRegister />} />
         <Route path="/public/login" element={<PublicLogin />} />
         <Route path="/public/dashboard" element={<PublicDashboard />} />
-
         {/* Journal Users */}
         <Route
           path="/wiki/users"
@@ -316,9 +330,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         {/* EIC ROute */}
-
         <Route
           path="/journal/eic/submissions"
           element={
@@ -327,7 +339,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/journal/eic/final-decisions"
           element={
@@ -336,36 +347,47 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route path="/journal/eic/assign-editors" element={<AssignEditors />} />
         <Route path="/journal/eic/ethics" element={<EthicsScreen />} />
         <Route path="/journal/eic/ethics" element={<EthicsScreen />} />
         <Route path="/journal/eic/ethics" element={<EthicsScreen />} />
-        <Route path="/journal/ae/assigned-manuscripts" element={<AssignedManuscripts />} />
-        <Route path="/journal/ae/screening" element={<InitialScreening />} />
-
-        <Route path="/journal/ae/recommendations" element={<Recommendations />} />
-        
-<Route
- path="/journal/reviewer/submit-review"
- element={<SubmitReview />}
-/>
-        <Route path="/journal/reviewer/workspace" element={<ReviewerWorkspace />} />
-
+        <Route
+          path="/manuscript/ae/assigned-manuscripts"
+          element={<ManuscriptListAE />}
+        />
+        <Route path="/manuscription/ae/screening" element={<InitialScreeningListAE />} />
+        <Route
+          path="/journal/ae/recommendations"
+          element={<Recommendations />}
+        />
+        <Route
+          path="/journal/reviewer/submit-review"
+          element={<SubmitReview />}
+        />
+        <Route
+          path="/journal/reviewer/workspace"
+          element={<ReviewerWorkspace />}
+        />
         <Route path="/journal/ae/ethics" element={<Ethics />} />
-
         <Route path="/journal/ae/production" element={<Production />} />
-
-        <Route path="/journal/reviewer/assigned" element={<AssignedReviews />} />
-
-        <Route path="/journal/ae/review-evaluation" element={<ReviewEvaluation />} />
-
+        <Route
+          path="/journal/reviewer/assigned"
+          element={<AssignedReviews />}
+        />
+        {/* //reviewer/assigned */}
+        <Route
+          path="/reviewer/assigned/:id"
+          element={<AssignedReviewDetails />}
+        />
+        <Route
+          path="/journal/ae/review-evaluation"
+          element={<ReviewEvaluation />}
+        />
         <Route path="/journal/eic/production" element={<ProductionScreen />} />
         <Route path="/eic/manuscripts/:id" element={<EICManuscriptDetails />} />
         <Route path="/repository/public" element={<PublicLayout />}>
           <Route path="search" element={<PublicSearch />} />
         </Route>
-
         <Route
           path="/repository/collections/type"
           element={
@@ -382,7 +404,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="repository/curator/review/:uuid"
           element={
@@ -391,7 +412,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/repository/author/deposits/review"
           element={
@@ -400,7 +420,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/repository/author/deposits/returned"
           element={
@@ -409,7 +428,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="repository/curator/queue/in-progress"
           element={<InProgress />}
@@ -430,7 +448,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/repository/author/submit/list"
           element={
@@ -455,7 +472,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/repository/curator/tools"
           element={
@@ -464,7 +480,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/repository/author/show/:uuid"
           element={
@@ -489,7 +504,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/repository/search"
           element={
@@ -498,7 +512,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/module/users/add"
           element={
@@ -507,7 +520,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         {/* Journal Management */}
         <Route
           path="/journal/list"
@@ -533,9 +545,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         {/* Manuscription Routes */}
-
         <Route
           path="/journal/manuscraipts/create"
           element={
@@ -544,23 +554,35 @@ function App() {
             </ProtectedRoute>
           }
         />
-
-        <Route
-          path="/journal/coauthors/my-invitations"
-          element={
-            <ProtectedRoute>
-              <MyInvitedCoAuthors />
-            </ProtectedRoute>
-          }
-        />
+   
         <Route
           path="/journal/manuscripts"
           element={
             <ProtectedRoute>
-              <ManuscriptionList />
+              <ManuscriptList />
             </ProtectedRoute>
           }
         />
+
+    
+
+        <Route
+          path="/manuscripts/create"
+          element={
+            <ProtectedRoute>
+              <ManuscriptCreate />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manuscripts/edit/:id"
+          element={
+            <ProtectedRoute>
+              <ManuscriptEdit />
+            </ProtectedRoute>
+          }
+        />
+        manuscripts/edit/
         <Route
           path="/journal/manuscripts-status"
           element={
@@ -569,16 +591,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
-          path="/journal/draft-manuscript"
+          path="/manuscript/draft-manuscript"
           element={
             <ProtectedRoute>
-              <DraftManuscription />
+              <DraftManuscripts />
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/journal/profile"
           element={
@@ -587,7 +607,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/journal/manuscripts/revisions"
           element={
@@ -600,7 +619,6 @@ function App() {
           path="/journal/manuscripts/edit/:id"
           element={<ManuscriptEdit />}
         />
-
         <Route
           path="/journal/manuscripts/show/:id"
           element={<ManuscriptShow />}
@@ -613,13 +631,11 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         {/* // wikipedia articles routes can be added here */}
         <Route path="/wiki/articles" element={<ArticleList />} />
         <Route path="/wiki/articles/create" element={<ArticleCreate />} />
         <Route path="/wiki/articles/edit/:id" element={<ArticleEdit />} />
         <Route path="/wiki/articles/drafts" element={<ArticleDraftList />} />
-
         {/* ================= Wiki Categories ================= */}
         <Route path="/wiki/categories" element={<WikiCategoryList />} />
         <Route path="/wiki/categories/create" element={<WikiCategoryForm />} />
@@ -627,19 +643,22 @@ function App() {
           path="/wiki/categories/edit/:id"
           element={<WikiCategoryForm />}
         />
-
         <Route path="/researcher/register" element={<ResearcherRegister />} />
         <Route path="/researcher/" element={<PublicHome />} />
-         <Route path="/researcher/login" element={<ResearcherLogin />} />
-         
-         <Route path="/researcher/dashboard" element={<ResearcherDashboard />} />
-<Route path="/researcher/onboarding" element={<ProfileOnboarding />} />
-
-        <Route path="/researcher/profile/:userId" element={<ResearcherProfile />} />
-
-         <Route path="/researcher/groups" element={<Groups />} />
+        <Route path="/researcher/login" element={<ResearcherLogin />} />
+        <Route path="/researcher/dashboard" element={<ResearcherDashboard />} />
+        <Route path="/researcher/onboarding" element={<ProfileOnboarding />} />
+        <Route
+          path="/researcher/profile/:userId"
+          element={<ResearcherProfile />}
+        />
+        <Route path="/researcher/groups" element={<Groups />} />
         <Route path="/researcher/groups/create" element={<GroupForm />} />
         <Route path="/researcher/groups/edit/:uuid" element={<GroupForm />} />
+        {/* /moderator */}
+        {/* research-network/groups  */}
+        <Route path="research-network/groups" element={<AdminGroups />} />
+        <Route path="/admin/groups/:uuid" element={<AdminGroupDetails />} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,40 +1,63 @@
 import axios from "axios";
 
+/* ==============================
+   AXIOS INSTANCE
+============================== */
 const API = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: "http://localhost:5000/api/manuscripts/reviewer",
 });
 
-// attach token if you use auth
-API.interceptors.request.use((req) => {
+/* 🔐 AUTO ATTACH TOKEN */
+API.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) req.headers.Authorization = `Bearer ${token}`;
-  return req;
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
 });
 
+/* ==============================
+   REVIEWER ASSIGNMENTS
+============================== */
+
+// Get all assigned reviews
 export const getReviewerAssignedAPI = async () => {
-  const res = await API.get("/manuscripts/reviewer/assigned");
+  const res = await API.get("/assigned");
   return res.data;
 };
-export const respondInvitationAPI = async (id, status) => {
-  return API.post(`/manuscripts/reviewer/invitation/${id}/respond`, { status });
-};
-export const startReviewAPI = async (id) => {
-  return API.post(`/manuscripts/reviewer/start-review/${id}`);
-};
 
+// Get reviewer workspace
 export const getReviewerWorkspaceAPI = async () => {
-  return API.get("/manuscripts/reviewer/workspace");
+  const res = await API.get("/workspace");
+  return res.data;
 };
 
-export const acceptReviewAPI = async (id) => {
-  return API.put(`/journal/reviewer/accept/${id}`);
+// Get assignment details by ID
+export const getAssignmentDetailsAPI = async (id) => {
+  const res = await API.get(`/assignment/${id}`);
+  return res.data;
 };
 
-export const declineReviewAPI = async (id) => {
-  return API.put(`/journal/reviewer/decline/${id}`);
-};
-export const submitReviewAPI = async (id, data) => {
-  return API.put(`/journal/reviewer/submit/${id}`, data);
+/* ==============================
+   INVITATIONS
+============================== */
+
+// Respond to invitation (accept or decline)
+export const respondInvitationAPI = async (id, status) => {
+  const res = await API.post(`/invitation/${id}/respond`, { status });
+  return res.data;
 };
 
+/* ==============================
+   REVIEW MANAGEMENT
+============================== */
 
+// Start review for an assignment
+export const startReviewAPI = async (id) => {
+  const res = await API.post(`/start-review/${id}`);
+  return res.data;
+};
+
+// Submit review for an assignment
+export const submitReviewAPI = async (id, reviewData) => {
+  const res = await API.put(`/submit/${id}`, reviewData);
+  return res.data;
+};

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import MainLayout from "../../../../components/layout/MainLayout";
 import { getAuthUser } from "../../../../utils/auth.js";
-import { getManuscriptsByUser } from "../../../../api/manuscript.api"; // API to get logged-in user's manuscripts
+import { getManuscriptsByUser } from "../../../../api/odl_manuscript.api.js"; // API to get logged-in user's manuscripts
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
 

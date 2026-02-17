@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import MainLayout from "../../../../components/layout/MainLayout";
-import { getManuscripts, deleteManuscript } from "../../../../api/manuscript.api";
+import { getManuscripts, deleteManuscript } from "../../../../api/odl_manuscript.api";
 
 export default function ManuscriptList() {
   const [manuscripts, setManuscripts] = useState([]);

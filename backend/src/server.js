@@ -30,7 +30,14 @@ import researcherRoutes from "./researcher/routes/researcher.routes.js";
 
 import groupResearcherRoutes from "./researcher/groups/routes/group.routes.js";
 import connectionRoutes from "./researcher/routes/connection.route.js";
+import authorRoutes from "./journals/authors/routes/author.routes.js"; // <-- import routes, not controller
+// import userAccessRoutes from "./journals/authors/routes/userAccess.routes";
+import userAccessRoutes from "./journals/authors/routes/userAccess.routes.js";
+import journalUserRoutes from "./routes/journalUser.routes.js";
+import workflowStage from "./manuscription/workflowstages/routes/workflowStage.routes.js";
+import ManuscriptCategoryies from "./manuscriptCategories/routes/routes.categories.js";
 
+import ManuscriptFileRoute from "./manuscription/files/routes/files.routes.js";
 dotenv.config();
 
 const app = express();
@@ -77,11 +84,13 @@ app.use("/api/role-permissions", rolePermissionRoutes);
 app.use("/api/user-roles", userRoleRoutes);
 app.use("/api/modules", moduleRoutes);
 
+app.use("/api/categories",ManuscriptCategoryies);
 app.use("/api/journals", journalRoutes);
 app.use("/api", journalSectionRoutes);
 
 app.use("/api/manuscript-statuses", manuscriptStatusRoutes);
 app.use("/api/manuscripts", manuscriptRoutes);
+app.use("/api/files",ManuscriptFileRoute);
 app.use("/api/manuscripts/ae", manuscriptAERoutes);
 app.use("/api/manuscripts/reviewer", manuscriptReviewerRoutes);
 
@@ -106,9 +115,16 @@ app.use("/api/wiki/categories", wikiCategoryRoutes);
 // --- API Routes ---
 app.use("/api/researcher", researcherRoutes);
 
+app.use("/api/authors", authorRoutes);
+
 app.use("/api/researcher/groups", groupResearcherRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/researcher/connections", connectionRoutes);
+// app.use("/api/manuscripts/reviewer", reviewerRoutes);
+
+app.use("/api/user-access", userAccessRoutes);
+app.use("/api/journal", journalUserRoutes);
+app.use("/api/workflow-stages",workflowStage);
 
 // Default route
 app.get("/api/ora-researcher", (req, res) => {

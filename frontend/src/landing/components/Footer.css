@@ -1,0 +1,112 @@
+/* Footer Styles */
+.footer-links-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+}
+
+@media (max-width: 1024px) {
+  .footer-links-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .footer-social-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .footer-bottom-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .footer-legal-links {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-links-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .footer-newsletter-form {
+    flex-direction: column;
+  }
+  
+  .footer-back-to-top {
+    bottom: 15px;
+    right: 15px;
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.footer-link-item {
+  animation: fadeInUp 0.5s ease forwards;
+  opacity: 0;
+}
+
+.footer-link-item:nth-child(1) { animation-delay: 0.1s; }
+.footer-link-item:nth-child(2) { animation-delay: 0.2s; }
+.footer-link-item:nth-child(3) { animation-delay: 0.3s; }
+.footer-link-item:nth-child(4) { animation-delay: 0.4s; }
+.footer-link-item:nth-child(5) { animation-delay: 0.5s; }
+
+/* Hover Effects */
+.footer-social-icon:hover {
+  animation: socialBounce 0.3s ease;
+}
+
+@keyframes socialBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* Newsletter Input Focus */
+.footer-newsletter-input:focus {
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.3);
+}
+
+/* Back to Top Button Animation */
+.footer-back-to-top {
+  animation: pulseButton 2s infinite;
+}
+
+@keyframes pulseButton {
+  0%, 100% {
+    box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3);
+  }
+  50% {
+    box-shadow: 0 5px 30px rgba(212, 175, 55, 0.6);
+  }
+}
+
+/* Gold Border Animation */
+@keyframes goldPulse {
+  0%, 100% {
+    border-color: rgba(212, 175, 55, 0.5);
+  }
+  50% {
+    border-color: rgba(212, 175, 55, 1);
+  }
+}
+
+.footer-social-icon {
+  animation: goldPulse 2s infinite;
+}

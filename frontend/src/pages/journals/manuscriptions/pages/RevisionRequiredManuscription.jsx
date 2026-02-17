@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import MainLayout from "../../../../components/layout/MainLayout";
-import { getManuscripts } from "../../../../api/manuscript.api";
+import { getManuscripts } from "../../../../api/odl_manuscript.api";
 
 const API_BASE = "http://localhost:5000";
 const fileUrl = (path) => (path?.startsWith("http") ? path : `${API_BASE}${path}`);

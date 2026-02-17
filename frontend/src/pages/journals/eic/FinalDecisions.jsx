@@ -4,7 +4,7 @@ import {
   getFinalDecisionsAPI,
   makeFinalDecisionAPI,
   getDecisionsAPI,
-} from "../../../api/manuscript.api";
+} from "../../../api/odl_manuscript.api";
 
 export default function FinalDecisions() {
   const [data, setData] = useState([]);
