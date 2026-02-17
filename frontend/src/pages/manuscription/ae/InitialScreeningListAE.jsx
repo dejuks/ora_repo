@@ -4,53 +4,68 @@ import {
   fetchInitialScreeningManuscripts,
   screeningAPI,
   rejectManuscriptAPI,
+  fetchReviewersAPI,assignReviewersAPI
 } from "../../../api/associateEditor.api";
 
 export default function InitialScreeningListAE() {
   const [manuscripts, setManuscripts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // reviewer modal
+  const [showModal, setShowModal] = useState(false);
+  const [currentManuscript, setCurrentManuscript] = useState(null);
+  const [reviewers, setReviewers] = useState([]);
+  const [selectedReviewers, setSelectedReviewers] = useState([]);
+
   useEffect(() => {
-    loadScreeningManuscripts();
+    loadInitialScreening();
   }, []);
 
-  const loadScreeningManuscripts = async () => {
-    setLoading(true);
+  const loadInitialScreening = async () => {
     try {
+      setLoading(true);
       const data = await fetchInitialScreeningManuscripts();
       setManuscripts(data);
     } catch (err) {
-      console.error("Failed to load initial screening manuscripts:", err);
       alert("Failed to load manuscripts");
     } finally {
       setLoading(false);
     }
   };
 
+  /* ================= SCREEN ================= */
   const handleScreen = async (id) => {
-    if (!window.confirm("Are you sure you want to screen this manuscript?")) return;
-
-    try {
-      await screeningAPI(id);
-      alert("Manuscript screened successfully");
-      loadScreeningManuscripts();
-    } catch (err) {
-      console.error("Screening error:", err);
-      alert("Failed to screen manuscript");
-    }
+    if (!window.confirm("Mark this manuscript as screened?")) return;
+    await screeningAPI(id);
+    loadInitialScreening();
   };
 
+  /* ================= REJECT ================= */
   const handleReject = async (id) => {
-    if (!window.confirm("Are you sure you want to reject this manuscript?")) return;
+    if (!window.confirm("Reject this manuscript?")) return;
+    await rejectManuscriptAPI(id);
+    loadInitialScreening();
+  };
 
-    try {
-      await rejectManuscriptAPI(id);
-      alert("Manuscript rejected successfully");
-      loadScreeningManuscripts();
-    } catch (err) {
-      console.error("Reject error:", err);
-      alert("Failed to reject manuscript");
+  /* ================= ASSIGN REVIEWERS ================= */
+  const openAssignModal = async (manuscript) => {
+    setCurrentManuscript(manuscript);
+    setSelectedReviewers([]);
+    const data = await fetchReviewersAPI();
+    setReviewers(data);
+    setShowModal(true);
+  };
+
+  const assignReviewers = async () => {
+    if (selectedReviewers.length === 0) {
+      alert("Select at least one reviewer");
+      return;
     }
+
+    await assignReviewersAPI(currentManuscript.id, selectedReviewers);
+    alert("Reviewers assigned successfully");
+    setShowModal(false);
+    loadInitialScreening();
   };
 
   return (
@@ -63,9 +78,11 @@ export default function InitialScreeningListAE() {
 
           <div className="card-body">
             {loading ? (
-              <p>Loading manuscripts...</p>
+              <p>Loading...</p>
+            ) : manuscripts.length === 0 ? (
+              <p>No manuscripts</p>
             ) : (
-              <table className="table table-bordered table-hover">
+              <table className="table table-bordered">
                 <thead>
                   <tr>
                     <th>Title</th>
@@ -111,6 +128,50 @@ export default function InitialScreeningListAE() {
             )}
           </div>
         </div>
+
+        {/* ================= ASSIGN MODAL ================= */}
+        {showModal && (
+          <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,.5)" }}>
+            <div className="modal-dialog modal-lg">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5>Assign Reviewers</h5>
+                  <button className="btn-close" onClick={() => setShowModal(false)} />
+                </div>
+
+                <div className="modal-body">
+                  {reviewers.map((r) => (
+                    <div className="form-check" key={r.uuid}>
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        onChange={(e) =>
+                          setSelectedReviewers((prev) =>
+                            e.target.checked
+                              ? [...prev, r.uuid]
+                              : prev.filter((x) => x !== r.uuid)
+                          )
+                        }
+                      />
+                      <label className="form-check-label">
+                        {r.full_name} ({r.email})
+                      </label>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="modal-footer">
+                  <button className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                    Cancel
+                  </button>
+                  <button className="btn btn-primary" onClick={assignReviewers}>
+                    Assign
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </MainLayout>
   );

@@ -59,3 +59,4 @@ export const fetchReviewersAPI = async () => {
 
 export const assignReviewersAPI = (id, reviewers) =>
   API.post(`/manuscripts/${id}/assign-reviewers`, { reviewers });
+
