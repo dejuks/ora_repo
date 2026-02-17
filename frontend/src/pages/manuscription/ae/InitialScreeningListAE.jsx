@@ -4,69 +4,53 @@ import {
   fetchInitialScreeningManuscripts,
   screeningAPI,
   rejectManuscriptAPI,
-  fetchReviewersAPI,
-  assignReviewersAPI,
 } from "../../../api/associateEditor.api";
 
 export default function InitialScreeningListAE() {
   const [manuscripts, setManuscripts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // reviewer modal
-  const [showModal, setShowModal] = useState(false);
-  const [currentManuscript, setCurrentManuscript] = useState(null);
-  const [reviewers, setReviewers] = useState([]);
-  const [selectedReviewers, setSelectedReviewers] = useState([]);
-
   useEffect(() => {
-    loadInitialScreening();
+    loadScreeningManuscripts();
   }, []);
 
-  const loadInitialScreening = async () => {
+  const loadScreeningManuscripts = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const data = await fetchInitialScreeningManuscripts();
       setManuscripts(data);
     } catch (err) {
+      console.error("Failed to load initial screening manuscripts:", err);
       alert("Failed to load manuscripts");
     } finally {
       setLoading(false);
     }
   };
 
-  /* ================= SCREEN ================= */
   const handleScreen = async (id) => {
-    if (!window.confirm("Mark this manuscript as screened?")) return;
-    await screeningAPI(id);
-    loadInitialScreening();
-  };
+    if (!window.confirm("Are you sure you want to screen this manuscript?")) return;
 
-  /* ================= REJECT ================= */
-  const handleReject = async (id) => {
-    if (!window.confirm("Reject this manuscript?")) return;
-    await rejectManuscriptAPI(id);
-    loadInitialScreening();
-  };
-
-  /* ================= ASSIGN REVIEWERS ================= */
-  const openAssignModal = async (manuscript) => {
-    setCurrentManuscript(manuscript);
-    setSelectedReviewers([]);
-    const data = await fetchReviewersAPI();
-    setReviewers(data);
-    setShowModal(true);
-  };
-
-  const assignReviewers = async () => {
-    if (selectedReviewers.length === 0) {
-      alert("Select at least one reviewer");
-      return;
+    try {
+      await screeningAPI(id);
+      alert("Manuscript screened successfully");
+      loadScreeningManuscripts();
+    } catch (err) {
+      console.error("Screening error:", err);
+      alert("Failed to screen manuscript");
     }
+  };
 
-    await assignReviewersAPI(currentManuscript.id, selectedReviewers);
-    alert("Reviewers assigned successfully");
-    setShowModal(false);
-    loadInitialScreening();
+  const handleReject = async (id) => {
+    if (!window.confirm("Are you sure you want to reject this manuscript?")) return;
+
+    try {
+      await rejectManuscriptAPI(id);
+      alert("Manuscript rejected successfully");
+      loadScreeningManuscripts();
+    } catch (err) {
+      console.error("Reject error:", err);
+      alert("Failed to reject manuscript");
+    }
   };
 
   return (
@@ -79,100 +63,74 @@ export default function InitialScreeningListAE() {
 
           <div className="card-body">
             {loading ? (
-              <p>Loading...</p>
-            ) : manuscripts.length === 0 ? (
-              <p>No manuscripts</p>
+              <p>Loading manuscripts...</p>
             ) : (
-              <table className="table table-bordered">
+              <table className="table table-bordered table-hover">
                 <thead>
                   <tr>
                     <th>Title</th>
                     <th>Status</th>
-                    <th>Submitted</th>
-                    <th width="260">Actions</th>
+                    <th>Submitted At</th>
+                    <th>Files</th>
+                    <th width="180">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {manuscripts.map((m) => (
-                    <tr key={m.id}>
-                      <td>{m.title}</td>
-                      <td>
-                        <span className="badge bg-info">{m.status}</span>
-                      </td>
-                      <td>{new Date(m.submitted_at).toLocaleString()}</td>
-                      <td>
-                        <button
-                          className="btn btn-success btn-sm me-1"
-                          onClick={() => handleScreen(m.id)}
-                        >
-                          Screen
-                        </button>
-
-                        <button
-                          className="btn btn-primary btn-sm me-1"
-                          onClick={() => openAssignModal(m)}
-                        >
-                          Assign Reviewers
-                        </button>
-
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => handleReject(m.id)}
-                        >
-                          Reject
-                        </button>
+                  {manuscripts.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="text-center">
+                        No manuscripts under initial screening
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    manuscripts.map((m) => (
+                      <tr key={m.id}>
+                        <td>{m.title}</td>
+                        <td>
+                          <span className="badge bg-warning">{m.status}</span>
+                        </td>
+                        <td>{new Date(m.submitted_at).toLocaleString()}</td>
+                        <td>
+                          {m.files?.length > 0 ? (
+                            <ul className="mb-0">
+                              {m.files.map((f) => (
+                                <li key={f.id}>
+                                  <a
+                                    href={`http://localhost:5000/${f.file_path}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    {f.file_name}
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <span className="text-muted">No files</span>
+                          )}
+                        </td>
+                        <td>
+                          <button
+                            className="btn btn-success btn-sm me-1"
+                            onClick={() => handleScreen(m.id)}
+                          >
+                            Screen
+                          </button>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleReject(m.id)}
+                          >
+                            Reject
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             )}
           </div>
         </div>
-
-        {/* ================= ASSIGN MODAL ================= */}
-        {showModal && (
-          <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,.5)" }}>
-            <div className="modal-dialog modal-lg">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h5>Assign Reviewers</h5>
-                  <button className="btn-close" onClick={() => setShowModal(false)} />
-                </div>
-
-                <div className="modal-body">
-                  {reviewers.map((r) => (
-                    <div className="form-check" key={r.uuid}>
-                      <input
-                        type="checkbox"
-                        className="form-check-input"
-                        onChange={(e) =>
-                          setSelectedReviewers((prev) =>
-                            e.target.checked
-                              ? [...prev, r.uuid]
-                              : prev.filter((x) => x !== r.uuid)
-                          )
-                        }
-                      />
-                      <label className="form-check-label">
-                        {r.full_name} ({r.email})
-                      </label>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="modal-footer">
-                  <button className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                    Cancel
-                  </button>
-                  <button className="btn btn-primary" onClick={assignReviewers}>
-                    Assign
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </MainLayout>
   );
