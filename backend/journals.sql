@@ -70,20 +70,25 @@ CREATE TYPE review_assignment_status AS ENUM (
     'completed'
 );
 
-
 CREATE TABLE review_assignments (
-  id INT UUID PRIMARY KEY,
-  manuscript_id INT NOT NULL,
-  reviewer_id INT NOT NULL,
-  assigned_by INT NOT NULL, -- AE or EIC user id
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  manuscript_id UUID NOT NULL,
+  reviewer_id UUID NOT NULL,
+  assigned_by UUID NOT NULL,
+
   due_date DATE NOT NULL,
-  review_status ENUM('assigned','completed','overdue') DEFAULT 'assigned',
+  review_status TEXT CHECK (review_status IN ('assigned','completed','overdue')) DEFAULT 'assigned',
+
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
   FOREIGN KEY (manuscript_id) REFERENCES manuscripts(id),
-  FOREIGN KEY (reviewer_id) REFERENCES users(uui),
+  FOREIGN KEY (reviewer_id) REFERENCES users(uuid),
   FOREIGN KEY (assigned_by) REFERENCES users(uuid)
 );
+
+
 CREATE TABLE manuscript_stage_history (
   id INT AUTO_INCREMENT PRIMARY KEY,
   manuscript_id INT NOT NULL,

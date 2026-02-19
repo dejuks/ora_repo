@@ -29,8 +29,7 @@ const router = express.Router();
 // Submitted manuscripts (AE)
 router.get("/submitted", authenticate, getSubmittedManuscripts);
 
-// Initial screened manuscripts (AE)
-router.get("/ae/screening", authenticate, getInitialScreenedManuscripts);
+
 
 // Move to screening
 router.post("/:manuscriptId/screening", authenticate, moveToScreening);

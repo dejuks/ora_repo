@@ -38,6 +38,8 @@ import workflowStage from "./manuscription/workflowstages/routes/workflowStage.r
 import ManuscriptCategoryies from "./manuscriptCategories/routes/routes.categories.js";
 
 import ManuscriptFileRoute from "./manuscription/files/routes/files.routes.js";
+
+import eicDecisionRoutes from "./eic/routes/eic.decision.routes.js";
 dotenv.config();
 
 const app = express();
@@ -91,8 +93,9 @@ app.use("/api", journalSectionRoutes);
 app.use("/api/manuscript-statuses", manuscriptStatusRoutes);
 app.use("/api/manuscripts", manuscriptRoutes);
 app.use("/api/files",ManuscriptFileRoute);
-app.use("/api/manuscripts/ae", manuscriptAERoutes);
+app.use("/api/manuscriptions/ae", manuscriptAERoutes);
 app.use("/api/manuscripts/reviewer", manuscriptReviewerRoutes);
+
 
 
 app.use("/api/repository-items", repositoryRoutes);
@@ -125,6 +128,8 @@ app.use("/api/researcher/connections", connectionRoutes);
 app.use("/api/user-access", userAccessRoutes);
 app.use("/api/journal", journalUserRoutes);
 app.use("/api/workflow-stages",workflowStage);
+app.use("/api/eic", eicDecisionRoutes);
+
 
 // Default route
 app.get("/api/ora-researcher", (req, res) => {

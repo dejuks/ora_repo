@@ -111,6 +111,8 @@ import ManuscriptCreate from "./pages/manuscription/ManuscriptCreate";
 import ManuscriptListAE from "./pages/manuscription/ae/ManuscriptListAE";
 import DraftManuscripts from "./pages/manuscription/DraftManuscripts";
 import InitialScreeningListAE from "./pages/manuscription/ae/InitialScreeningListAE";
+import EICCompletedReviews from "./pages/manuscription/eic/EICCompletedReviews";
+import EICMakeDecision from "./pages/manuscription/eic/EICMakeDecision";
 
 function App() {
   return (
@@ -335,15 +337,15 @@ function App() {
           path="/journal/eic/submissions"
           element={
             <ProtectedRoute>
-              <EICSubmissions />
+              <EICCompletedReviews />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/journal/eic/final-decisions"
+          path="eic/decision/:id"
           element={
             <ProtectedRoute>
-              <FinalDecisions />
+              <EICMakeDecision />
             </ProtectedRoute>
           }
         />

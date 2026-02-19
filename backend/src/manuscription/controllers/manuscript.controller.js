@@ -221,21 +221,55 @@ export const getSubmittedManuscripts = async (req, res) => {
         m.*,
         ws.name AS stage_name,
         c.name AS category_name,
-        CONCAT(u.full_name) AS author_name
+        u.full_name AS author_name,
+
+        COALESCE(
+          json_agg(
+            jsonb_build_object(
+              'manuscript_id', mf.manuscript_id,
+              'revision_id', mf.revision_id,
+              'file_type', mf.file_type,
+              'file_path', mf.file_path,
+              'uploaded_by', mf.uploaded_by,
+              'uploaded_at', mf.uploaded_at
+            )
+          ) FILTER (WHERE mf.manuscript_id IS NOT NULL),
+          '[]'
+        ) AS files
+
       FROM manuscripts m
-      LEFT JOIN workflow_stages ws ON m.current_stage_id = ws.id
-      LEFT JOIN categories c ON m.category_id = c.id
-      LEFT JOIN users u ON m.corresponding_author_id = u.uuid
+
+      LEFT JOIN workflow_stages ws 
+        ON m.current_stage_id = ws.id
+
+      LEFT JOIN categories c 
+        ON m.category_id = c.id
+
+      LEFT JOIN users u 
+        ON m.corresponding_author_id = u.uuid
+
+      LEFT JOIN files mf
+        ON m.id = mf.manuscript_id
+
       WHERE m.status = 'submitted'
+
+      GROUP BY 
+        m.id,
+        ws.name,
+        c.name,
+        u.full_name
+
       ORDER BY m.created_at ASC
     `);
 
     res.json(result.rows);
+
   } catch (err) {
     console.error("GET SUBMITTED ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 };
+
 
 
 

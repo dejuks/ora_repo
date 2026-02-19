@@ -27,7 +27,7 @@ export default function ManuscriptListAE() {
     try {
       const res = await axios.get(
         "http://localhost:5000/api/manuscripts/submitted",
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       setManuscripts(res.data);
     } catch (err) {
@@ -38,14 +38,19 @@ export default function ManuscriptListAE() {
 
   // Confirm before moving to screening
   const moveToScreening = async (m) => {
-    if (!window.confirm(`Are you sure you want to move "${m.title}" to screening?`)) return;
+    if (
+      !window.confirm(
+        `Are you sure you want to move "${m.title}" to screening?`,
+      )
+    )
+      return;
 
     const token = localStorage.getItem("token");
     try {
       await axios.post(
         `http://localhost:5000/api/manuscripts/${m.id}/screening`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       alert(`Manuscript "${m.title}" moved to screening`);
       loadManuscripts();
@@ -73,7 +78,7 @@ export default function ManuscriptListAE() {
       await axios.post(
         `http://localhost:5000/api/manuscripts/${rejectingManuscript.id}/reject`,
         { comment: rejectComment, checklist: rejectReasons },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       setRejectModalOpen(false);
       alert(`Manuscript "${rejectingManuscript.title}" rejected`);
@@ -106,22 +111,32 @@ export default function ManuscriptListAE() {
                 {manuscripts.map((m) => (
                   <tr key={m.id}>
                     <td>{m.title}</td>
-                    <td>{m.status_label}</td>
+                    <td>{m.status}</td>
                     <td>
-                      {m.files?.length > 0 ? (
-                        <ul>
-                          {m.files.map((f) => (
-                            <li key={f.id}>
-                              <a href={`http://localhost:5000/${f.file_path}`} target="_blank" rel="noreferrer">
-                                {f.file_name}
+                      {m.files && m.files.length > 0 ? (
+                        <ul className="mb-0">
+                          {m.files.map((f, index) => (
+                            <li key={index}>
+                              <a
+                                href={`http://localhost:5000/${f.file_path}`}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {f.file_type} file
                               </a>
+                              <br />
+                              <small className="text-muted">
+                                Uploaded:{" "}
+                                {new Date(f.uploaded_at).toLocaleString()}
+                              </small>
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <span>No files</span>
+                        <span className="text-muted">No files</span>
                       )}
                     </td>
+
                     <td>
                       <button
                         className="btn btn-success btn-sm me-1"
@@ -172,7 +187,7 @@ export default function ManuscriptListAE() {
                           setRejectReasons((prev) =>
                             e.target.checked
                               ? [...prev, r]
-                              : prev.filter((x) => x !== r)
+                              : prev.filter((x) => x !== r),
                           )
                         }
                       />

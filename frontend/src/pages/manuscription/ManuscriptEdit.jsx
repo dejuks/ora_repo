@@ -58,7 +58,7 @@ export default function ManuscriptEdit() {
     try {
       await updateManuscript(id, { ...formData, status: 'submitted' });
       alert('Manuscript Submitted');
-      navigate('/manuscripts');
+      navigate('/journal/manuscripts');
     } catch (err) {
       console.error(err.response?.data);
       alert(err.response?.data?.error || 'Error submitting manuscript');
