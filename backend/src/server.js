@@ -20,8 +20,8 @@ import publicRepositoryRoutes from "./repository/items/routes/publicRepository.r
 
 import publicUserRoutes from "./publicUsers/routes/publicUser.routes.js";
 
-import wikiArticleRoutes from "./wiki/routes/wikiArticle.routes.js";
-import wikiCategoryRoutes from "./wiki/categories/routes/wikiCategory.routes.js";
+import wikiArticleRoutes from "./wiki/routes/articleRoutes.js";
+import wikiCategoryRoutes from "./wiki/routes/categoryRoutes.js";
 import manuscriptAERoutes from "./manuscription/routes/associateEditor.routes.js";
 import manuscriptReviewerRoutes from "./manuscription/routes/reviewer.routes.js";
 
@@ -40,6 +40,12 @@ import ManuscriptCategoryies from "./manuscriptCategories/routes/routes.categori
 import ManuscriptFileRoute from "./manuscription/files/routes/files.routes.js";
 
 import eicDecisionRoutes from "./eic/routes/eic.decision.routes.js";
+import wikiRoutes from "./wiki/routes/authRoutes.js";
+
+import paymentRoutes from './eic/routes/payment.routes.js';
+import publicationRoutes from "./publication/routes/publication.routes.js"; // Add this import
+import wikiMediaRoute from "./wiki/routes/mediaRoutes.js";
+
 dotenv.config();
 
 const app = express();
@@ -96,6 +102,7 @@ app.use("/api/files",ManuscriptFileRoute);
 app.use("/api/manuscriptions/ae", manuscriptAERoutes);
 app.use("/api/manuscripts/reviewer", manuscriptReviewerRoutes);
 
+app.use("/api/publications", publicationRoutes); // Add this line
 
 
 app.use("/api/repository-items", repositoryRoutes);
@@ -110,6 +117,8 @@ app.use("/api/public-users", publicUserRoutes);
 
 app.use("/api/wiki/articles", wikiArticleRoutes);
 app.use("/api/wiki/categories", wikiCategoryRoutes);
+app.use("/api/wiki/media", wikiMediaRoute);
+
 
 
 
@@ -130,7 +139,11 @@ app.use("/api/journal", journalUserRoutes);
 app.use("/api/workflow-stages",workflowStage);
 app.use("/api/eic", eicDecisionRoutes);
 
+app.use('/api/wiki', wikiRoutes);
 
+
+
+app.use('/api/payments', paymentRoutes);
 // Default route
 app.get("/api/ora-researcher", (req, res) => {
   res.send("Researcher Network Platform API running...");

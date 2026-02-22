@@ -23,12 +23,9 @@ export default function EICMakeDecision() {
   const paymentMethods = [
     { id: 'telebirr', name: 'Telebirr', icon: '📱', countries: ['Ethiopia'] },
     { id: 'cbe_birr', name: 'CBE Birr', icon: '📱', countries: ['Ethiopia'] },
-    { id: 'mpesa', name: 'M-PESA', icon: '📱', countries: ['Kenya', 'Tanzania'] },
     { id: 'bank_transfer', name: 'Bank Transfer', icon: '🏦', countries: ['All'] },
     { id: 'credit_card', name: 'Credit Card', icon: '💳', countries: ['All'] },
-    { id: 'paypal', name: 'PayPal', icon: '🅿️', countries: ['All'] },
     { id: 'cash', name: 'Cash', icon: '💰', countries: ['Ethiopia'] },
-    { id: 'check', name: 'Check', icon: '📝', countries: ['All'] }
   ];
 
   const [paymentDetails, setPaymentDetails] = useState({
@@ -74,136 +71,194 @@ export default function EICMakeDecision() {
   const getDefaultDueDate = () => {
     const date = new Date();
     date.setDate(date.getDate() + 30); // 30 days from now
-    return date.toISOString().split('T')[0];
+    return date.toISOString().split('T')[0]
   };
 
-  const handleDecision = async () => {
-    if (!decision) {
-      alert("Please select a decision");
-      return;
-    }
+const handleDecision = async () => {
+  if (!decision) {
+    alert("Please select a decision");
+    return;
+  }
 
-    // If decision is accept, show payment modal first
-    if (decision === "accept") {
-      setShowConfirm(false);
-      setShowPaymentModal(true);
-      return;
-    }
-
-    // For other decisions, proceed normally
-    await submitDecision();
-  };
-
-  const submitDecision = async (paymentData = null) => {
+  // If decision is accept, update status to final_accepted in database
+  if (decision === "accept") {
     try {
       setSubmitting(true);
       
+      // Prepare data for final_accepted status
       const decisionData = {
-        decision,
-        decision_comment: comment
+        decision: "accept",
+        decision_comment: comment,
+        status: "accepted" // This will be saved to database
       };
-
-      // If payment data is provided, include it
-      if (paymentData) {
-        decisionData.payment = paymentData;
-      }
-
-      await makeDecisionAPI(id, decisionData);
       
-      // Show success message based on decision type
-      if (decision === "accept" && paymentData) {
-        alert("Manuscript accepted and payment order created successfully");
-        navigate("/eic/payments/pending");
+      console.log("Sending accept decision with final_accepted status:", decisionData);
+      
+      // Call API to update status
+      const response = await makeDecisionAPI(id, decisionData);
+      console.log("Accept decision response:", response);
+      
+      // Check if status was updated
+      if (response && response.new_status === "final_accepted") {
+        console.log("✅ Manuscript status updated to final_accepted in database");
+        
+        // Update local manuscript state with new status
+        setManuscript(prev => ({
+          ...prev,
+          status: "accepted"
+        }));
+        
+        // Close confirmation modal and open payment modal
+        setShowConfirm(false);
+        setShowPaymentModal(true);
       } else {
-        alert(`Decision recorded successfully: ${decision}`);
-        navigate("/eic/completed-reviews");
+        console.warn("Status may not have been updated correctly:", response);
+        // Still try to open payment modal
+        setShowConfirm(false);
+        setShowPaymentModal(true);
       }
-    } catch (err) {
-      alert(err.response?.data?.error || "Failed to record decision");
-    } finally {
+      
       setSubmitting(false);
-      setShowConfirm(false);
-      setShowPaymentModal(false);
+      
+    } catch (err) {
+      console.error("Failed to update manuscript status:", err);
+      alert(err.response?.data?.error || "Failed to update manuscript status to final_accepted");
+      setSubmitting(false);
     }
-  };
+    return;
+  }
 
-  const handlePaymentSubmit = async () => {
-    // Validate payment details
-    if (!paymentDetails.amount || parseFloat(paymentDetails.amount) <= 0) {
-      alert("Please enter a valid payment amount");
+  // For other decisions, proceed normally
+  await submitDecision();
+};
+const submitDecision = async (paymentData = null) => {
+  try {
+    setSubmitting(true);
+    
+    // Prepare decision data
+    const decisionData = {
+      decision: decision,
+      decision_comment: comment
+    };
+
+    // For reject or revision, let backend determine status
+    if (decision === 'reject') {
+      decisionData.status = 'rejected';
+    } else if (decision === 'revision') {
+      decisionData.status = 'revision_required';
+    }
+
+    // If payment data is provided, include it
+    if (paymentData) {
+      decisionData.payment = paymentData;
+    }
+
+    console.log("Submitting decision with data:", decisionData);
+    
+    // Call API
+    const response = await makeDecisionAPI(id, decisionData);
+    console.log("Submit decision response:", response);
+    
+    // Show success message based on decision type
+    if (decision === "accept" && paymentData) {
+      alert("✓ Manuscript marked as FINAL ACCEPTED in database\n✓ Payment order created successfully");
+      navigate("/eic/payment-orders");
+    } else {
+      alert(`Decision recorded successfully: ${decision}`);
+      navigate("/eic/completed-reviews");
+    }
+  } catch (err) {
+    console.error("Submit decision error:", err);
+    alert(err.response?.data?.error || "Failed to record decision");
+  } finally {
+    setSubmitting(false);
+    setShowConfirm(false);
+    setShowPaymentModal(false);
+  }
+};
+
+const handlePaymentSubmit = async () => {
+  // Validate payment details
+  if (!paymentDetails.amount || parseFloat(paymentDetails.amount) <= 0) {
+    alert("Please enter a valid payment amount");
+    return;
+  }
+
+  if (!paymentDetails.due_date) {
+    alert("Please select a due date");
+    return;
+  }
+
+  // Validate based on payment method
+  if (paymentDetails.payment_method === 'telebirr' || 
+      paymentDetails.payment_method === 'cbe_birr') {
+    if (!paymentDetails.phone_number) {
+      alert(`Phone number is required for ${getPaymentMethodName(paymentDetails.payment_method)} payments`);
       return;
     }
+  }
 
-    if (!paymentDetails.due_date) {
-      alert("Please select a due date");
+  if (paymentDetails.payment_method === 'bank_transfer') {
+    if (!paymentDetails.bank_name || !paymentDetails.account_number) {
+      alert("Bank name and account number are required for bank transfer");
       return;
     }
+  }
 
-    // Validate based on payment method
+  try {
+    setPaymentProcessing(true);
+    
+    // Prepare payment data based on method
+    const paymentData = {
+      amount: paymentDetails.amount,
+      currency: paymentDetails.currency,
+      payment_method: paymentDetails.payment_method,
+      payment_type: paymentDetails.payment_type,
+      due_date: paymentDetails.due_date,
+      notes: paymentDetails.notes,
+      manuscript_title: manuscript.title,
+      author_name: manuscript.author_name,
+      author_email: manuscript.author_email
+    };
+
+    // Add method-specific fields
     if (paymentDetails.payment_method === 'telebirr' || 
-        paymentDetails.payment_method === 'cbe_birr' || 
-        paymentDetails.payment_method === 'mpesa') {
-      if (!paymentDetails.phone_number) {
-        alert(`Phone number is required for ${getPaymentMethodName(paymentDetails.payment_method)} payments`);
-        return;
-      }
+        paymentDetails.payment_method === 'cbe_birr') {
+      paymentData.phone_number = paymentDetails.phone_number;
     }
 
     if (paymentDetails.payment_method === 'bank_transfer') {
-      if (!paymentDetails.bank_name || !paymentDetails.account_number) {
-        alert("Bank name and account number are required for bank transfer");
-        return;
-      }
+      paymentData.bank_name = paymentDetails.bank_name;
+      paymentData.account_number = paymentDetails.account_number;
     }
 
-    try {
-      setPaymentProcessing(true);
+    if (paymentDetails.transaction_reference) {
+      paymentData.transaction_reference = paymentDetails.transaction_reference;
+    }
+
+    console.log("Creating payment with data:", paymentData);
+    
+    // Create payment order
+    const paymentResult = await initiatePaymentAPI(id, paymentData);
+    console.log("Payment result:", paymentResult);
+
+    // After payment is created, update manuscript to payment_pending
+    // But first check if payment was successful
+    if (paymentResult && paymentResult.success) {
+      alert("Payment created successfully!");
       
-      // Prepare payment data based on method
-      const paymentData = {
-        amount: paymentDetails.amount,
-        currency: paymentDetails.currency,
-        payment_method: paymentDetails.payment_method,
-        payment_type: paymentDetails.payment_type,
-        due_date: paymentDetails.due_date,
-        notes: paymentDetails.notes,
-        manuscript_title: manuscript.title,
-        author_name: manuscript.author_name,
-        author_email: manuscript.author_email
-      };
-
-      // Add method-specific fields
-      if (paymentDetails.payment_method === 'telebirr' || 
-          paymentDetails.payment_method === 'cbe_birr' || 
-          paymentDetails.payment_method === 'mpesa') {
-        paymentData.phone_number = paymentDetails.phone_number;
-      }
-
-      if (paymentDetails.payment_method === 'bank_transfer') {
-        paymentData.bank_name = paymentDetails.bank_name;
-        paymentData.account_number = paymentDetails.account_number;
-      }
-
-      if (paymentDetails.transaction_reference) {
-        paymentData.transaction_reference = paymentDetails.transaction_reference;
-      }
-
-      // Create payment order
-      const paymentResult = await initiatePaymentAPI(id, paymentData);
-
-      // Submit decision with payment info
-      await submitDecision({
-        ...paymentData,
-        payment_id: paymentResult.payment_id,
-        payment_status: 'pending'
-      });
-
-    } catch (err) {
-      alert(err.response?.data?.error || "Failed to create payment order");
-      setPaymentProcessing(false);
+      // Navigate to payments page
+      navigate("/eic/payment-orders");
+    } else {
+      throw new Error("Payment creation failed");
     }
-  };
 
+  } catch (err) {
+    console.error("Payment error:", err);
+    alert(err.response?.data?.error || "Failed to create payment order");
+    setPaymentProcessing(false);
+  }
+};
   const getPaymentMethodName = (methodId) => {
     const method = paymentMethods.find(m => m.id === methodId);
     return method ? method.name : methodId;
@@ -622,90 +677,95 @@ export default function EICMakeDecision() {
         )}
 
         {/* Confirmation Modal */}
-        {showConfirm && (
-          <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-            <div className="modal-dialog modal-dialog-centered">
-              <div className="modal-content">
-                <div className={`modal-header bg-${getDecisionColor(decision)} text-white`}>
-                  <h5 className="modal-title">
-                    <i className={`${getDecisionIcon(decision)} me-2`}></i>
-                    Confirm {decision.charAt(0).toUpperCase() + decision.slice(1)} Decision
-                  </h5>
-                  <button
-                    type="button"
-                    className="btn-close btn-close-white"
-                    onClick={() => setShowConfirm(false)}
-                  ></button>
-                </div>
-                <div className="modal-body">
-                  <div className="text-center mb-4">
-                    <div className={`decision-preview-icon bg-${getDecisionColor(decision)} bg-opacity-10 p-4 rounded-circle d-inline-block`}>
-                      <i className={`${getDecisionIcon(decision)} fa-3x text-${getDecisionColor(decision)}`}></i>
-                    </div>
-                  </div>
-                  
-                  <p className="mb-3 text-center">
-                    Are you sure you want to mark this manuscript as <strong className={`text-${getDecisionColor(decision)}`}>{decision}</strong>?
-                  </p>
-                  
-                  {decision === 'accept' && (
-                    <div className="alert alert-info mb-3">
-                      <i className="fas fa-info-circle me-2"></i>
-                      <strong>Note:</strong> You will be redirected to create a payment order for the author.
-                    </div>
-                  )}
-                  
-                  <div className="manuscript-info p-3 bg-light rounded mb-3">
-                    <p className="mb-1"><strong>Title:</strong> {manuscript.title}</p>
-                    <p className="mb-0"><strong>Author:</strong> {manuscript.author_name}</p>
-                  </div>
-                  
-                  {comment && (
-                    <div className="feedback-preview p-3 border-start border-4 border-primary bg-light rounded">
-                      <strong className="d-block mb-2">
-                        <i className="fas fa-comment-dots me-2 text-primary"></i>
-                        Your Feedback:
-                      </strong>
-                      <p className="mb-0">{comment}</p>
-                    </div>
-                  )}
-                  
-                  <div className="alert alert-warning mt-3 mb-0">
-                    <i className="fas fa-exclamation-triangle me-2"></i>
-                    <strong>Warning:</strong> This action cannot be undone.
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => setShowConfirm(false)}
-                    disabled={submitting}
-                  >
-                    <i className="fas fa-times me-2"></i>
-                    Cancel
-                  </button>
-                  <button
-                    className={`btn btn-${getDecisionColor(decision)}`}
-                    onClick={handleDecision}
-                    disabled={submitting}
-                  >
-                    {submitting ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2"></span>
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <i className="fas fa-check-circle me-2"></i>
-                        {decision === 'accept' ? 'Continue to Payment' : 'Confirm Decision'}
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
+{showConfirm && (
+  <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+    <div className="modal-dialog modal-dialog-centered">
+      <div className="modal-content">
+        <div className={`modal-header bg-${getDecisionColor(decision)} text-white`}>
+          <h5 className="modal-title">
+            <i className={`${getDecisionIcon(decision)} me-2`}></i>
+            Confirm {decision.charAt(0).toUpperCase() + decision.slice(1)} Decision
+          </h5>
+          <button
+            type="button"
+            className="btn-close btn-close-white"
+            onClick={() => setShowConfirm(false)}
+          ></button>
+        </div>
+        <div className="modal-body">
+          <div className="text-center mb-4">
+            <div className={`decision-preview-icon bg-${getDecisionColor(decision)} bg-opacity-10 p-4 rounded-circle d-inline-block`}>
+              <i className={`${getDecisionIcon(decision)} fa-3x text-${getDecisionColor(decision)}`}></i>
             </div>
           </div>
-        )}
+          
+          <p className="mb-3 text-center">
+            Are you sure you want to mark this manuscript as <strong className={`text-${getDecisionColor(decision)}`}>{decision}</strong>?
+          </p>
+          
+          {decision === 'accept' && (
+            <div className="alert alert-info mb-3">
+              <i className="fas fa-info-circle me-2"></i>
+              <strong>Note:</strong> 
+              <ul className="mb-0 mt-2">
+                <li>Manuscript status will be changed to <strong>FINAL ACCEPTED</strong></li>
+                <li>You will be redirected to create a payment order for the author</li>
+                <li>Author will be notified about the acceptance and payment</li>
+              </ul>
+            </div>
+          )}
+          
+          <div className="manuscript-info p-3 bg-light rounded mb-3">
+            <p className="mb-1"><strong>Title:</strong> {manuscript.title}</p>
+            <p className="mb-0"><strong>Author:</strong> {manuscript.author_name}</p>
+          </div>
+          
+          {comment && (
+            <div className="feedback-preview p-3 border-start border-4 border-primary bg-light rounded">
+              <strong className="d-block mb-2">
+                <i className="fas fa-comment-dots me-2 text-primary"></i>
+                Your Feedback:
+              </strong>
+              <p className="mb-0">{comment}</p>
+            </div>
+          )}
+          
+          <div className="alert alert-warning mt-3 mb-0">
+            <i className="fas fa-exclamation-triangle me-2"></i>
+            <strong>Warning:</strong> This action cannot be undone.
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button
+            className="btn btn-secondary"
+            onClick={() => setShowConfirm(false)}
+            disabled={submitting}
+          >
+            <i className="fas fa-times me-2"></i>
+            Cancel
+          </button>
+          <button
+            className={`btn btn-${getDecisionColor(decision)}`}
+            onClick={handleDecision}
+            disabled={submitting}
+          >
+            {submitting ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2"></span>
+                Processing...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-check-circle me-2"></i>
+                {decision === 'accept' ? 'Continue to Payment' : 'Confirm Decision'}
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
         {/* Payment Modal for Accepted Manuscripts */}
         {showPaymentModal && (
@@ -911,7 +971,7 @@ export default function EICMakeDecision() {
                     </div>
 
                     {/* Payment Method Instructions */}
-                    <div className={`payment-instructions mt-3 p-3 bg-${paymentDetails.payment_method === 'telebirr' ? 'success' : 'info'} bg-opacity-10 rounded-3`}>
+                    <div className={`payment-instructions text-dark mt-3 p-3 bg-${paymentDetails.payment_method === 'telebirr' ? 'success' : 'info'} bg-opacity-10 rounded-3`}>
                       <h6 className="fw-bold mb-2">
                         <i className="fas fa-info-circle me-2"></i>
                         {getPaymentMethodName(paymentDetails.payment_method)} Instructions:

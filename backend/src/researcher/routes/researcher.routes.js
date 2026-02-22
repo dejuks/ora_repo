@@ -50,13 +50,7 @@ import {
   rejectConnectionRequest,
   checkConnectionStatus,
   removeConnection,
-  // Messages
-  getConversations,
-  getMessages,
-  sendMessage,
-  markMessagesAsRead,
-  deleteMessage,
-  getUnreadMessageCount,
+  
   // Project Updates
   getProjectUpdates,
   createProjectUpdate,
@@ -64,6 +58,13 @@ import {
   deleteProjectUpdate,
   getAllProjectUpdates
 } from "../../researcher/controllers/researcher.controller.js";
+import { // Messages
+  getConversations,
+  getMessages,
+  sendMessage,
+  markMessagesAsRead,
+  deleteMessage,
+  getUnreadMessageCount,} from  "../../researcher/controllers/message.controller.js";
 
 import { authenticate } from "../../middleware/auth.middleware.js";
 import upload from "../../middleware/researcher.upload.middleware.js";

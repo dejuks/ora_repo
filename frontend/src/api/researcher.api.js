@@ -359,7 +359,7 @@ export const removeConnection = async (connectionId) => {
 ============================== */
 export const getConversations = async () => {
   try {
-    const res = await API.get(`/messages/conversations/`);
+    const res = await API.get(`${API_BASE}/messages/conversations`);
     return res.data;
   } catch (error) {
     console.error("Error getting conversations:", error.response?.data || error.message);
@@ -369,7 +369,7 @@ export const getConversations = async () => {
 
 export const getMessages = async (conversationId) => {
   try {
-    const res = await API.get(`/messages/${conversationId}`);
+    const res = await API.get(`${API_BASE}/messages/${conversationId}`);
     return res.data;
   } catch (error) {
     console.error("Error getting messages:", error.response?.data || error.message);
@@ -379,7 +379,8 @@ export const getMessages = async (conversationId) => {
 
 export const sendMessage = async (receiverId, content) => {
   try {
-    const res = await API.post(`/messages/`, { 
+    console.log("Sending message to:", receiverId, "content:", content);
+    const res = await API.post(`${API_BASE}/messages/`, { 
       receiver_id: receiverId, 
       content: content 
     });
@@ -390,9 +391,10 @@ export const sendMessage = async (receiverId, content) => {
   }
 };
 
+
 export const markMessagesAsRead = async (conversationId) => {
   try {
-    const res = await API.put(`/messages/${conversationId}/read/`);
+    const res = await API.put(`${API_BASE}/messages/${conversationId}/read/`);
     return res.data;
   } catch (error) {
     console.error("Error marking messages as read:", error.response?.data || error.message);
@@ -402,7 +404,7 @@ export const markMessagesAsRead = async (conversationId) => {
 
 export const deleteMessage = async (messageId) => {
   try {
-    const res = await API.delete(`/messages/${messageId}/`);
+    const res = await API.delete(`${API_BASE}/messages/${messageId}/`);
     return res.data;
   } catch (error) {
     console.error("Error deleting message:", error.response?.data || error.message);
@@ -412,7 +414,7 @@ export const deleteMessage = async (messageId) => {
 
 export const getUnreadMessageCount = async () => {
   try {
-    const res = await API.get(`/messages/unread/count/`);
+    const res = await API.get(`${API_BASE}/messages/unread/count/`);
     return res.data;
   } catch (error) {
     console.error("Error getting unread count:", error.response?.data || error.message);
@@ -426,7 +428,7 @@ export const getUnreadMessageCount = async () => {
 ============================== */
 export const getProjectUpdates = async (groupId) => {
   try {
-    const res = await API.get(`/researcher/updates/groups/${groupId}`);
+    const res = await API.get(`${API_BASE}/updates/groups/${groupId}`);
     return res.data;
   } catch (error) {
     console.error("Error getting project updates:", error.response?.data || error.message);
@@ -437,7 +439,7 @@ export const getProjectUpdates = async (groupId) => {
 export const createProjectUpdate = async (groupId, updateData) => {
   try {
     const res = await API.post(
-      `/researcher/updates/groups/${groupId}`, 
+      `${API_BASE}/updates/groups/${groupId}`, 
       updateData,
       {
         headers: {
@@ -454,7 +456,7 @@ export const createProjectUpdate = async (groupId, updateData) => {
 
 export const updateProjectUpdate = async (updateId, updateData) => {
   try {
-    const res = await API.put(`/researcher/updates/${updateId}`, updateData);
+    const res = await API.put(`${API_BASE}/updates/${updateId}`, updateData);
     return res.data;
   } catch (error) {
     console.error("Error updating project update:", error.response?.data || error.message);
@@ -464,7 +466,7 @@ export const updateProjectUpdate = async (updateId, updateData) => {
 
 export const deleteProjectUpdate = async (updateId) => {
   try {
-    const res = await API.delete(`/researcher/updates/${updateId}`);
+    const res = await API.delete(`${API_BASE}/updates/${updateId}`);
     return res.data;
   } catch (error) {
     console.error("Error deleting project update:", error.response?.data || error.message);
@@ -474,7 +476,7 @@ export const deleteProjectUpdate = async (updateId) => {
 
 export const getAllProjectUpdates = async () => {
   try {
-    const res = await API.get(`/researcher/updates/all`);
+    const res = await API.get(`${API_BASE}/updates/all`);
     return res.data;
   } catch (error) {
     console.error("Error getting all project updates:", error.response?.data || error.message);

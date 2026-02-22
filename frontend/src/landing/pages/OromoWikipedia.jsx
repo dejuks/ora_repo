@@ -1,380 +1,532 @@
-import { useState } from "react";
+// WikipediaArticlesPage.jsx
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import { 
+  FaSearch, 
+  FaClock, 
+  FaEye, 
+  FaUser, 
+  FaTag, 
+  FaStar,
+  FaFire,
+  FaNewspaper,
+  FaArrowRight,
+  FaGlobe,
+  FaBookOpen,
+  FaHistory,
+  FaLandmark,
+  FaMusic,
+  FaUsers,
+  FaMapMarkedAlt
+} from "react-icons/fa";
 
-export default function WikipediaPage() {
+export default function OromoWikipedia() {
+  const [articles, setArticles] = useState([]);
+  const [featuredArticles, setFeaturedArticles] = useState([]);
+  const [popularArticles, setPopularArticles] = useState([]);
+  const [recentArticles, setRecentArticles] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [languages, setLanguages] = useState([]);
+  const [stats, setStats] = useState({});
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedLang, setSelectedLang] = useState("en");
+  const [selectedLang, setSelectedLang] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const featuredArticles = [
-    {
-      title: "Gadaa System",
-      description: "Traditional Oromo governance system and democratic process",
-      image: "📜",
-      category: "History & Culture",
-      views: "12.5K",
-      lang: "en",
-    },
-    {
-      title: "Oromo Language",
-      description: "Cushitic language spoken by the Oromo people in Ethiopia",
-      image: "🔤",
-      category: "Language",
-      views: "10.2K",
-      lang: "en",
-    },
-    {
-      title: "Irreecha",
-      description: "Annual Oromo thanksgiving festival celebrating nature",
-      image: "🌿",
-      category: "Culture",
-      views: "8.9K",
-      lang: "en",
-    },
-    {
-      title: "Oromia Region",
-      description: "Cultural and historical region in Ethiopia",
-      image: "🗺️",
-      category: "Geography",
-      views: "15.3K",
-      lang: "en",
-    },
-  ];
+  // Fetch all data on component mount
+  useEffect(() => {
+    fetchDashboardData();
+    fetchCategories();
+    fetchLanguages();
+    fetchStats();
+  }, []);
 
-  const languages = [
-    { code: "om", name: "Afaan Oromoo", articles: "12,345" },
-    { code: "en", name: "English", articles: "8,901" },
-    { code: "am", name: "አማርኛ", articles: "3,456" },
-    { code: "fr", name: "Français", articles: "2,123" },
-    { code: "ar", name: "العربية", articles: "1,567" },
-    { code: "sw", name: "Kiswahili", articles: "890" },
-  ];
+  // Fetch articles when filters change
+  useEffect(() => {
+    fetchArticles();
+  }, [selectedLang, selectedCategory, currentPage, searchQuery]);
 
-  const categories = [
-    { name: "History", icon: "📜", count: "2,345" },
-    { name: "Culture", icon: "🎭", count: "3,210" },
-    { name: "Language", icon: "🔤", count: "1,876" },
-    { name: "Geography", icon: "🗺️", count: "2,567" },
-    { name: "People", icon: "👥", count: "3,789" },
-    { name: "Music", icon: "🎵", count: "1,234" },
-    { name: "Literature", icon: "📚", count: "1,567" },
-    { name: "Politics", icon: "🏛️", count: "2,890" },
-  ];
+  const fetchDashboardData = async () => {
+    try {
+      // Fetch featured articles
+      const featuredRes = await fetch('http://localhost:5000/api/wiki/articles?is_featured=true&limit=4');
+      const featuredData = await featuredRes.json();
+      setFeaturedArticles(featuredData.data?.articles || []);
 
-  const todayFeatArticles = [
-    {
-      title: "Abbaa Gadaa",
-      description: "The elected leader of the Gadaa system",
-      image: "👑",
-    },
-    {
-      title: "Oromo Music",
-      description: "Traditional and modern Oromo musical traditions",
-      image: "🎵",
-    },
-    {
-      title: "Coffee Ceremony",
-      description: "Traditional Oromo coffee preparation and serving",
-      image: "☕",
-    },
-  ];
+      // Fetch popular articles
+      const popularRes = await fetch('http://localhost:5000/api/wiki/articles/popular?limit=6');
+      const popularData = await popularRes.json();
+      setPopularArticles(popularData.data || []);
+
+      // Fetch recent articles
+      const recentRes = await fetch('http://localhost:5000/api/wiki/articles?limit=6');
+      const recentData = await recentRes.json();
+      setRecentArticles(recentData.data?.articles || []);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    }
+  };
+
+  const fetchArticles = async () => {
+    setLoading(true);
+    try {
+      let url = `http://localhost:5000/api/wiki/articles?page=${currentPage}&limit=12`;
+      
+      if (searchQuery) {
+        url += `&search=${encodeURIComponent(searchQuery)}`;
+      }
+      
+      if (selectedCategory && selectedCategory !== 'all') {
+        url += `&category=${selectedCategory}`;
+      }
+
+      const res = await fetch(url);
+      const data = await res.json();
+      
+      setArticles(data.data?.articles || []);
+      setTotalPages(data.data?.pagination?.pages || 1);
+    } catch (error) {
+      console.error('Error fetching articles:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/wiki/categories');
+      const data = await res.json();
+      setCategories(data.data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  const fetchLanguages = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/wiki/articles/languages/stats');
+      const data = await res.json();
+      setLanguages(data.data || []);
+    } catch (error) {
+      console.error('Error fetching languages:', error);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/wiki/articles/stats');
+      const data = await res.json();
+      setStats(data.data || {});
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
+
+  const formatNumber = (num) => {
+    if (!num) return '0';
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toString();
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const getCategoryIcon = (categoryName) => {
+    const icons = {
+      'History': <FaHistory />,
+      'Culture': <FaLandmark />,
+      'Language': <FaGlobe />,
+      'Music': <FaMusic />,
+      'People': <FaUsers />,
+      'Geography': <FaMapMarkedAlt />
+    };
+    return icons[categoryName] || <FaBookOpen />;
+  };
 
   return (
     <>
       <Navbar />
       <div style={styles.container}>
-        {/* Header */}
+        {/* Hero Header */}
         <header style={styles.header}>
-          <div style={styles.headerContent}>
-            <h1 style={styles.logo}>
-              <span style={styles.logoOromo}>Oromo</span> 
-              <span style={styles.logoWikipedia}>Wikipedia</span>
-            </h1>
-            <p style={styles.tagline}>
-              The Free Encyclopedia of Oromo Knowledge
-            </p>
+          <div style={styles.headerOverlay}>
+            <div style={styles.headerContent}>
+              <h1 style={styles.logo}>
+                <span style={styles.logoOromo}>Oromo</span>
+                <span style={styles.logoWikipedia}>Wikipedia</span>
+              </h1>
+              <p style={styles.tagline}>
+                The Free Encyclopedia of Oromo Knowledge
+              </p>
+              
+              {/* Search Bar */}
+              <div style={styles.searchWrapper}>
+                <div style={styles.searchContainer}>
+                  <FaSearch style={styles.searchIcon} />
+                  <input
+                    type="text"
+                    placeholder="Search articles..."
+                    style={styles.searchInput}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <Link to="/wiki/create" style={styles.createButton}>
+                  + Create Article
+                </Link>
+              </div>
+
+              {/* Quick Stats */}
+              <div style={styles.quickStats}>
+                <div style={styles.quickStat}>
+                  <span style={styles.quickStatNumber}>{formatNumber(stats.totalArticles)}</span>
+                  <span style={styles.quickStatLabel}>Articles</span>
+                </div>
+                <div style={styles.quickStat}>
+                  <span style={styles.quickStatNumber}>{formatNumber(stats.totalEditors)}</span>
+                  <span style={styles.quickStatLabel}>Editors</span>
+                </div>
+                <div style={styles.quickStat}>
+                  <span style={styles.quickStatNumber}>{formatNumber(stats.totalEdits)}</span>
+                  <span style={styles.quickStatLabel}>Edits</span>
+                </div>
+                <div style={styles.quickStat}>
+                  <span style={styles.quickStatNumber}>{formatNumber(stats.totalViews)}</span>
+                  <span style={styles.quickStatLabel}>Views</span>
+                </div>
+              </div>
+            </div>
           </div>
         </header>
 
-        {/* Language Bar */}
+        {/* Language Filter Bar */}
         <section style={styles.langBar}>
           <div style={styles.langContainer}>
             <span style={styles.langLabel}>Read in:</span>
             <div style={styles.langButtons}>
+              <button
+                style={{
+                  ...styles.langButton,
+                  ...(selectedLang === 'all' ? styles.langActive : {})
+                }}
+                onClick={() => setSelectedLang('all')}
+              >
+                <span style={styles.langName}>All Languages</span>
+              </button>
               {languages.map((lang) => (
                 <button
                   key={lang.code}
                   style={{
                     ...styles.langButton,
-                    ...(selectedLang === lang.code ? styles.langActive : {}),
+                    ...(selectedLang === lang.code ? styles.langActive : {})
                   }}
                   onClick={() => setSelectedLang(lang.code)}
                 >
                   <span style={styles.langName}>{lang.name}</span>
-                  <span style={styles.langCount}>{lang.articles} articles</span>
+                  <span style={styles.langCount}>{formatNumber(lang.count)}</span>
                 </button>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Hero Search */}
-        <section style={styles.heroSection}>
-          <div style={styles.heroContent}>
-            <div style={styles.searchWrapper}>
-              <div style={styles.searchContainer}>
-                <input
-                  type="text"
-                  placeholder="Search Oromo Wikipedia..."
-                  style={styles.searchInput}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <button style={styles.searchButton}>
-                  🔍 Search
-                </button>
-              </div>
-              <div style={styles.searchLinks}>
-                <Link to="/wikipedia/random" style={styles.searchLink}>
-                  Random Article
-                </Link>
-                <span style={styles.searchLinkDivider}>•</span>
-                <Link to="/wikipedia/new" style={styles.searchLink}>
-                  New Articles
-                </Link>
-                <span style={styles.searchLinkDivider}>•</span>
-                <Link to="/wikipedia/help" style={styles.searchLink}>
-                  Help
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Main Content Grid */}
+        {/* Main Content */}
         <div style={styles.mainGrid}>
-          {/* Left Column - Categories */}
-          <aside style={styles.leftColumn}>
-            <div style={styles.welcomeBox}>
+          {/* Left Sidebar - Categories */}
+          <aside style={styles.leftSidebar}>
+            <div style={styles.welcomeCard}>
               <h3 style={styles.welcomeTitle}>Welcome to Oromo Wikipedia</h3>
               <p style={styles.welcomeText}>
-                The Oromo Wikipedia is a free, open-content encyclopedia 
-                that anyone can edit. Started in 2015, it now contains 
-                over 12,000 articles in Afaan Oromoo and other languages.
+                A free encyclopedia that anyone can edit. Join us in preserving 
+                and sharing Oromo knowledge with the world.
               </p>
-              <div style={styles.stats}>
-                <div style={styles.stat}>
-                  <span style={styles.statNumber}>12,345</span>
-                  <span style={styles.statLabel}>Articles</span>
-                </div>
-                <div style={styles.stat}>
-                  <span style={styles.statNumber}>1,234</span>
-                  <span style={styles.statLabel}>Editors</span>
-                </div>
-                <div style={styles.stat}>
-                  <span style={styles.statNumber}>45K</span>
-                  <span style={styles.statLabel}>Edits</span>
-                </div>
-              </div>
+              <Link to="/wiki/help" style={styles.helpLink}>
+                Learn how to contribute →
+              </Link>
             </div>
 
-            <div style={styles.sectionBox}>
-              <h3 style={styles.sectionTitle}>Categories</h3>
+            <div style={styles.sectionCard}>
+              <h3 style={styles.sectionTitle}>
+                <FaTag style={styles.sectionIcon} />
+                Categories
+              </h3>
               <div style={styles.categoryList}>
+                <button
+                  style={{
+                    ...styles.categoryButton,
+                    ...(selectedCategory === 'all' ? styles.categoryActive : {})
+                  }}
+                  onClick={() => setSelectedCategory('all')}
+                >
+                  <span style={styles.categoryIcon}>📚</span>
+                  <span style={styles.categoryName}>All Articles</span>
+                  <span style={styles.categoryCount}>{formatNumber(stats.totalArticles)}</span>
+                </button>
                 {categories.map((cat) => (
-                  <Link 
-                    key={cat.name}
-                    to={`/wikipedia/category/${cat.name}`}
-                    style={styles.categoryItem}
+                  <button
+                    key={cat.id}
+                    style={{
+                      ...styles.categoryButton,
+                      ...(selectedCategory === cat.id ? styles.categoryActive : {})
+                    }}
+                    onClick={() => setSelectedCategory(cat.id)}
                   >
-                    <span style={styles.categoryIcon}>{cat.icon}</span>
+                    <span style={styles.categoryIcon}>{getCategoryIcon(cat.name)}</span>
                     <span style={styles.categoryName}>{cat.name}</span>
-                    <span style={styles.categoryCount}>{cat.count}</span>
-                  </Link>
+                    <span style={styles.categoryCount}>{formatNumber(cat.article_count)}</span>
+                  </button>
                 ))}
               </div>
             </div>
 
-            <div style={styles.sectionBox}>
-              <h3 style={styles.sectionTitle}>Sister Projects</h3>
-              <div style={styles.sisterProjects}>
-                <Link to="/journal" style={styles.sisterProject}>
-                  <span style={styles.sisterIcon}>📚</span>
-                  <span>Oromo Journal</span>
-                </Link>
-                <Link to="/repository" style={styles.sisterProject}>
-                  <span style={styles.sisterIcon}>📦</span>
-                  <span>Repository</span>
-                </Link>
-                <Link to="/ebooks" style={styles.sisterProject}>
-                  <span style={styles.sisterIcon}>📖</span>
-                  <span>eBooks</span>
-                </Link>
-                <Link to="/library" style={styles.sisterProject}>
-                  <span style={styles.sisterIcon}>🏛️</span>
-                  <span>Library</span>
-                </Link>
+            <div style={styles.sectionCard}>
+              <h3 style={styles.sectionTitle}>
+                <FaFire style={styles.sectionIcon} />
+                Trending Topics
+              </h3>
+              <div style={styles.trendingList}>
+                {popularArticles.slice(0, 5).map((article) => (
+                  <Link 
+                    key={article.id}
+                    to={`/wiki/article/${article.slug}`}
+                    style={styles.trendingItem}
+                  >
+                    <span style={styles.trendingRank}>#{article.rank || '•'}</span>
+                    <span style={styles.trendingTitle}>{article.title}</span>
+                    <span style={styles.trendingViews}>{formatNumber(article.view_count)} views</span>
+                  </Link>
+                ))}
               </div>
             </div>
           </aside>
 
-          {/* Center Column - Featured Content */}
-          <main style={styles.centerColumn}>
-            {/* Today's Featured Article */}
-            <div style={styles.sectionBox}>
-              <h3 style={styles.sectionTitle}>
-                <span style={styles.sectionIcon}>⭐</span>
-                Today's Featured Article
-              </h3>
-              <div style={styles.featuredArticle}>
-                <span style={styles.featuredIcon}>📜</span>
-                <div style={styles.featuredContent}>
-                  <h4 style={styles.featuredTitle}>
-                    <Link to="/wikipedia/gadaa" style={styles.featuredLink}>
-                      Gadaa System
+          {/* Main Content Area */}
+          <main style={styles.mainContent}>
+            {/* Featured Section */}
+            {featuredArticles.length > 0 && (
+              <section style={styles.featuredSection}>
+                <h2 style={styles.featuredTitle}>
+                  <FaStar style={styles.featuredIcon} />
+                  Featured Articles
+                </h2>
+                <div style={styles.featuredGrid}>
+                  {featuredArticles.map((article) => (
+                    <Link 
+                      key={article.id}
+                      to={`/wiki/article/${article.slug}`}
+                      style={styles.featuredCard}
+                    >
+                      <div style={styles.featuredCardHeader}>
+                        <span style={styles.featuredEmoji}>
+                          {article.emoji || '📖'}
+                        </span>
+                      </div>
+                      <div style={styles.featuredCardBody}>
+                        <h4 style={styles.featuredCardTitle}>{article.title}</h4>
+                        <p style={styles.featuredCardDesc}>
+                          {article.description || article.excerpt?.substring(0, 100)}...
+                        </p>
+                        <div style={styles.featuredCardMeta}>
+                          <span style={styles.featuredCardCategory}>
+                            {article.categories?.[0]?.name || 'General'}
+                          </span>
+                          <span style={styles.featuredCardViews}>
+                            <FaEye /> {formatNumber(article.view_count)}
+                          </span>
+                        </div>
+                      </div>
                     </Link>
-                  </h4>
-                  <p style={styles.featuredDescription}>
-                    The Gadaa system is a traditional Oromo system of governance 
-                    that has been practiced for centuries. It is a democratic system 
-                    where leaders are elected every eight years...
-                  </p>
-                  <Link to="/wikipedia/gadaa" style={styles.readMore}>
-                    Read more →
-                  </Link>
+                  ))}
                 </div>
-              </div>
-            </div>
+              </section>
+            )}
 
-            {/* In the News */}
-            <div style={styles.sectionBox}>
-              <h3 style={styles.sectionTitle}>
-                <span style={styles.sectionIcon}>📰</span>
-                In the News
-              </h3>
-              <div style={styles.newsList}>
-                <div style={styles.newsItem}>
-                  <span style={styles.newsDate}>Mar 15</span>
-                  <span style={styles.newsText}>
-                    Irreecha festival celebrated in Addis Ababa
-                  </span>
-                </div>
-                <div style={styles.newsItem}>
-                  <span style={styles.newsDate}>Mar 10</span>
-                  <span style={styles.newsText}>
-                    New Oromo language learning resources added
-                  </span>
-                </div>
-                <div style={styles.newsItem}>
-                  <span style={styles.newsDate}>Mar 5</span>
-                  <span style={styles.newsText}>
-                    Gadaa System recognized by UNESCO
+            {/* All Articles Section */}
+            <section style={styles.articlesSection}>
+              <div style={styles.articlesHeader}>
+                <h2 style={styles.articlesTitle}>
+                  <FaNewspaper style={styles.articlesIcon} />
+                  All Articles
+                </h2>
+                <div style={styles.viewControls}>
+                  <span style={styles.articlesCount}>
+                    Showing {articles.length} of {formatNumber(stats.totalArticles)} articles
                   </span>
                 </div>
               </div>
-            </div>
 
-            {/* Featured Articles Grid */}
-            <h3 style={styles.sectionTitle}>Featured Articles</h3>
-            <div style={styles.featuredGrid}>
-              {featuredArticles.map((article, index) => (
-                <Link 
-                  key={index}
-                  to={`/wikipedia/${article.title.toLowerCase().replace(/\s+/g, '-')}`}
-                  style={styles.articleCard}
-                >
-                  <span style={styles.articleImage}>{article.image}</span>
-                  <div style={styles.articleInfo}>
-                    <h4 style={styles.articleCardTitle}>{article.title}</h4>
-                    <p style={styles.articleCardDesc}>{article.description}</p>
-                    <div style={styles.articleMeta}>
-                      <span style={styles.articleCategory}>{article.category}</span>
-                      <span style={styles.articleViews}>👁️ {article.views}</span>
+              {loading ? (
+                <div style={styles.loadingGrid}>
+                  {[1,2,3,4,5,6].map(n => (
+                    <div key={n} style={styles.skeletonCard}>
+                      <div style={styles.skeletonImage}></div>
+                      <div style={styles.skeletonTitle}></div>
+                      <div style={styles.skeletonText}></div>
                     </div>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <div style={styles.articlesGrid}>
+                    {articles.map((article) => (
+                      <Link 
+                        key={article.id}
+                        to={`/wiki/article/${article.slug}`}
+                        style={styles.articleCard}
+                      >
+                        <div style={styles.articleCardContent}>
+                          <h3 style={styles.articleCardTitle}>{article.title}</h3>
+                          <p style={styles.articleCardDesc}>
+                            {article.excerpt?.substring(0, 120)}...
+                          </p>
+                          <div style={styles.articleCardFooter}>
+                            <div style={styles.articleCardAuthor}>
+                              <FaUser style={styles.authorIcon} />
+                              <span>{article.author_name || article.author_username}</span>
+                            </div>
+                            <div style={styles.articleCardStats}>
+                              <span title="Views">
+                                <FaEye /> {formatNumber(article.view_count)}
+                              </span>
+                              <span title="Last edited">
+                                <FaClock /> {formatDate(article.updated_at)}
+                              </span>
+                            </div>
+                          </div>
+                          {article.categories && article.categories.length > 0 && (
+                            <div style={styles.articleCardCategories}>
+                              {article.categories.slice(0, 2).map(cat => (
+                                <span key={cat.id} style={styles.articleCardCategory}>
+                                  {cat.name}
+                                </span>
+                              ))}
+                              {article.categories.length > 2 && (
+                                <span style={styles.articleCardCategoryMore}>
+                                  +{article.categories.length - 2}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
                   </div>
-                </Link>
-              ))}
-            </div>
 
-            {/* Did You Know */}
-            <div style={styles.sectionBox}>
-              <h3 style={styles.sectionTitle}>
-                <span style={styles.sectionIcon}>❓</span>
-                Did You Know?
-              </h3>
-              <div style={styles.didYouKnow}>
-                <ul style={styles.factsList}>
-                  <li>The Oromo calendar has 12 months of 30 days each</li>
-                  <li>The Gadaa system is over 500 years old</li>
-                  <li>Oromia is the largest region in Ethiopia</li>
-                  <li>The Oromo language has over 30 million speakers</li>
-                </ul>
-              </div>
-            </div>
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div style={styles.pagination}>
+                      <button
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        style={styles.pageButton}
+                      >
+                        Previous
+                      </button>
+                      <span style={styles.pageInfo}>
+                        Page {currentPage} of {totalPages}
+                      </span>
+                      <button
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        style={styles.pageButton}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </section>
           </main>
 
-          {/* Right Column - Community */}
-          <aside style={styles.rightColumn}>
-            <div style={styles.sectionBox}>
+          {/* Right Sidebar */}
+          <aside style={styles.rightSidebar}>
+            {/* Recent Articles */}
+            <div style={styles.sectionCard}>
               <h3 style={styles.sectionTitle}>
-                <span style={styles.sectionIcon}>👥</span>
-                Community Portal
+                <FaClock style={styles.sectionIcon} />
+                Recent Articles
               </h3>
-              <div style={styles.communityLinks}>
-                <Link to="/wikipedia/help" style={styles.communityLink}>
-                  📖 Help desk
-                </Link>
-                <Link to="/wikipedia/request" style={styles.communityLink}>
-                  📝 Request an article
-                </Link>
-                <Link to="/wikipedia/translate" style={styles.communityLink}>
-                  🌍 Translate articles
-                </Link>
-                <Link to="/wikipedia/discuss" style={styles.communityLink}>
-                  💬 Community discussion
-                </Link>
-                <Link to="/wikipedia/upload" style={styles.communityLink}>
-                  📤 Upload media
-                </Link>
+              <div style={styles.recentList}>
+                {recentArticles.map((article) => (
+                  <Link 
+                    key={article.id}
+                    to={`/wiki/article/${article.slug}`}
+                    style={styles.recentItem}
+                  >
+                    <div style={styles.recentContent}>
+                      <h4 style={styles.recentTitle}>{article.title}</h4>
+                      <span style={styles.recentDate}>
+                        {formatDate(article.created_at)}
+                      </span>
+                    </div>
+                    <FaArrowRight style={styles.recentArrow} />
+                  </Link>
+                ))}
               </div>
             </div>
 
-            <div style={styles.sectionBox}>
+            {/* Popular Articles */}
+            <div style={styles.sectionCard}>
               <h3 style={styles.sectionTitle}>
-                <span style={styles.sectionIcon}>📌</span>
-                Today's Featured Articles
+                <FaFire style={styles.sectionIcon} />
+                Most Popular
               </h3>
-              {todayFeatArticles.map((article, index) => (
-                <Link 
-                  key={index}
-                  to={`/wikipedia/${article.title.toLowerCase().replace(/\s+/g, '-')}`}
-                  style={styles.todayArticle}
-                >
-                  <span style={styles.todayIcon}>{article.image}</span>
-                  <div style={styles.todayInfo}>
-                    <h4 style={styles.todayTitle}>{article.title}</h4>
-                    <p style={styles.todayDesc}>{article.description}</p>
-                  </div>
-                </Link>
-              ))}
+              <div style={styles.popularList}>
+                {popularArticles.map((article, index) => (
+                  <Link 
+                    key={article.id}
+                    to={`/wiki/article/${article.slug}`}
+                    style={styles.popularItem}
+                  >
+                    <span style={styles.popularRank}>{index + 1}</span>
+                    <div style={styles.popularContent}>
+                      <span style={styles.popularTitle}>{article.title}</span>
+                      <span style={styles.popularViews}>
+                        <FaEye /> {formatNumber(article.view_count)}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
 
-            <div style={styles.sectionBox}>
+            {/* Community Links */}
+            <div style={styles.sectionCard}>
               <h3 style={styles.sectionTitle}>
-                <span style={styles.sectionIcon}>🔗</span>
-                Other Languages
+                <FaUsers style={styles.sectionIcon} />
+                Community
               </h3>
-              <div style={styles.otherLangs}>
-                {languages.slice(0, 5).map((lang) => (
-                  <button
-                    key={lang.code}
-                    style={styles.otherLang}
-                    onClick={() => setSelectedLang(lang.code)}
-                  >
-                    <span style={styles.otherLangName}>{lang.name}</span>
-                    <span style={styles.otherLangCount}>{lang.articles}</span>
-                  </button>
-                ))}
+              <div style={styles.communityLinks}>
+                <Link to="/wiki/help" style={styles.communityLink}>
+                  <span style={styles.communityIcon}>📖</span>
+                  Help desk
+                </Link>
+                <Link to="/wiki/request" style={styles.communityLink}>
+                  <span style={styles.communityIcon}>📝</span>
+                  Request article
+                </Link>
+                <Link to="/wiki/translate" style={styles.communityLink}>
+                  <span style={styles.communityIcon}>🌍</span>
+                  Translate
+                </Link>
+                <Link to="/wiki/discuss" style={styles.communityLink}>
+                  <span style={styles.communityIcon}>💬</span>
+                  Discussion
+                </Link>
               </div>
             </div>
           </aside>
@@ -384,18 +536,18 @@ export default function WikipediaPage() {
         <footer style={styles.footer}>
           <div style={styles.footerContent}>
             <div style={styles.footerLinks}>
-              <Link to="/wikipedia/about" style={styles.footerLink}>About</Link>
-              <Link to="/wikipedia/disclaimer" style={styles.footerLink}>Disclaimer</Link>
-              <Link to="/wikipedia/privacy" style={styles.footerLink}>Privacy</Link>
-              <Link to="/wikipedia/terms" style={styles.footerLink}>Terms</Link>
-              <Link to="/wikipedia/contact" style={styles.footerLink}>Contact</Link>
+              <Link to="/about" style={styles.footerLink}>About</Link>
+              <Link to="/disclaimer" style={styles.footerLink}>Disclaimer</Link>
+              <Link to="/privacy" style={styles.footerLink}>Privacy</Link>
+              <Link to="/terms" style={styles.footerLink}>Terms</Link>
+              <Link to="/contact" style={styles.footerLink}>Contact</Link>
             </div>
             <p style={styles.copyright}>
-              Oromo Wikipedia is a free encyclopedia. All content is available under 
-              the Creative Commons Attribution-ShareAlike License.
+              Oromo Wikipedia is a free encyclopedia. Content available under 
+              Creative Commons Attribution-ShareAlike License.
             </p>
             <p style={styles.copyright}>
-              © 2024 Oromo Researcher Association. All rights reserved.
+              © {new Date().getFullYear()} Oromo Wikipedia. All rights reserved.
             </p>
           </div>
         </footer>
@@ -408,24 +560,26 @@ const styles = {
   container: {
     width: "100%",
     minHeight: "100vh",
-    fontFamily: "'Poppins', sans-serif",
+    fontFamily: "'Inter', 'Poppins', sans-serif",
     backgroundColor: "#f8f9fa",
   },
 
   // Header
   header: {
     background: "linear-gradient(135deg, #0F3D2E 0%, #1A5439 100%)",
-    padding: "40px 20px",
+    position: "relative",
+  },
+  headerOverlay: {
+    padding: "60px 20px",
     textAlign: "center",
-    color: "white",
   },
   headerContent: {
-    maxWidth: "800px",
+    maxWidth: "1000px",
     margin: "0 auto",
   },
   logo: {
-    fontSize: "clamp(2rem, 8vw, 3.5rem)",
-    margin: "0 0 10px",
+    fontSize: "clamp(2.5rem, 8vw, 4rem)",
+    margin: "0 0 15px",
     fontWeight: "700",
   },
   logoOromo: {
@@ -439,8 +593,73 @@ const styles = {
   },
   tagline: {
     fontSize: "1.2rem",
-    opacity: 0.9,
-    margin: 0,
+    color: "rgba(255,255,255,0.9)",
+    marginBottom: "40px",
+  },
+
+  // Search
+  searchWrapper: {
+    display: "flex",
+    gap: "15px",
+    maxWidth: "700px",
+    margin: "0 auto 40px",
+  },
+  searchContainer: {
+    flex: 1,
+    position: "relative",
+  },
+  searchIcon: {
+    position: "absolute",
+    left: "20px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    color: "#999",
+    fontSize: "1.2rem",
+  },
+  searchInput: {
+    width: "100%",
+    padding: "18px 20px 18px 50px",
+    border: "none",
+    borderRadius: "50px",
+    fontSize: "1rem",
+    outline: "none",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+  },
+  createButton: {
+    padding: "18px 30px",
+    background: "#C9A227",
+    color: "#0F3D2E",
+    textDecoration: "none",
+    borderRadius: "50px",
+    fontWeight: "600",
+    whiteSpace: "nowrap",
+    transition: "all 0.3s ease",
+    boxShadow: "0 4px 20px rgba(201,162,39,0.3)",
+    ':hover': {
+      transform: "translateY(-2px)",
+      boxShadow: "0 6px 25px rgba(201,162,39,0.4)",
+    },
+  },
+
+  // Quick Stats
+  quickStats: {
+    display: "flex",
+    justifyContent: "center",
+    gap: "40px",
+    flexWrap: "wrap",
+  },
+  quickStat: {
+    textAlign: "center",
+  },
+  quickStatNumber: {
+    display: "block",
+    fontSize: "2rem",
+    fontWeight: "700",
+    color: "#C9A227",
+  },
+  quickStatLabel: {
+    fontSize: "0.9rem",
+    color: "rgba(255,255,255,0.8)",
   },
 
   // Language Bar
@@ -448,14 +667,17 @@ const styles = {
     background: "white",
     borderBottom: "1px solid #eaeef2",
     padding: "15px 20px",
-    overflowX: "auto",
+    position: "sticky",
+    top: 0,
+    zIndex: 100,
   },
   langContainer: {
-    maxWidth: "1200px",
+    maxWidth: "1400px",
     margin: "0 auto",
     display: "flex",
     alignItems: "center",
     gap: "20px",
+    overflowX: "auto",
   },
   langLabel: {
     fontSize: "0.9rem",
@@ -465,14 +687,14 @@ const styles = {
   },
   langButtons: {
     display: "flex",
-    gap: "15px",
+    gap: "10px",
     flexWrap: "wrap",
   },
   langButton: {
     background: "transparent",
     border: "1px solid #eaeef2",
-    borderRadius: "20px",
-    padding: "5px 15px",
+    borderRadius: "30px",
+    padding: "8px 16px",
     cursor: "pointer",
     display: "flex",
     gap: "8px",
@@ -480,155 +702,82 @@ const styles = {
     fontSize: "0.9rem",
     transition: "all 0.3s ease",
     whiteSpace: "nowrap",
+    ':hover': {
+      background: "#f8f9fa",
+    },
   },
   langActive: {
     background: "#C9A227",
     borderColor: "#C9A227",
     color: "#0F3D2E",
   },
-  langName: {
-    fontWeight: "500",
-  },
   langCount: {
     fontSize: "0.8rem",
     color: "#5a6a7a",
   },
 
-  // Hero Search
-  heroSection: {
-    padding: "40px 20px",
-    background: "white",
-  },
-  heroContent: {
-    maxWidth: "800px",
-    margin: "0 auto",
-  },
-  searchWrapper: {
-    textAlign: "center",
-  },
-  searchContainer: {
-    display: "flex",
-    gap: "10px",
-    marginBottom: "15px",
-  },
-  searchInput: {
-    flex: 1,
-    padding: "15px 20px",
-    border: "2px solid #eaeef2",
-    borderRadius: "50px",
-    fontSize: "1rem",
-    outline: "none",
-    transition: "border-color 0.3s ease",
-  },
-  searchButton: {
-    padding: "15px 40px",
-    background: "#C9A227",
-    color: "#0F3D2E",
-    border: "none",
-    borderRadius: "50px",
-    fontSize: "1rem",
-    fontWeight: "600",
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-  },
-  searchLinks: {
-    display: "flex",
-    gap: "10px",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  searchLink: {
-    color: "#2E86AB",
-    textDecoration: "none",
-    fontSize: "0.9rem",
-  },
-  searchLinkDivider: {
-    color: "#cbd5e0",
-  },
-
   // Main Grid
   mainGrid: {
     display: "grid",
-    gridTemplateColumns: "250px 1fr 280px",
-    gap: "20px",
+    gridTemplateColumns: "280px 1fr 300px",
+    gap: "25px",
     maxWidth: "1400px",
     margin: "40px auto",
     padding: "0 20px",
   },
 
-  // Columns
-  leftColumn: {
+  // Sidebars
+  leftSidebar: {
     display: "flex",
     flexDirection: "column",
-    gap: "20px",
+    gap: "25px",
   },
-  rightColumn: {
+  rightSidebar: {
     display: "flex",
     flexDirection: "column",
-    gap: "20px",
-  },
-  centerColumn: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "20px",
+    gap: "25px",
   },
 
-  // Boxes
-  sectionBox: {
-    background: "white",
-    borderRadius: "10px",
-    padding: "20px",
-    border: "1px solid #eaeef2",
-  },
-  welcomeBox: {
-    background: "linear-gradient(135deg, #f8f9fa, #ffffff)",
-    borderRadius: "10px",
+  // Cards
+  welcomeCard: {
+    background: "linear-gradient(135deg, #0F3D2E 0%, #1A5439 100%)",
+    borderRadius: "16px",
     padding: "25px",
-    border: "1px solid #eaeef2",
+    color: "white",
   },
   welcomeTitle: {
     fontSize: "1.3rem",
     margin: "0 0 10px",
-    color: "#1a2639",
   },
   welcomeText: {
     fontSize: "0.95rem",
-    color: "#5a6a7a",
+    opacity: 0.9,
     lineHeight: 1.6,
-    margin: "0 0 20px",
+    margin: "0 0 15px",
   },
-
-  // Stats
-  stats: {
-    display: "flex",
-    gap: "20px",
-    justifyContent: "space-around",
-  },
-  stat: {
-    textAlign: "center",
-  },
-  statNumber: {
-    display: "block",
-    fontSize: "1.5rem",
-    fontWeight: "700",
+  helpLink: {
     color: "#C9A227",
-  },
-  statLabel: {
-    fontSize: "0.85rem",
-    color: "#5a6a7a",
+    textDecoration: "none",
+    fontSize: "0.9rem",
+    fontWeight: "500",
   },
 
-  // Section Titles
+  sectionCard: {
+    background: "white",
+    borderRadius: "16px",
+    padding: "20px",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+  },
   sectionTitle: {
     fontSize: "1.2rem",
-    fontWeight: "600",
-    margin: "0 0 15px",
+    margin: "0 0 20px",
     display: "flex",
     alignItems: "center",
-    gap: "8px",
+    gap: "10px",
+    color: "#0F3D2E",
   },
   sectionIcon: {
-    fontSize: "1.3rem",
+    color: "#C9A227",
   },
 
   // Categories
@@ -637,161 +786,391 @@ const styles = {
     flexDirection: "column",
     gap: "8px",
   },
-  categoryItem: {
+  categoryButton: {
     display: "flex",
     alignItems: "center",
-    gap: "10px",
-    padding: "8px",
-    textDecoration: "none",
-    color: "#1a2639",
-    borderRadius: "5px",
-    transition: "background 0.3s ease",
+    gap: "12px",
+    padding: "10px",
+    border: "none",
+    background: "transparent",
+    borderRadius: "8px",
+    cursor: "pointer",
+    width: "100%",
+    textAlign: "left",
+    transition: "all 0.3s ease",
+    ':hover': {
+      background: "#f8f9fa",
+    },
+  },
+  categoryActive: {
+    background: "#C9A22720",
+    borderLeft: "3px solid #C9A227",
   },
   categoryIcon: {
     fontSize: "1.2rem",
-    width: "25px",
+    width: "24px",
   },
   categoryName: {
     flex: 1,
     fontSize: "0.95rem",
+    color: "#1a2639",
   },
   categoryCount: {
     fontSize: "0.85rem",
     color: "#a0aec0",
   },
 
-  // Sister Projects
-  sisterProjects: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
-    gap: "10px",
-  },
-  sisterProject: {
+  // Main Content
+  mainContent: {
     display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    padding: "8px",
-    textDecoration: "none",
-    color: "#1a2639",
-    fontSize: "0.9rem",
-    background: "#f8f9fa",
-    borderRadius: "5px",
-  },
-  sisterIcon: {
-    fontSize: "1.2rem",
+    flexDirection: "column",
+    gap: "30px",
   },
 
-  // Featured Article
-  featuredArticle: {
-    display: "flex",
-    gap: "15px",
-  },
-  featuredIcon: {
-    fontSize: "3rem",
-  },
-  featuredContent: {
-    flex: 1,
+  // Featured Section
+  featuredSection: {
+    background: "white",
+    borderRadius: "16px",
+    padding: "25px",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
   },
   featuredTitle: {
-    fontSize: "1.1rem",
-    margin: "0 0 5px",
+    fontSize: "1.5rem",
+    margin: "0 0 20px",
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    color: "#0F3D2E",
   },
-  featuredLink: {
-    color: "#1a2639",
+  featuredIcon: {
+    color: "#C9A227",
+  },
+  featuredGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
+    gap: "20px",
+  },
+  featuredCard: {
+    background: "#f8f9fa",
+    borderRadius: "12px",
+    overflow: "hidden",
     textDecoration: "none",
+    transition: "all 0.3s ease",
+    ':hover': {
+      transform: "translateY(-5px)",
+      boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+    },
   },
-  featuredDescription: {
+  featuredCardHeader: {
+    background: "linear-gradient(135deg, #C9A22720, #C9A22740)",
+    padding: "20px",
+    textAlign: "center",
+  },
+  featuredEmoji: {
+    fontSize: "3rem",
+  },
+  featuredCardBody: {
+    padding: "20px",
+  },
+  featuredCardTitle: {
+    fontSize: "1.2rem",
+    margin: "0 0 10px",
+    color: "#0F3D2E",
+  },
+  featuredCardDesc: {
     fontSize: "0.9rem",
     color: "#5a6a7a",
+    margin: "0 0 15px",
     lineHeight: 1.6,
-    margin: "0 0 10px",
   },
-  readMore: {
+  featuredCardMeta: {
+    display: "flex",
+    justifyContent: "space-between",
+    fontSize: "0.85rem",
+  },
+  featuredCardCategory: {
     color: "#C9A227",
-    textDecoration: "none",
-    fontSize: "0.9rem",
-    fontWeight: "500",
+  },
+  featuredCardViews: {
+    color: "#a0aec0",
+    display: "flex",
+    alignItems: "center",
+    gap: "5px",
   },
 
-  // News
-  newsList: {
+  // Articles Section
+  articlesSection: {
+    background: "white",
+    borderRadius: "16px",
+    padding: "25px",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+  },
+  articlesHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "20px",
+  },
+  articlesTitle: {
+    fontSize: "1.5rem",
+    margin: 0,
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    color: "#0F3D2E",
+  },
+  articlesIcon: {
+    color: "#C9A227",
+  },
+  articlesCount: {
+    fontSize: "0.9rem",
+    color: "#a0aec0",
+  },
+  articlesGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
+    gap: "20px",
+  },
+
+  // Article Cards
+  articleCard: {
+    background: "#f8f9fa",
+    borderRadius: "12px",
+    overflow: "hidden",
+    textDecoration: "none",
+    transition: "all 0.3s ease",
+    border: "1px solid #eaeef2",
+    ':hover': {
+      transform: "translateY(-3px)",
+      boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
+      borderColor: "#C9A227",
+    },
+  },
+  articleCardContent: {
+    padding: "20px",
+  },
+  articleCardTitle: {
+    fontSize: "1.1rem",
+    margin: "0 0 10px",
+    color: "#0F3D2E",
+  },
+  articleCardDesc: {
+    fontSize: "0.9rem",
+    color: "#5a6a7a",
+    margin: "0 0 15px",
+    lineHeight: 1.5,
+  },
+  articleCardFooter: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "15px",
+    fontSize: "0.85rem",
+  },
+  articleCardAuthor: {
+    display: "flex",
+    alignItems: "center",
+    gap: "5px",
+    color: "#0F3D2E",
+  },
+  authorIcon: {
+    color: "#C9A227",
+  },
+  articleCardStats: {
+    display: "flex",
+    gap: "15px",
+    color: "#a0aec0",
+  },
+  articleCardCategories: {
+    display: "flex",
+    gap: "8px",
+    flexWrap: "wrap",
+  },
+  articleCardCategory: {
+    background: "#eaeef2",
+    color: "#5a6a7a",
+    padding: "4px 10px",
+    borderRadius: "20px",
+    fontSize: "0.75rem",
+  },
+  articleCardCategoryMore: {
+    color: "#a0aec0",
+    fontSize: "0.75rem",
+  },
+
+  // Loading Skeletons
+  loadingGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
+    gap: "20px",
+  },
+  skeletonCard: {
+    background: "#f8f9fa",
+    borderRadius: "12px",
+    padding: "20px",
+    animation: "pulse 1.5s infinite",
+  },
+  skeletonImage: {
+    height: "40px",
+    background: "#eaeef2",
+    borderRadius: "8px",
+    marginBottom: "15px",
+  },
+  skeletonTitle: {
+    height: "20px",
+    background: "#eaeef2",
+    borderRadius: "4px",
+    marginBottom: "10px",
+    width: "70%",
+  },
+  skeletonText: {
+    height: "60px",
+    background: "#eaeef2",
+    borderRadius: "4px",
+  },
+
+  // Pagination
+  pagination: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "20px",
+    marginTop: "30px",
+  },
+  pageButton: {
+    padding: "10px 20px",
+    border: "1px solid #eaeef2",
+    background: "white",
+    borderRadius: "8px",
+    cursor: "pointer",
+    transition: "all 0.3s ease",
+    ':hover:not(:disabled)': {
+      background: "#C9A227",
+      borderColor: "#C9A227",
+      color: "#0F3D2E",
+    },
+    ':disabled': {
+      opacity: 0.5,
+      cursor: "not-allowed",
+    },
+  },
+  pageInfo: {
+    fontSize: "0.95rem",
+    color: "#5a6a7a",
+  },
+
+  // Trending List
+  trendingList: {
     display: "flex",
     flexDirection: "column",
     gap: "12px",
   },
-  newsItem: {
+  trendingItem: {
     display: "flex",
-    gap: "10px",
-    fontSize: "0.9rem",
-  },
-  newsDate: {
-    color: "#C9A227",
-    fontWeight: "500",
-    minWidth: "60px",
-  },
-  newsText: {
-    color: "#1a2639",
-  },
-
-  // Featured Grid
-  featuredGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
-    gap: "15px",
-  },
-  articleCard: {
-    background: "white",
-    padding: "15px",
-    borderRadius: "8px",
+    alignItems: "center",
+    gap: "12px",
+    padding: "8px",
     textDecoration: "none",
-    border: "1px solid #eaeef2",
-    transition: "transform 0.3s ease",
+    borderRadius: "8px",
+    transition: "background 0.3s ease",
+    ':hover': {
+      background: "#f8f9fa",
+    },
   },
-  articleImage: {
-    fontSize: "2rem",
-    display: "block",
-    marginBottom: "10px",
-  },
-  articleInfo: {
-    flex: 1,
-  },
-  articleCardTitle: {
+  trendingRank: {
     fontSize: "1rem",
-    margin: "0 0 5px",
+    fontWeight: "600",
+    color: "#C9A227",
+    minWidth: "30px",
+  },
+  trendingTitle: {
+    flex: 1,
+    fontSize: "0.95rem",
     color: "#1a2639",
   },
-  articleCardDesc: {
-    fontSize: "0.85rem",
-    color: "#5a6a7a",
-    margin: "0 0 8px",
-  },
-  articleMeta: {
-    display: "flex",
-    justifyContent: "space-between",
-    fontSize: "0.75rem",
-  },
-  articleCategory: {
-    color: "#C9A227",
-  },
-  articleViews: {
+  trendingViews: {
+    fontSize: "0.8rem",
     color: "#a0aec0",
   },
 
-  // Did You Know
-  didYouKnow: {
-    padding: "0 10px",
+  // Recent List
+  recentList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
   },
-  factsList: {
-    margin: "0",
-    paddingLeft: "20px",
-    color: "#1a2639",
-    "& li": {
-      marginBottom: "8px",
-      fontSize: "0.9rem",
+  recentItem: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "10px",
+    textDecoration: "none",
+    borderRadius: "8px",
+    transition: "background 0.3s ease",
+    ':hover': {
+      background: "#f8f9fa",
     },
   },
+  recentContent: {
+    flex: 1,
+  },
+  recentTitle: {
+    fontSize: "0.95rem",
+    color: "#1a2639",
+    marginBottom: "4px",
+  },
+  recentDate: {
+    fontSize: "0.8rem",
+    color: "#a0aec0",
+  },
+  recentArrow: {
+    color: "#C9A227",
+    fontSize: "0.9rem",
+  },
 
-  // Community
+  // Popular List
+  popularList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+  },
+  popularItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    padding: "8px",
+    textDecoration: "none",
+    borderRadius: "8px",
+    transition: "background 0.3s ease",
+    ':hover': {
+      background: "#f8f9fa",
+    },
+  },
+  popularRank: {
+    fontSize: "1rem",
+    fontWeight: "600",
+    color: "#C9A227",
+    minWidth: "25px",
+  },
+  popularContent: {
+    flex: 1,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  popularTitle: {
+    fontSize: "0.95rem",
+    color: "#1a2639",
+  },
+  popularViews: {
+    fontSize: "0.8rem",
+    color: "#a0aec0",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+  },
+
+  // Community Links
   communityLinks: {
     display: "flex",
     flexDirection: "column",
@@ -801,62 +1180,21 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "10px",
-    padding: "8px",
-    textDecoration: "none",
-    color: "#1a2639",
-    background: "#f8f9fa",
-    borderRadius: "5px",
-    fontSize: "0.9rem",
-  },
-
-  // Today's Articles
-  todayArticle: {
-    display: "flex",
-    gap: "10px",
     padding: "10px",
+    background: "#f8f9fa",
     textDecoration: "none",
-    borderBottom: "1px solid #eaeef2",
-  },
-  todayIcon: {
-    fontSize: "1.5rem",
-  },
-  todayInfo: {
-    flex: 1,
-  },
-  todayTitle: {
-    fontSize: "0.95rem",
-    margin: "0 0 3px",
     color: "#1a2639",
-  },
-  todayDesc: {
-    fontSize: "0.8rem",
-    color: "#5a6a7a",
-    margin: 0,
-  },
-
-  // Other Languages
-  otherLangs: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-  },
-  otherLang: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "8px",
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-    borderRadius: "5px",
-  },
-  otherLangName: {
+    borderRadius: "8px",
     fontSize: "0.9rem",
-    color: "#1a2639",
+    transition: "all 0.3s ease",
+    ':hover': {
+      background: "#C9A227",
+      color: "#0F3D2E",
+      transform: "translateX(5px)",
+    },
   },
-  otherLangCount: {
-    fontSize: "0.8rem",
-    color: "#a0aec0",
+  communityIcon: {
+    fontSize: "1.1rem",
   },
 
   // Footer
@@ -873,7 +1211,7 @@ const styles = {
   },
   footerLinks: {
     display: "flex",
-    gap: "20px",
+    gap: "30px",
     justifyContent: "center",
     marginBottom: "20px",
     flexWrap: "wrap",
@@ -883,37 +1221,46 @@ const styles = {
     textDecoration: "none",
     opacity: 0.8,
     fontSize: "0.9rem",
+    transition: "opacity 0.3s ease",
+    ':hover': {
+      opacity: 1,
+    },
   },
   copyright: {
     fontSize: "0.85rem",
     opacity: 0.6,
-    margin: "10px 0 0",
+    margin: "5px 0",
   },
 };
 
-// Add responsive styles
-const mediaStyles = `
+// Add global styles
+const styleSheet = document.createElement("style");
+styleSheet.textContent = `
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+  }
+  
   @media (max-width: 1024px) {
     .mainGrid {
       grid-template-columns: 1fr !important;
     }
   }
-
+  
   @media (max-width: 768px) {
-    .searchContainer {
+    .featuredGrid,
+    .articlesGrid {
+      grid-template-columns: 1fr !important;
+    }
+    
+    .searchWrapper {
       flex-direction: column;
     }
     
-    .searchButton {
-      width: 100%;
-    }
-    
-    .featuredGrid {
-      grid-template-columns: 1fr !important;
-    }
-    
-    .sisterProjects {
-      grid-template-columns: 1fr !important;
+    .quickStats {
+      gap: 20px;
     }
   }
 `;
+document.head.appendChild(styleSheet);

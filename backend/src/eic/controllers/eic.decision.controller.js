@@ -251,8 +251,10 @@ export const makeDecision = async (req, res) => {
     await client.query("BEGIN");
 
     const { id } = req.params;
-    const { decision, decision_comment } = req.body;
+    const { decision, decision_comment, status, payment } = req.body;
     const eicId = req.user.uuid;
+
+    console.log("Received decision data:", { decision, decision_comment, status, payment });
 
     // Validate decision
     const validDecisions = ['accept', 'reject', 'revision'];
@@ -263,7 +265,9 @@ export const makeDecision = async (req, res) => {
     // Check if manuscript exists
     const manuscriptCheck = await client.query(
       `
-      SELECT id, status, title 
+      SELECT id, status, title, corresponding_author_id,
+             (SELECT full_name FROM users WHERE uuid = corresponding_author_id) as author_name,
+             (SELECT email FROM users WHERE uuid = corresponding_author_id) as author_email
       FROM manuscripts 
       WHERE id = $1
       `,
@@ -276,18 +280,8 @@ export const makeDecision = async (req, res) => {
 
     const manuscript = manuscriptCheck.rows[0];
 
-    // Check if manuscript already has a decision
-    const decisionCheck = await client.query(
-      `SELECT id FROM decisions WHERE manuscript_id = $1`,
-      [manuscript.id]
-    );
-
-    if (decisionCheck.rows.length > 0) {
-      return res.status(400).json({ error: "Decision already made for this manuscript" });
-    }
-
     // Insert the decision
-    await client.query(
+    const decisionResult = await client.query(
       `
       INSERT INTO decisions (
         manuscript_id, 
@@ -296,56 +290,67 @@ export const makeDecision = async (req, res) => {
         decision_comment, 
         decision_date
       ) VALUES ($1, $2, $3, $4, NOW())
+      RETURNING id
       `,
-      [manuscript.id, decision, eicId, decision_comment]
+      [manuscript.id, decision, eicId, decision_comment || null]
     );
 
-    // Update manuscript status based on decision
-    let newStatus;
-    if (decision === 'accept') {
-      newStatus = 'accepted';
-    } else if (decision === 'reject') {
-      newStatus = 'rejected';
-    } else if (decision === 'revision') {
-      newStatus = 'revision_required';
+    console.log("Decision inserted with ID:", decisionResult.rows[0].id);
+
+    // Determine new status
+    let newStatus = status;
+    if (!newStatus) {
+      // Default status mapping if status not provided
+      if (decision === 'accept') newStatus = 'accepted';
+      else if (decision === 'reject') newStatus = 'rejected';
+      else if (decision === 'revision') newStatus = 'revision_required';
     }
 
-    await client.query(
+    // Update manuscript status in database
+    const updateResult = await client.query(
       `
       UPDATE manuscripts 
       SET status = $2, 
-          updated_at = NOW(),
-          decision_date = NOW()
+          updated_at = NOW()
       WHERE id = $1
+      RETURNING id, status, title
       `,
       [manuscript.id, newStatus]
     );
 
-    // Record in stage history if table exists
+    console.log("Manuscript updated to status:", updateResult.rows[0].status);
+
+    // Record in stage history
     try {
       await client.query(
         `
         INSERT INTO manuscript_stage_history (
           manuscript_id,
-          stage,
+          new_stage_id,
           changed_by,
           changed_at,
-          comments
-        ) VALUES ($1, $2, $3, NOW(), $4)
+          comment
+        ) VALUES ($1, 6, $2, NOW(), $3)
         `,
-        [manuscript.id, newStatus, eicId, `Decision made: ${decision}`]
+        [manuscript.id,  eicId, `Decision made: ${decision} → Status: ${newStatus}`]
       );
     } catch (historyErr) {
-      console.log("Stage history table might not exist:", historyErr.message);
-      // Continue even if stage history fails
+      console.log("Could not record stage history:", historyErr.message);
     }
 
     await client.query("COMMIT");
 
     res.json({ 
+      success: true,
       message: `Decision '${decision}' recorded successfully`,
       manuscript_id: manuscript.id,
-      new_status: newStatus
+      manuscript: {
+        id: manuscript.id,
+        title: manuscript.title,
+        status: newStatus,
+        author_name: manuscript.author_name,
+        author_email: manuscript.author_email
+      }
     });
 
   } catch (err) {
@@ -474,6 +479,9 @@ export const getAllDecisions = async (req, res) => {
 /* =====================================================
    INITIATE PAYMENT FOR ACCEPTED MANUSCRIPT
 ===================================================== */
+/* =====================================================
+   INITIATE PAYMENT FOR ACCEPTED MANUSCRIPT
+===================================================== */
 export const initiatePayment = async (req, res) => {
   const client = await pool.connect();
   
@@ -481,7 +489,22 @@ export const initiatePayment = async (req, res) => {
     await client.query("BEGIN");
 
     const { manuscriptId } = req.params;
-    const { amount, payment_method, due_date, notes } = req.body;
+    const { 
+      amount, 
+      currency, 
+      payment_method, 
+      payment_type,
+      due_date, 
+      notes,
+      phone_number,
+      bank_name,
+      account_number,
+      transaction_reference,
+      author_name,
+      author_email,
+      manuscript_title
+    } = req.body;
+    
     const eicId = req.user.uuid;
 
     // Validate required fields
@@ -489,7 +512,7 @@ export const initiatePayment = async (req, res) => {
       return res.status(400).json({ error: "Valid amount is required" });
     }
 
-    if (!payment_method) { 
+    if (!payment_method) {
       return res.status(400).json({ error: "Payment method is required" });
     }
 
@@ -497,10 +520,12 @@ export const initiatePayment = async (req, res) => {
       return res.status(400).json({ error: "Due date is required" });
     }
 
-    // Check if manuscript exists and is accepted
+    // Check if manuscript exists and is accepted or final_accepted
     const manuscriptCheck = await client.query(
       `
-      SELECT id, title, status, corresponding_author_id
+      SELECT id, title, status, corresponding_author_id,
+             (SELECT full_name FROM users WHERE uuid = corresponding_author_id) as author_name,
+             (SELECT email FROM users WHERE uuid = corresponding_author_id) as author_email
       FROM manuscripts 
       WHERE id = $1
       `,
@@ -513,11 +538,12 @@ export const initiatePayment = async (req, res) => {
 
     const manuscript = manuscriptCheck.rows[0];
 
-    // Check if manuscript status is accepted
-    if (manuscript.status !== 'accepted') {
+    // Check if manuscript status is either 'accepted' or 'final_accepted'
+    const validStatuses = ['accepted', 'final_accepted'];
+    if (!validStatuses.includes(manuscript.status)) {
       return res.status(400).json({ 
-        error: "Manuscript must be accepted before creating payment",
-        current_status: manuscript.status
+        error: `Manuscript must be accepted before creating payment. Current status: ${manuscript.status}`,
+        valid_statuses: validStatuses
       });
     }
 
@@ -531,21 +557,52 @@ export const initiatePayment = async (req, res) => {
       return res.status(400).json({ error: "Payment already exists for this manuscript" });
     }
 
+    // Generate payment reference
+    const paymentReference = `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
     // Insert payment record
     const paymentResult = await client.query(
       `
       INSERT INTO payments (
         manuscript_id,
         amount,
+        currency,
         payment_method,
+        payment_type,
+        payment_reference,
         due_date,
         status,
+        notes,
+        phone_number,
+        bank_name,
+        account_number,
+        transaction_reference,
         created_by,
-        created_at
-      ) VALUES ($1, $2, $3, $4, 'pending', $5, NOW())
-      RETURNING id, amount, payment_method, due_date, status, created_at
+        created_at,
+        author_name,
+        author_email,
+        manuscript_title
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', $8, $9, $10, $11, $12, $13, NOW(), $14, $15, $16)
+      RETURNING id, amount, payment_method, payment_reference, due_date, status, created_at
       `,
-      [manuscript.id, amount, payment_method, due_date, eicId]
+      [
+        manuscript.id,
+        amount,
+        currency || 'ETB',
+        payment_method,
+        payment_type || 'publication_fee',
+        paymentReference,
+        due_date,
+        notes || null,
+        phone_number || null,
+        bank_name || null,
+        account_number || null,
+        transaction_reference || null,
+        eicId,
+        author_name || manuscript.author_name,
+        author_email || manuscript.author_email,
+        manuscript_title || manuscript.title
+      ]
     );
 
     const payment = paymentResult.rows[0];
@@ -561,22 +618,22 @@ export const initiatePayment = async (req, res) => {
       [manuscript.id]
     );
 
-    // Record in manuscript history if table exists
+    // Record in manuscript history
     try {
       await client.query(
         `
         INSERT INTO manuscript_stage_history (
           manuscript_id,
-          stage,
+          new_stage_id,
           changed_by,
           changed_at,
-          comments
-        ) VALUES ($1, $2, $3, NOW(), $4)
+          comment
+        ) VALUES ($1, 8, $2, NOW(), $3)
         `,
-        [manuscript.id, 'payment_pending', eicId, `Payment initiated: ${amount} ${payment_method}`]
+        [manuscript.id,  eicId, `Payment initiated: ${amount} ${currency} via ${payment_method}`]
       );
     } catch (historyErr) {
-      console.log("Stage history table might not exist:", historyErr.message);
+      console.log("Stage history error:", historyErr.message);
     }
 
     await client.query("COMMIT");
@@ -589,6 +646,7 @@ export const initiatePayment = async (req, res) => {
         id: payment.id,
         amount: parseFloat(payment.amount),
         payment_method: payment.payment_method,
+        payment_reference: payment.payment_reference,
         due_date: payment.due_date,
         status: payment.status,
         created_at: payment.created_at
@@ -746,13 +804,13 @@ export const updatePaymentStatus = async (req, res) => {
           `
           INSERT INTO manuscript_stage_history (
             manuscript_id,
-            stage,
+            new_stage_id,
             changed_by,
             changed_at,
-            comments
-          ) VALUES ($1, $2, $3, NOW(), $4)
+            comment
+          ) VALUES ($1, 9, $2, NOW(), $3)
           `,
-          [payment.manuscript_id, 'published', userId, 'Payment received, manuscript published']
+          [payment.manuscript_id, userId, 'Payment received, manuscript published']
         );
       } catch (historyErr) {
         console.log("Stage history error:", historyErr.message);

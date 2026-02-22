@@ -37,10 +37,12 @@ export const getManuscriptForDecisionAPI = async (id) => {
 // Make final decision on manuscript
 export const makeDecisionAPI = async (id, decisionData) => {
   try {
+    console.log("Sending decision data to backend:", decisionData); // Debug log
     const response = await API.post(`/manuscript/${id}/decide`, decisionData);
+    console.log("Backend response:", response.data); // Debug log
     return response.data;
   } catch (error) {
-    console.error(`Error making decision for ${id}:`, error);
+    console.error("Error making decision:", error);
     throw error;
   }
 };
@@ -68,6 +70,14 @@ export const getDecisionStatsAPI = async () => {
 };
 
 export const initiatePaymentAPI = async (manuscriptId, paymentData) => {
-  const response = await API.post(`/manuscripts/${manuscriptId}/initiate-payment`, paymentData);
-  return response.data;
+  try {
+    console.log("Sending payment data to backend:", paymentData); // Debug log
+    const response = await API.post(`/manuscripts/${manuscriptId}/initiate-payment`, paymentData);
+    console.log("Payment response:", response.data); // Debug log
+    return response.data;
+  } catch (error) {
+    console.error("Error initiating payment:", error);
+    throw error;
+  }
 };
+

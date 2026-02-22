@@ -278,9 +278,9 @@ export default function Sidebar() {
       icon: "fas fa-folder-open",
     },
     {
-      name: "Assign Associate Editors",
-      path: "/journal/eic/assign-editors",
-      icon: "fas fa-user-edit",
+      name: "Publication Payments",
+      path: "/eic/payment-orders",
+      icon: "fas fa-payment",
     },
     {
       name: "Final Decisions",

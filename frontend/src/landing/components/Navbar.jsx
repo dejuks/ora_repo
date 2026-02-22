@@ -33,10 +33,7 @@ export default function Navbar() {
             🔍
           </button>
           
-          <Link to="/profile" style={styles.profileLink}>
-            <span style={styles.profileIcon}>👤</span>
-            <span>Profile</span>
-          </Link>
+      
         </div>
 
         {/* Mobile Menu Button */}

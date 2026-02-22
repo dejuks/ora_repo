@@ -865,24 +865,42 @@ const handleCreateUpdate = async (e) => {
   /* ===============================
      MESSAGING
   ================================= */
-  const handleOpenMessaging = async (user = null) => {
-    setSelectedUserForMessage(user);
-    setShowMessagingModal(true);
-    try {
-      const convs = await getConversations();
-      setConversations(convs);
-
-      if (user) {
-        const existingConv = convs.find((c) => c.participant_id === user.uuid);
-
-        if (existingConv) {
-          await handleSelectConversation(existingConv);
-        }
-      }
-    } catch (error) {
-      console.error("Error loading conversations:", error);
+ const handleOpenMessaging = async (user = null) => {
+  setSelectedUserForMessage(user);
+  setShowMessagingModal(true);
+  try {
+    const response = await getConversations();
+    console.log("Conversations response:", response); // Debug log
+    
+    // Handle different response structures
+    let convs = [];
+    if (response && response.success && Array.isArray(response.conversations)) {
+      convs = response.conversations;
+    } else if (Array.isArray(response)) {
+      convs = response;
+    } else if (response && response.data && Array.isArray(response.data)) {
+      convs = response.data;
     }
-  };
+    
+    console.log("Processed conversations:", convs);
+    setConversations(convs);
+
+    if (user) {
+      // Check if convs is array before using find
+      const existingConv = Array.isArray(convs) 
+        ? convs.find((c) => c.participant_id === user.uuid)
+        : null;
+
+      if (existingConv) {
+        await handleSelectConversation(existingConv);
+      }
+    }
+  } catch (error) {
+    console.error("Error loading conversations:", error);
+    // Set empty array on error to prevent further issues
+    setConversations([]);
+  }
+};
 
   const handleAppealGroupBan = async (groupId) => {
     alert("Appeal functionality - This would send a message to admins");

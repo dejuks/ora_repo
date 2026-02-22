@@ -113,6 +113,14 @@ import DraftManuscripts from "./pages/manuscription/DraftManuscripts";
 import InitialScreeningListAE from "./pages/manuscription/ae/InitialScreeningListAE";
 import EICCompletedReviews from "./pages/manuscription/eic/EICCompletedReviews";
 import EICMakeDecision from "./pages/manuscription/eic/EICMakeDecision";
+import EICPaymentOrders from "./pages/manuscription/eic/EICPaymentOrders";
+import RegisterPage from "./pages/wiki/users/RegisterPage";
+import WikiLoginPage from "./pages/wiki/users/WikiLoginPage";
+import WikiDashboard from "./pages/wiki/WikiDashboard";
+import CreateArticlePage from "./pages/wiki/CreateArticlePage";
+import WikiArticlePage from "./pages/wiki/WikiArticlePage";
+import WikiMediaUploadPage from "./pages/wiki/media/WikiMediaUploadPage";
+import WikiMediaGalleryPage from "./pages/wiki/media/WikiMediaGalleryPage";
 
 function App() {
   return (
@@ -357,7 +365,10 @@ function App() {
           path="/manuscript/ae/assigned-manuscripts"
           element={<ManuscriptListAE />}
         />
-        <Route path="/manuscription/ae/screening" element={<InitialScreeningListAE />} />
+        <Route
+          path="/manuscription/ae/screening"
+          element={<InitialScreeningListAE />}
+        />
         <Route
           path="/journal/ae/recommendations"
           element={<Recommendations />}
@@ -556,7 +567,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-   
         <Route
           path="/journal/manuscripts"
           element={
@@ -565,9 +575,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-
-    
-
+        <Route
+          path="/eic/payment-orders"
+          element={
+            <ProtectedRoute>
+              <EICPaymentOrders />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/manuscripts/create"
           element={
@@ -661,6 +676,13 @@ function App() {
         {/* research-network/groups  */}
         <Route path="research-network/groups" element={<AdminGroups />} />
         <Route path="/admin/groups/:uuid" element={<AdminGroupDetails />} />
+        <Route path="/wiki/user-registrations" element={<RegisterPage />} />
+        <Route path="/wiki/login" element={<WikiLoginPage />} />
+        <Route path="/wiki/dashboard" element={<WikiDashboard />} />
+        <Route path="/wiki/new-articles" element={<CreateArticlePage />} />
+        <Route path="/wiki/article/:slug" element={<WikiArticlePage />} />
+        <Route path="/wiki/media/upload" element={<WikiMediaUploadPage />} />
+        <Route path="/wiki/media" element={<WikiMediaGalleryPage />} />
       </Routes>
     </BrowserRouter>
   );
