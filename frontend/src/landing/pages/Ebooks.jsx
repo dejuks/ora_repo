@@ -1,73 +1,125 @@
-import { useState } from "react";
+// pages/EbookDashboard.jsx
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 
-export default function EbooksPage() {
+export default function EbookDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [featuredEbooks, setFeaturedEbooks] = useState([]);
+  const [newReleases, setNewReleases] = useState([]);
+  const [stats, setStats] = useState({
+    totalEbooks: 0,
+    totalDownloads: 0,
+    totalAuthors: 0,
+    languages: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const categories = [
-    { name: "Academic", count: "234", icon: "📚", color: "#C9A227" },
-    { name: "Literature", count: "156", icon: "📖", color: "#2E86AB" },
-    { name: "History", count: "189", icon: "📜", color: "#A569BD" },
-    { name: "Language", count: "98", icon: "🔤", color: "#27AE60" },
-    { name: "Culture", count: "145", icon: "🏛️", color: "#E67E22" },
-  ];
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
-  const featuredEbooks = [
-    {
-      title: "History of the Oromo People",
-      author: "Prof. Mohammed Hassan",
-      downloads: "12.5K",
-      rating: "4.8",
-      icon: "📜",
-      format: "PDF, EPUB",
-    },
-    {
-      title: "Gadaa System: Democracy & Governance",
-      author: "Dr. Abdi Mohammed",
-      downloads: "10.2K",
-      rating: "4.9",
-      icon: "📚",
-      format: "PDF",
-    },
-    {
-      title: "Oromo-English Dictionary",
-      author: "Prof. Lemma Dibaba",
-      downloads: "15.8K",
-      rating: "5.0",
-      icon: "📖",
-      format: "PDF, EPUB, MOBI",
-    },
-    {
-      title: "Oromo Oral Poetry Collection",
-      author: "Dr. Fatuma Hassan",
-      downloads: "8.9K",
-      rating: "4.7",
-      icon: "🎵",
-      format: "EPUB",
-    },
-  ];
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch all data in parallel
+      const [categoriesRes, ebooksRes, statsRes] = await Promise.all([
+        fetch("http://localhost:5000/api/ebook/categories"),
+        fetch("http://localhost:5000/api/ebook/all"),
+        fetch("http://localhost:5000/api/ebook/stats")
+      ]);
 
-  const newReleases = [
-    {
-      title: "Women in Oromo Society",
-      author: "Dr. Aisha Mohammed",
-      date: "2024",
-      icon: "📘",
-    },
-    {
-      title: "Traditional Oromo Medicine",
-      author: "Prof. Tekle Berhan",
-      date: "2024",
-      icon: "📙",
-    },
-    {
-      title: "Oromo Proverbs & Wisdom",
-      author: "Dr. Gemechu Kebede",
-      date: "2023",
-      icon: "📗",
-    },
-  ];
+      const categoriesData = await categoriesRes.json();
+      const ebooksData = await ebooksRes.json();
+      const statsData = await statsRes.json();
+
+      if (categoriesData.success) {
+        setCategories(categoriesData.data);
+      }
+
+      if (ebooksData.success) {
+        // Set featured ebooks (most downloaded)
+        const featured = ebooksData.data
+          .sort((a, b) => b.downloads - a.downloads)
+          .slice(0, 4);
+        setFeaturedEbooks(featured);
+
+        // Set new releases (most recent)
+        const releases = ebooksData.data
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .slice(0, 3);
+        setNewReleases(releases);
+      }
+
+      if (statsData.success) {
+        setStats(statsData.data);
+      }
+
+    } catch (err) {
+      console.error("Error fetching dashboard data:", err);
+      setError("Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      window.location.href = `/ebooks/search?q=${encodeURIComponent(searchQuery)}`;
+    }
+  };
+
+  const handleDownload = async (ebookId) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/ebook/download/${ebookId}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      
+      const data = await res.json();
+      if (data.success && data.data.downloadUrl) {
+        // Trigger download
+        window.open(data.data.downloadUrl, "_blank");
+        // Refresh stats
+        fetchDashboardData();
+      }
+    } catch (err) {
+      console.error("Download error:", err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <div style={styles.loadingContainer}>
+          <div style={styles.spinner}></div>
+          <p>Loading amazing ebooks...</p>
+        </div>
+      </>
+    );
+  }
+
+  if (error) {
+    return (
+      <>
+        <Navbar />
+        <div style={styles.errorContainer}>
+          <h2>Oops! Something went wrong</h2>
+          <p>{error}</p>
+          <button onClick={fetchDashboardData} style={styles.retryButton}>
+            Try Again
+          </button>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -87,7 +139,7 @@ export default function EbooksPage() {
             </p>
             
             {/* Search Bar */}
-            <div style={styles.searchContainer}>
+            <form onSubmit={handleSearch} style={styles.searchContainer}>
               <input
                 type="text"
                 placeholder="Search for eBooks by title, author, or topic..."
@@ -95,109 +147,151 @@ export default function EbooksPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <button style={styles.searchButton}>
+              <button type="submit" style={styles.searchButton}>
                 🔍 Search
               </button>
-            </div>
+            </form>
 
             {/* Quick Stats */}
             <div style={styles.stats}>
               <div style={styles.stat}>
-                <span style={styles.statNumber}>850+</span>
+                <span style={styles.statNumber}>{stats.totalEbooks}+</span>
                 <span style={styles.statLabel}>eBooks</span>
               </div>
               <div style={styles.stat}>
-                <span style={styles.statNumber}>125K</span>
+                <span style={styles.statNumber}>{stats.totalDownloads}K+</span>
                 <span style={styles.statLabel}>Downloads</span>
               </div>
               <div style={styles.stat}>
-                <span style={styles.statNumber}>45+</span>
+                <span style={styles.statNumber}>{stats.languages}+</span>
                 <span style={styles.statLabel}>Languages</span>
+              </div>
+              <div style={styles.stat}>
+                <span style={styles.statNumber}>{stats.totalAuthors}+</span>
+                <span style={styles.statLabel}>Authors</span>
               </div>
             </div>
           </div>
         </section>
 
         {/* Categories Section */}
-        <section style={styles.categoriesSection}>
-          <h2 style={styles.sectionTitle}>
-            Browse by <span style={styles.gradient}>Category</span>
-          </h2>
-          <div style={styles.categoriesGrid}>
-            {categories.map((cat) => (
-              <Link 
-                to={`/ebooks/category/${cat.name}`} 
-                key={cat.name} 
-                style={styles.categoryCard}
-              >
-                <div style={{
-                  ...styles.categoryIcon,
-                  backgroundColor: `${cat.color}15`,
-                  color: cat.color
-                }}>
-                  {cat.icon}
-                </div>
-                <h3 style={styles.categoryName}>{cat.name}</h3>
-                <p style={styles.categoryCount}>{cat.count} books</p>
-              </Link>
-            ))}
-          </div>
-        </section>
+        {categories.length > 0 && (
+          <section style={styles.categoriesSection}>
+            <h2 style={styles.sectionTitle}>
+              Browse by <span style={styles.gradient}>Category</span>
+            </h2>
+            <div style={styles.categoriesGrid}>
+              {categories.map((cat) => (
+                <Link 
+                  to={`/ebooks/category/${cat.slug || cat.name}`} 
+                  key={cat.id || cat.name} 
+                  style={styles.categoryCard}
+                >
+                  <div style={{
+                    ...styles.categoryIcon,
+                    backgroundColor: `${cat.color || '#C9A227'}15`,
+                    color: cat.color || '#C9A227'
+                  }}>
+                    {cat.icon || '📚'}
+                  </div>
+                  <h3 style={styles.categoryName}>{cat.name}</h3>
+                  <p style={styles.categoryCount}>{cat.count} books</p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Featured eBooks */}
-        <section style={styles.featuredSection}>
-          <h2 style={styles.sectionTitle}>
-            Featured <span style={styles.gradient}>eBooks</span>
-          </h2>
-          <div style={styles.featuredGrid}>
-            {featuredEbooks.map((book, index) => (
-              <div key={index} style={styles.bookCard}>
-                <span style={styles.bookIcon}>{book.icon}</span>
-                <h3 style={styles.bookTitle}>{book.title}</h3>
-                <p style={styles.bookAuthor}>By: {book.author}</p>
-                <div style={styles.bookMeta}>
-                  <span style={styles.bookRating}>⭐ {book.rating}</span>
-                  <span style={styles.bookDownloads}>⬇️ {book.downloads}</span>
+        {featuredEbooks.length > 0 && (
+          <section style={styles.featuredSection}>
+            <h2 style={styles.sectionTitle}>
+              Featured <span style={styles.gradient}>eBooks</span>
+            </h2>
+            <div style={styles.featuredGrid}>
+              {featuredEbooks.map((book) => (
+                <div key={book.id} style={styles.bookCard}>
+                  <span style={styles.bookIcon}>{book.icon || '📚'}</span>
+                  <h3 style={styles.bookTitle}>{book.title}</h3>
+                  <p style={styles.bookAuthor}>By: {book.author_name || book.author}</p>
+                  <div style={styles.bookMeta}>
+                    <span style={styles.bookRating}>⭐ {book.rating || '4.5'}</span>
+                    <span style={styles.bookDownloads}>⬇️ {book.downloads}K</span>
+                  </div>
+                  <p style={styles.bookFormat}>{book.format || 'PDF, EPUB'}</p>
+                  <div style={styles.bookActions}>
+                    <button 
+                      onClick={() => handleDownload(book.id)}
+                      style={styles.downloadBtn}
+                    >
+                      Download
+                    </button>
+                    <Link to={`/ebooks/${book.slug || book.id}`} style={styles.viewLink}>
+                      View →
+                    </Link>
+                  </div>
                 </div>
-                <p style={styles.bookFormat}>{book.format}</p>
-                <div style={styles.bookActions}>
-                  <button style={styles.downloadBtn}>Download</button>
-                  <Link to={`/ebooks/${index}`} style={styles.viewLink}>
-                    View →
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div style={styles.viewAllContainer}>
-            <Link to="/ebooks/all" style={styles.viewAllLink}>
-              View All eBooks →
-            </Link>
-          </div>
-        </section>
+              ))}
+            </div>
+            <div style={styles.viewAllContainer}>
+              <Link to="/ebooks/all" style={styles.viewAllLink}>
+                View All eBooks →
+              </Link>
+            </div>
+          </section>
+        )}
 
         {/* New Releases */}
-        <section style={styles.newSection}>
-          <h2 style={styles.sectionTitle}>
-            New <span style={styles.gradient}>Releases</span>
-          </h2>
-          <div style={styles.newGrid}>
-            {newReleases.map((book, index) => (
-              <div key={index} style={styles.newCard}>
-                <span style={styles.newIcon}>{book.icon}</span>
-                <div style={styles.newInfo}>
-                  <h4 style={styles.newTitle}>{book.title}</h4>
-                  <p style={styles.newAuthor}>{book.author}</p>
-                  <p style={styles.newDate}>{book.date}</p>
+        {newReleases.length > 0 && (
+          <section style={styles.newSection}>
+            <h2 style={styles.sectionTitle}>
+              New <span style={styles.gradient}>Releases</span>
+            </h2>
+            <div style={styles.newGrid}>
+              {newReleases.map((book) => (
+                <div key={book.id} style={styles.newCard}>
+                  <span style={styles.newIcon}>{book.icon || '📘'}</span>
+                  <div style={styles.newInfo}>
+                    <h4 style={styles.newTitle}>{book.title}</h4>
+                    <p style={styles.newAuthor}>{book.author_name || book.author}</p>
+                    <p style={styles.newDate}>
+                      {new Date(book.created_at).getFullYear()}
+                    </p>
+                  </div>
+                  <Link to={`/ebooks/${book.slug || book.id}`} style={styles.newLink}>
+                    →
+                  </Link>
                 </div>
-                <Link to={`/ebooks/new/${index}`} style={styles.newLink}>
-                  →
-                </Link>
-              </div>
-            ))}
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Features */}
+        <section style={styles.featuresSection}>
+          <div style={styles.featuresGrid}>
+            <div style={styles.feature}>
+              <span style={styles.featureIcon}>📱</span>
+              <h4>Read Anywhere</h4>
+              <p>On phone, tablet, or computer</p>
+            </div>
+            <div style={styles.feature}>
+              <span style={styles.featureIcon}>⚡</span>
+              <h4>Instant Access</h4>
+              <p>Download and read immediately</p>
+            </div>
+            <div style={styles.feature}>
+              <span style={styles.featureIcon}>🆓</span>
+              <h4>Always Free</h4>
+              <p>No subscription required</p>
+            </div>
+            <div style={styles.feature}>
+              <span style={styles.featureIcon}>🌍</span>
+              <h4>Multiple Languages</h4>
+              <p>Available in various formats</p>
+            </div>
           </div>
         </section>
-
 
         {/* Newsletter */}
         <section style={styles.newsletterSection}>
@@ -206,16 +300,35 @@ export default function EbooksPage() {
             <p style={styles.newsletterText}>
               Be the first to know when new Oromo books are added
             </p>
-            <div style={styles.newsletterForm}>
+            <form 
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const email = e.target.email.value;
+                try {
+                  await fetch("http://localhost:5000/api/newsletter/subscribe", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email })
+                  });
+                  alert("Subscribed successfully!");
+                  e.target.reset();
+                } catch (err) {
+                  console.error("Newsletter error:", err);
+                }
+              }}
+              style={styles.newsletterForm}
+            >
               <input
                 type="email"
+                name="email"
                 placeholder="Enter your email"
                 style={styles.newsletterInput}
+                required
               />
-              <button style={styles.newsletterButton}>
+              <button type="submit" style={styles.newsletterButton}>
                 Subscribe
               </button>
-            </div>
+            </form>
           </div>
         </section>
 
@@ -236,6 +349,48 @@ const styles = {
     minHeight: "100vh",
     fontFamily: "'Poppins', sans-serif",
     backgroundColor: "#ffffff",
+  },
+
+  // Loading
+  loadingContainer: {
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "linear-gradient(135deg, #0F3D2E, #1A5439)",
+    color: "white",
+  },
+  spinner: {
+    width: "50px",
+    height: "50px",
+    border: "3px solid rgba(255,255,255,0.3)",
+    borderTop: "3px solid #C9A227",
+    borderRadius: "50%",
+    animation: "spin 1s linear infinite",
+    marginBottom: "20px",
+  },
+
+  // Error
+  errorContainer: {
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#f8f9fa",
+    color: "#1a2639",
+  },
+  retryButton: {
+    padding: "12px 30px",
+    background: "#C9A227",
+    color: "#0F3D2E",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "1rem",
+    fontWeight: "600",
+    cursor: "pointer",
+    marginTop: "20px",
   },
 
   // Hero Section
@@ -265,7 +420,7 @@ const styles = {
     zIndex: 2,
     textAlign: "center",
     color: "white",
-    maxWidth: "800px",
+    maxWidth: "900px",
     padding: "0 20px",
   },
   badge: {
@@ -295,7 +450,7 @@ const styles = {
     lineHeight: 1.6,
     margin: "0 auto 30px",
     opacity: 0.95,
-    maxWidth: "600px",
+    maxWidth: "700px",
   },
   searchContainer: {
     display: "flex",
@@ -322,11 +477,16 @@ const styles = {
     fontWeight: "600",
     cursor: "pointer",
     whiteSpace: "nowrap",
+    transition: "transform 0.3s ease",
+    ":hover": {
+      transform: "translateY(-2px)",
+    },
   },
   stats: {
     display: "flex",
     gap: "40px",
     justifyContent: "center",
+    flexWrap: "wrap",
   },
   stat: {
     textAlign: "center",
@@ -345,7 +505,7 @@ const styles = {
   // Categories Section
   categoriesSection: {
     padding: "60px 20px",
-    maxWidth: "90%",
+    maxWidth: "1200px",
     margin: "0 auto",
   },
   sectionTitle: {
@@ -353,10 +513,11 @@ const styles = {
     fontWeight: "700",
     textAlign: "left",
     margin: "0 0 40px",
+    color: "#1a2639",
   },
   categoriesGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
     gap: "20px",
   },
   categoryCard: {
@@ -365,23 +526,28 @@ const styles = {
     borderRadius: "15px",
     textAlign: "center",
     textDecoration: "none",
-    transition: "transform 0.3s ease",
+    transition: "transform 0.3s ease, box-shadow 0.3s ease",
     border: "1px solid #eaeef2",
+    ":hover": {
+      transform: "translateY(-5px)",
+      boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+    },
   },
   categoryIcon: {
-    width: "60px",
-    height: "60px",
-    borderRadius: "15px",
+    width: "70px",
+    height: "70px",
+    borderRadius: "20px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "2rem",
+    fontSize: "2.2rem",
     margin: "0 auto 15px",
   },
   categoryName: {
     fontSize: "1.1rem",
     margin: "0 0 5px",
     color: "#1a2639",
+    fontWeight: "600",
   },
   categoryCount: {
     fontSize: "0.9rem",
@@ -395,31 +561,36 @@ const styles = {
     background: "#f8f9fa",
   },
   featuredGrid: {
-    maxWidth: "90%",
+    maxWidth: "1200px",
     margin: "0 auto",
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-    gap: "20px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+    gap: "25px",
   },
   bookCard: {
     background: "white",
     padding: "25px",
     borderRadius: "15px",
     border: "1px solid #eaeef2",
-    transition: "transform 0.3s ease",
+    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+    ":hover": {
+      transform: "translateY(-5px)",
+      boxShadow: "0 15px 40px rgba(0,0,0,0.1)",
+    },
   },
   bookIcon: {
-    fontSize: "2.5rem",
+    fontSize: "3rem",
     display: "block",
     marginBottom: "15px",
   },
   bookTitle: {
-    fontSize: "1.1rem",
+    fontSize: "1.2rem",
     margin: "0 0 5px",
     color: "#1a2639",
+    fontWeight: "600",
   },
   bookAuthor: {
-    fontSize: "0.85rem",
+    fontSize: "0.9rem",
     color: "#5a6a7a",
     margin: "0 0 10px",
   },
@@ -431,14 +602,17 @@ const styles = {
   },
   bookRating: {
     color: "#C9A227",
+    fontWeight: "600",
   },
   bookDownloads: {
     color: "#2E86AB",
+    fontWeight: "600",
   },
   bookFormat: {
     fontSize: "0.8rem",
     color: "#A569BD",
     margin: "0 0 15px",
+    fontWeight: "500",
   },
   bookActions: {
     display: "flex",
@@ -451,62 +625,83 @@ const styles = {
     color: "#0F3D2E",
     border: "none",
     borderRadius: "5px",
-    fontSize: "0.85rem",
+    fontSize: "0.9rem",
     fontWeight: "600",
     cursor: "pointer",
+    transition: "background 0.3s ease",
+    ":hover": {
+      background: "#b88c1f",
+    },
   },
   viewLink: {
     color: "#2E86AB",
     textDecoration: "none",
-    fontSize: "0.85rem",
+    fontSize: "0.9rem",
     fontWeight: "600",
+    ":hover": {
+      textDecoration: "underline",
+    },
   },
   viewAllContainer: {
     textAlign: "center",
-    marginTop: "30px",
+    marginTop: "40px",
   },
   viewAllLink: {
     color: "#C9A227",
     textDecoration: "none",
-    fontSize: "1rem",
+    fontSize: "1.1rem",
     fontWeight: "600",
+    padding: "10px 20px",
+    borderRadius: "30px",
+    border: "2px solid #C9A227",
+    transition: "all 0.3s ease",
+    ":hover": {
+      background: "#C9A227",
+      color: "#0F3D2E",
+    },
   },
 
   // New Releases
   newSection: {
     padding: "60px 20px",
-    maxWidth: "90%",
+    maxWidth: "1200px",
     margin: "0 auto",
   },
   newGrid: {
-    display: "flex",
-    flexDirection: "column",
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
     gap: "15px",
   },
   newCard: {
     display: "flex",
     alignItems: "center",
     gap: "15px",
-    padding: "15px",
+    padding: "20px",
     background: "white",
-    borderRadius: "10px",
+    borderRadius: "12px",
     border: "1px solid #eaeef2",
+    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+    ":hover": {
+      transform: "translateX(5px)",
+      boxShadow: "0 5px 20px rgba(0,0,0,0.1)",
+    },
   },
   newIcon: {
-    fontSize: "2rem",
-    width: "50px",
+    fontSize: "2.2rem",
+    width: "60px",
     textAlign: "center",
   },
   newInfo: {
     flex: 1,
   },
   newTitle: {
-    fontSize: "1rem",
+    fontSize: "1.1rem",
     margin: "0 0 3px",
     color: "#1a2639",
+    fontWeight: "600",
   },
   newAuthor: {
-    fontSize: "0.85rem",
+    fontSize: "0.9rem",
     color: "#5a6a7a",
     margin: "0 0 3px",
   },
@@ -514,39 +709,53 @@ const styles = {
     fontSize: "0.8rem",
     color: "#C9A227",
     margin: 0,
+    fontWeight: "500",
   },
   newLink: {
     fontSize: "1.5rem",
     color: "#C9A227",
     textDecoration: "none",
     padding: "0 10px",
+    fontWeight: "bold",
+    ":hover": {
+      transform: "translateX(3px)",
+    },
   },
 
   // Features
   featuresSection: {
-    padding: "40px 20px",
+    padding: "60px 20px",
     background: "white",
   },
   featuresGrid: {
-    maxWidth: "800px",
+    maxWidth: "1000px",
     margin: "0 auto",
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: "20px",
+    gap: "30px",
   },
   feature: {
     textAlign: "center",
     padding: "20px",
   },
   featureIcon: {
-    fontSize: "2.5rem",
+    fontSize: "3rem",
     display: "block",
-    marginBottom: "10px",
+    marginBottom: "15px",
+  },
+  feature: {
+    textAlign: "center",
+    padding: "20px",
+  },
+  featureIcon: {
+    fontSize: "3rem",
+    display: "block",
+    marginBottom: "15px",
   },
 
   // Newsletter
   newsletterSection: {
-    padding: "60px 20px",
+    padding: "80px 20px",
     background: "linear-gradient(135deg, #0F3D2E, #1A5439)",
   },
   newsletterContainer: {
@@ -556,12 +765,13 @@ const styles = {
     color: "white",
   },
   newsletterTitle: {
-    fontSize: "1.5rem",
+    fontSize: "2rem",
     margin: "0 0 10px",
+    fontWeight: "700",
   },
   newsletterText: {
-    fontSize: "1rem",
-    margin: "0 0 20px",
+    fontSize: "1.1rem",
+    margin: "0 0 30px",
     opacity: 0.9,
   },
   newsletterForm: {
@@ -570,21 +780,25 @@ const styles = {
   },
   newsletterInput: {
     flex: 1,
-    padding: "12px 15px",
+    padding: "15px 20px",
     border: "none",
     borderRadius: "8px",
-    fontSize: "0.95rem",
+    fontSize: "1rem",
     outline: "none",
   },
   newsletterButton: {
-    padding: "12px 25px",
+    padding: "15px 30px",
     background: "#C9A227",
     color: "#0F3D2E",
     border: "none",
     borderRadius: "8px",
-    fontSize: "0.95rem",
+    fontSize: "1rem",
     fontWeight: "600",
     cursor: "pointer",
+    transition: "transform 0.3s ease",
+    ":hover": {
+      transform: "translateY(-2px)",
+    },
   },
 
   // Footer
@@ -596,7 +810,17 @@ const styles = {
   footerText: {
     color: "white",
     opacity: 0.7,
-    fontSize: "0.9rem",
+    fontSize: "0.95rem",
     margin: 0,
   },
 };
+
+// Add keyframe animation
+const styleSheet = document.createElement("style");
+styleSheet.textContent = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+document.head.appendChild(styleSheet);

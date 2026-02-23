@@ -121,6 +121,13 @@ import CreateArticlePage from "./pages/wiki/CreateArticlePage";
 import WikiArticlePage from "./pages/wiki/WikiArticlePage";
 import WikiMediaUploadPage from "./pages/wiki/media/WikiMediaUploadPage";
 import WikiMediaGalleryPage from "./pages/wiki/media/WikiMediaGalleryPage";
+import EbookAuthorRegistrationForm from "./pages/ebooks/users/EbookAuthorRegistrationForm";
+import EbookDashboard from "./landing/pages/Ebooks";
+import CreateEbook from "./pages/ebooks/CreateEbook";
+import UpdateEbook from "./pages/ebooks/UpdateEbook";
+import EbooksList from "./pages/ebooks/EbooksList";
+
+import EbookManagementPage from "./pages/ebooks/EbookManagementPage";
 
 function App() {
   return (
@@ -683,6 +690,18 @@ function App() {
         <Route path="/wiki/article/:slug" element={<WikiArticlePage />} />
         <Route path="/wiki/media/upload" element={<WikiMediaUploadPage />} />
         <Route path="/wiki/media" element={<WikiMediaGalleryPage />} />
+
+        <Route path="/ebooks/author-registration" element={<EbookAuthorRegistrationForm />} />
+        <Route path="/ebook/dashboard" element={<EbookDashboard />} />
+
+        <Route path="/ebooks" element={<EbooksList />} />
+      <Route path="/ebooks/create" element={<CreateEbook />} />
+      <Route path="/ebooks/edit/:id" element={<UpdateEbook />} />
+
+
+
+
+
       </Routes>
     </BrowserRouter>
   );

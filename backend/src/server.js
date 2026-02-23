@@ -46,6 +46,8 @@ import paymentRoutes from './eic/routes/payment.routes.js';
 import publicationRoutes from "./publication/routes/publication.routes.js"; // Add this import
 import wikiMediaRoute from "./wiki/routes/mediaRoutes.js";
 
+import ebookAuthorRoutes from "./ebooks/routes/ebookAuthorRoutes.js";
+
 dotenv.config();
 
 const app = express();
@@ -119,6 +121,9 @@ app.use("/api/wiki/articles", wikiArticleRoutes);
 app.use("/api/wiki/categories", wikiCategoryRoutes);
 app.use("/api/wiki/media", wikiMediaRoute);
 
+
+
+app.use("/api/ebooks", ebookAuthorRoutes);
 
 
 
