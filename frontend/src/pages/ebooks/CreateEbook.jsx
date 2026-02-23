@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import EbookForm from "./EbookForm";
+import Navbar from "../../landing/components/Navbar";
 
 export default function CreateEbook() {
   const navigate = useNavigate();
@@ -43,27 +44,11 @@ export default function CreateEbook() {
   };
 
   return (
+    <>
+    <Navbar />
     <div className="container-fluid py-4">
       {/* Header */}
-      <div className="row mb-4">
-        <div className="col-12">
-          <div className="card bg-gradient-primary text-white shadow-lg border-0">
-            <div className="card-body py-4">
-              <div className="d-flex align-items-center">
-                <div className="mr-3">
-                  <i className="fas fa-plus-circle fa-3x opacity-75"></i>
-                </div>
-                <div>
-                  <h2 className="mb-1">Create New Ebook</h2>
-                  <p className="mb-0 opacity-75">
-                    Add a new ebook to the Oromo digital library
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      
 
       {/* Progress Steps */}
       <div className="row mb-4">
@@ -170,5 +155,6 @@ export default function CreateEbook() {
         </div>
       )}
     </div>
+    </>
   );
 }

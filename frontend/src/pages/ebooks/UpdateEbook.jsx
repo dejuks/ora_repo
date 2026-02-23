@@ -1,7 +1,7 @@
 // pages/ebooks/UpdateEbook.jsx
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import EbookForm from "../../components/ebooks/EbookForm";
+import EbookForm from "./EbookForm";
 
 export default function UpdateEbook() {
   const { id } = useParams();
