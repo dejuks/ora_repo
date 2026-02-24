@@ -126,36 +126,7 @@ const CreateArticlePage = () => {
           <p style={styles.subtitle}>Share your knowledge with the Oromo Wikipedia community</p>
         </div>
 
-        {/* Debug info - remove in production */}
-        <div style={{marginBottom: '20px', padding: '10px', background: '#f0f0f0', borderRadius: '5px'}}>
-          <p><strong>Debug:</strong> Token exists: {localStorage.getItem('token') ? '✅' : '❌'}</p>
-          <button 
-            onClick={() => {
-              const token = localStorage.getItem('token');
-              if (token) {
-                try {
-                  const payload = JSON.parse(atob(token.split('.')[1]));
-                  alert('Token is valid. Check console for details.');
-                  console.log('Token payload:', payload);
-                } catch (e) {
-                  alert('Invalid token format');
-                }
-              } else {
-                alert('No token found');
-              }
-            }}
-            style={{padding: '5px 10px', marginRight: '10px'}}
-          >
-            Check Token
-          </button>
-          <button 
-            onClick={() => navigate('/wiki/login')}
-            style={{padding: '5px 10px'}}
-          >
-            Go to Login
-          </button>
-        </div>
-
+     
         <form onSubmit={handleSubmit} style={styles.form}>
           {error && <div style={styles.error}>{error}</div>}
 

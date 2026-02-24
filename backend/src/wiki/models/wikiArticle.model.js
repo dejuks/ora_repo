@@ -1,4 +1,4 @@
-// models/WikiArticle.js
+// models/wikiArticle.model.js
 import pool from "../../config/db.js";
 import slugify from "slugify";
 
@@ -171,12 +171,15 @@ export const getArticleById = async (articleId) => {
       LEFT JOIN users u ON a.created_by = u.uuid
       LEFT JOIN wiki_profiles wp ON a.created_by = wp.user_id
       LEFT JOIN wiki_revisions r ON a.current_revision_id = r.id
-      WHERE a.status = $1
+      WHERE a.id = $1
       `,
       [articleId]
     );
 
     return result.rows[0];
+  } catch (error) {
+    console.error("Error in getArticleById:", error);
+    throw error;
   } finally {
     client.release();
   }
@@ -204,6 +207,9 @@ export const getArticleBySlug = async (slug) => {
     );
 
     return result.rows[0];
+  } catch (error) {
+    console.error("Error in getArticleBySlug:", error);
+    throw error;
   } finally {
     client.release();
   }
@@ -216,7 +222,7 @@ export const getAllArticles = async (filters = {}, page = 1, limit = 10) => {
   try {
     const offset = (page - 1) * limit;
     
-    // First, get total count - FIXED with proper error handling
+    // Build count query
     let countQuery = `SELECT COUNT(*) as total FROM wiki_articles WHERE 1=1`;
     const countParams = [];
     
@@ -321,7 +327,6 @@ export const getAllArticles = async (filters = {}, page = 1, limit = 10) => {
 
   } catch (err) {
     console.error("Error in getAllArticles:", err);
-    // Return empty result on error
     return {
       articles: [],
       pagination: {
@@ -338,26 +343,225 @@ export const getAllArticles = async (filters = {}, page = 1, limit = 10) => {
   }
 };
 
-// READ: Get articles by user
+// GET articles by user ID
 export const getUserArticles = async (userId) => {
   const client = await pool.connect();
   
   try {
-    const result = await client.query(
-      `
+    console.log("📊 Fetching articles for user:", userId);
+    
+    const query = `
       SELECT 
-        a.*,
+        a.id,
+        a.title,
+        a.slug,
+        a.status,
+        a.view_count,
+        a.is_featured,
+        a.created_at,
+        a.updated_at,
+        a.created_by,
         (
-          SELECT COUNT(*) FROM wiki_revisions WHERE article_id = a.id
-        ) as revision_count
+          SELECT COUNT(*) 
+          FROM wiki_revisions 
+          WHERE article_id = a.id
+        ) as edit_count,
+        COALESCE(a.view_count, 0) as views,
+        (
+          SELECT json_agg(
+            json_build_object(
+              'id', c.id,
+              'name', c.name
+            )
+          )
+          FROM wiki_article_categories ac
+          JOIN wiki_categories c ON ac.category_id = c.id
+          WHERE ac.article_id = a.id
+        ) as categories,
+        (
+          SELECT content 
+          FROM wiki_revisions 
+          WHERE article_id = a.id 
+          ORDER BY version DESC 
+          LIMIT 1
+        ) as latest_content
       FROM wiki_articles a
       WHERE a.created_by = $1
       ORDER BY a.created_at DESC
-      `,
-      [userId]
-    );
-
+    `;
+    
+    const result = await client.query(query, [userId]);
+    
+    console.log(`✅ Found ${result.rows.length} articles for user ${userId}`);
+    
     return result.rows;
+  } catch (error) {
+    console.error("❌ Error in getUserArticles:", error);
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+// GET user edits/revisions
+export const getUserEdits = async (userId, limit = 20) => {
+  const client = await pool.connect();
+  
+  try {
+    const query = `
+      SELECT 
+        r.id,
+        r.article_id,
+        a.title as article_title,
+        a.slug as article_slug,
+        r.summary,
+        r.version,
+        r.created_at,
+        r.is_current
+      FROM wiki_revisions r
+      JOIN wiki_articles a ON r.article_id = a.id
+      WHERE r.edited_by = $1
+      ORDER BY r.created_at DESC
+      LIMIT $2
+    `;
+    
+    const result = await client.query(query, [userId, limit]);
+    
+    return result.rows;
+  } catch (error) {
+    console.error("❌ Error in getUserEdits:", error);
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+// GET user contributions (combined articles and edits)
+export const getUserContributions = async (userId) => {
+  try {
+    const articles = await getUserArticles(userId);
+    const edits = await getUserEdits(userId, 20);
+    
+    return {
+      articles,
+      edits
+    };
+  } catch (error) {
+    console.error("❌ Error in getUserContributions:", error);
+    throw error;
+  }
+};
+
+// GET user stats
+export const getUserStats = async (userId) => {
+  const client = await pool.connect();
+  
+  try {
+    // Get article stats
+    const articleStats = await client.query(`
+      SELECT 
+        COUNT(*) as total_articles,
+        COUNT(CASE WHEN status = 'published' THEN 1 END) as published_articles,
+        COUNT(CASE WHEN status = 'draft' THEN 1 END) as draft_articles,
+        COUNT(CASE WHEN status = 'under_review' THEN 1 END) as under_review_articles,
+        COUNT(CASE WHEN status = 'archived' THEN 1 END) as archived_articles,
+        COALESCE(SUM(view_count), 0) as total_views,
+        COUNT(CASE WHEN created_at >= NOW() - INTERVAL '30 days' THEN 1 END) as articles_last_30_days,
+        COUNT(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as articles_last_7_days,
+        COUNT(CASE WHEN DATE(created_at) = CURRENT_DATE THEN 1 END) as articles_today
+      FROM wiki_articles
+      WHERE created_by = $1
+    `, [userId]);
+    
+    // Get edit stats
+    const editStats = await client.query(`
+      SELECT 
+        COUNT(*) as total_edits,
+        COUNT(CASE WHEN created_at >= NOW() - INTERVAL '30 days' THEN 1 END) as edits_last_30_days,
+        COUNT(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as edits_last_7_days,
+        COUNT(CASE WHEN DATE(created_at) = CURRENT_DATE THEN 1 END) as edits_today
+      FROM wiki_revisions
+      WHERE edited_by = $1
+    `, [userId]);
+    
+    const totalArticles = parseInt(articleStats.rows[0]?.total_articles) || 0;
+    const totalEdits = parseInt(editStats.rows[0]?.total_edits) || 0;
+    const totalContributions = totalArticles + totalEdits;
+    const totalViews = parseInt(articleStats.rows[0]?.total_views) || 0;
+    
+    // Determine rank title
+    let rankTitle = 'New Contributor';
+    if (totalContributions > 100) rankTitle = 'Expert Contributor';
+    else if (totalContributions > 50) rankTitle = 'Senior Contributor';
+    else if (totalContributions > 20) rankTitle = 'Regular Contributor';
+    else if (totalContributions > 5) rankTitle = 'Active Contributor';
+    
+    return {
+      totalArticles,
+      publishedArticles: parseInt(articleStats.rows[0]?.published_articles) || 0,
+      draftArticles: parseInt(articleStats.rows[0]?.draft_articles) || 0,
+      underReviewArticles: parseInt(articleStats.rows[0]?.under_review_articles) || 0,
+      archivedArticles: parseInt(articleStats.rows[0]?.archived_articles) || 0,
+      totalEdits,
+      totalViews,
+      articlesThisMonth: parseInt(articleStats.rows[0]?.articles_last_30_days) || 0,
+      articlesThisWeek: parseInt(articleStats.rows[0]?.articles_last_7_days) || 0,
+      todayArticles: parseInt(articleStats.rows[0]?.articles_today) || 0,
+      todayEdits: parseInt(editStats.rows[0]?.edits_today) || 0,
+      editsThisMonth: parseInt(editStats.rows[0]?.edits_last_30_days) || 0,
+      editsThisWeek: parseInt(editStats.rows[0]?.edits_last_7_days) || 0,
+      totalContributions,
+      rank: rankTitle
+    };
+  } catch (error) {
+    console.error("❌ Error in getUserStats:", error);
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+// GET user activity
+export const getUserActivity = async (userId, limit = 20) => {
+  const client = await pool.connect();
+  
+  try {
+    const query = `
+      (SELECT 
+        'create' as type,
+        'Created article' as action,
+        title as details,
+        created_at,
+        id as target_id,
+        slug as target_slug,
+        created_by
+      FROM wiki_articles
+      WHERE created_by = $1)
+      
+      UNION ALL
+      
+      (SELECT 
+        'edit' as type,
+        'Edited article' as action,
+        CONCAT('Edited "', a.title, '"') as details,
+        r.created_at,
+        a.id as target_id,
+        a.slug as target_slug,
+        r.edited_by
+      FROM wiki_revisions r
+      JOIN wiki_articles a ON r.article_id = a.id
+      WHERE r.edited_by = $1)
+      
+      ORDER BY created_at DESC
+      LIMIT $2
+    `;
+    
+    const result = await client.query(query, [userId, limit]);
+    
+    return result.rows;
+  } catch (error) {
+    console.error("❌ Error in getUserActivity:", error);
+    throw error;
   } finally {
     client.release();
   }
@@ -616,6 +820,9 @@ export const restoreArticle = async (articleId, userId) => {
     );
 
     return result.rows[0];
+  } catch (error) {
+    console.error("Error in restoreArticle:", error);
+    throw error;
   } finally {
     client.release();
   }
@@ -630,6 +837,9 @@ export const incrementViewCount = async (articleId) => {
       "UPDATE wiki_articles SET view_count = view_count + 1 WHERE id = $1",
       [articleId]
     );
+  } catch (error) {
+    console.error("Error in incrementViewCount:", error);
+    throw error;
   } finally {
     client.release();
   }
@@ -656,15 +866,20 @@ export const getArticleRevisions = async (articleId) => {
     );
 
     return result.rows;
+  } catch (error) {
+    console.error("Error in getArticleRevisions:", error);
+    throw error;
   } finally {
     client.release();
   }
 };
+
+// GET popular articles
 export const getPopularArticles = async (limit = 10) => {
   const client = await pool.connect();
   
   try {
-    console.log(`Fetching ${limit} popular articles...`); // Debug log
+    console.log(`Fetching ${limit} popular articles...`);
     
     const result = await client.query(
       `
@@ -708,7 +923,7 @@ export const getPopularArticles = async (limit = 10) => {
       [limit]
     );
 
-    console.log(`Found ${result.rows.length} popular articles`); // Debug log
+    console.log(`Found ${result.rows.length} popular articles`);
 
     // Add rank to each article
     const articles = result.rows.map((article, index) => ({
@@ -721,14 +936,72 @@ export const getPopularArticles = async (limit = 10) => {
     return articles;
   } catch (err) {
     console.error("Error in getPopularArticles:", err);
-    throw err; // Re-throw to be caught by controller
+    throw err;
   } finally {
     client.release();
   }
 };
 
+// GET recent articles
+export const getRecentArticles = async (limit = 10) => {
+  const client = await pool.connect();
+  
+  try {
+    console.log(`Fetching ${limit} recent articles...`);
+    
+    const result = await client.query(
+      `
+      SELECT 
+        a.id,
+        a.title,
+        a.slug,
+        a.view_count,
+        a.created_at,
+        a.updated_at,
+        a.status,
+        u.uuid as author_id,
+        u.username as author_username,
+        u.full_name as author_name,
+        wp.display_name as author_display_name,
+        wp.avatar_url as author_avatar,
+        (
+          SELECT COALESCE(json_agg(
+            json_build_object(
+              'id', c.id,
+              'name', c.name
+            )
+          ), '[]'::json)
+          FROM wiki_article_categories ac
+          JOIN wiki_categories c ON ac.category_id = c.id
+          WHERE ac.article_id = a.id
+        ) as categories,
+        (
+          SELECT COUNT(*) FROM wiki_revisions WHERE article_id = a.id
+        ) as revision_count,
+        SUBSTRING(r.content, 1, 200) as excerpt
+      FROM wiki_articles a
+      LEFT JOIN users u ON a.created_by = u.uuid
+      LEFT JOIN wiki_profiles wp ON a.created_by = wp.user_id
+      LEFT JOIN wiki_revisions r ON a.current_revision_id = r.id
+      WHERE a.status = 'published'
+      ORDER BY a.created_at DESC
+      LIMIT $1
+      `,
+      [limit]
+    );
 
+    console.log(`Found ${result.rows.length} recent articles`);
 
+    return result.rows;
+  } catch (err) {
+    console.error("Error in getRecentArticles:", err);
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+// GET wiki statistics
 export const getWikiStatistics = async () => {
   const client = await pool.connect();
   
@@ -739,8 +1012,20 @@ export const getWikiStatistics = async () => {
       WHERE status = 'published'
     `);
     
+    const usersResult = await client.query(`
+      SELECT COUNT(DISTINCT created_by) as total
+      FROM wiki_articles
+    `);
+    
+    const editsResult = await client.query(`
+      SELECT COUNT(*) as total
+      FROM wiki_revisions
+    `);
+    
     return {
-      totalArticles: parseInt(articlesResult.rows[0]?.total) || 0
+      totalArticles: parseInt(articlesResult.rows[0]?.total) || 0,
+      totalAuthors: parseInt(usersResult.rows[0]?.total) || 0,
+      totalEdits: parseInt(editsResult.rows[0]?.total) || 0
     };
   } catch (err) {
     console.error("Error in getWikiStatistics:", err);

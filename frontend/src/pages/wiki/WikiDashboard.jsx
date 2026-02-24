@@ -20,16 +20,21 @@ import {
   FaEye,
   FaThumbsUp,
   FaComment,
-  FaShare
+  FaShare,
+  FaPlus,
+  FaBookOpen,
+  FaRegClock
 } from "react-icons/fa";
 
 const WikiDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [recentActivity, setRecentActivity] = useState([]);
-  const [contributions, setContributions] = useState([]);
+  const [contributions, setContributions] = useState({ articles: [], edits: [] });
   const [notifications, setNotifications] = useState([]);
   const [stats, setStats] = useState({});
 
@@ -47,55 +52,99 @@ const WikiDashboard = () => {
     fetchDashboardData();
   }, []);
 
-  const fetchDashboardData = async () => {
-    try {
-      // Fetch user activity
-      const activityRes = await fetch('http://localhost:5000/api/wiki/user/activity', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const activityData = await activityRes.json();
-      setRecentActivity(activityData.data || mockActivity);
+const fetchDashboardData = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+    const token = localStorage.getItem('token');
 
-      // Fetch contributions
-      const contributionsRes = await fetch('http://localhost:5000/api/wiki/user/contributions', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const contributionsData = await contributionsRes.json();
-      setContributions(contributionsData.data || mockContributions);
-
-      // Fetch notifications
-      const notificationsRes = await fetch('http://localhost:5000/api/wiki/user/notifications', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const notificationsData = await notificationsRes.json();
-      setNotifications(notificationsData.data || mockNotifications);
-
-      // Fetch stats
-      const statsRes = await fetch('http://localhost:5000/api/wiki/user/stats', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const statsData = await statsRes.json();
-      setStats(statsData.data || mockStats);
-
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      // Use mock data for demo
-      setRecentActivity(mockActivity);
-      setContributions(mockContributions);
-      setNotifications(mockNotifications);
-      setStats(mockStats);
-    } finally {
-      setLoading(false);
+    // Fetch user profile
+    const profileRes = await fetch('http://localhost:5000/api/wiki/profile/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (profileRes.ok) {
+      const profileData = await profileRes.json();
+      if (profileData.success) setProfile(profileData.data);
     }
-  };
+
+    // Fetch user activity - Use the new endpoint
+    try {
+      const activityRes = await fetch('http://localhost:5000/api/wiki/articles/user/activity?limit=20', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (activityRes.ok) {
+        const activityData = await activityRes.json();
+        console.log("Activity data:", activityData);
+        setRecentActivity(activityData.success ? activityData.data : []);
+      }
+    } catch (err) {
+      console.log('No activity data yet');
+      setRecentActivity([]);
+    }
+
+    // Fetch contributions (articles and edits) - Use the new endpoint
+    try {
+      const contributionsRes = await fetch('http://localhost:5000/api/wiki/articles/user/contributions', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (contributionsRes.ok) {
+        const contributionsData = await contributionsRes.json();
+        console.log("Contributions data:", contributionsData);
+        if (contributionsData.success) {
+          setContributions({
+            articles: contributionsData.data.articles || [],
+            edits: contributionsData.data.edits || []
+          });
+        }
+      }
+    } catch (err) {
+      console.log('No contributions data yet');
+      setContributions({ articles: [], edits: [] });
+    }
+
+    // Fetch user stats - Use the new endpoint
+    try {
+      const statsRes = await fetch('http://localhost:5000/api/wiki/articles/user/stats', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        console.log("Stats data:", statsData);
+        if (statsData.success) {
+          setStats(statsData.data);
+        } else {
+          setStats(getDefaultStats());
+        }
+      }
+    } catch (err) {
+      console.log('No stats data yet');
+      setStats(getDefaultStats());
+    }
+
+    // Fetch notifications (you'll need to implement this)
+    // ...
+
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error);
+    setError('Failed to load some dashboard data. Please refresh the page.');
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const getDefaultStats = () => ({
+    totalArticles: 0,
+    totalEdits: 0,
+    totalUploads: 0,
+    reputationPoints: 0,
+    todayEdits: 0,
+    todayArticles: 0,
+    todayUploads: 0,
+    todayViews: 0,
+    articlesThisMonth: 0,
+    rank: 'New Contributor'
+  });
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -104,6 +153,8 @@ const WikiDashboard = () => {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now - date);
@@ -145,28 +196,30 @@ const WikiDashboard = () => {
           <div style={styles.headerContent}>
             <div style={styles.welcomeSection}>
               <h1 style={styles.welcomeTitle}>
-                Welcome back, {user?.full_name || user?.username}! 👋
+                Welcome back, {user?.full_name || user?.username || 'Contributor'}! 👋
               </h1>
               <p style={styles.welcomeSubtitle}>
-                Here's what's happening with your contributions today.
+                {profile?.bio || "Here's what's happening with your contributions today."}
               </p>
             </div>
             <div style={styles.headerActions}>
-              <button style={styles.notificationBtn}>
-                <FaBell />
-                {notifications.length > 0 && (
-                  <span style={styles.notificationBadge}>{notifications.length}</span>
-                )}
-              </button>
-              <button style={styles.settingsBtn}>
-                <FaCog />
-              </button>
+              <Link to="/wiki/profile/edit" style={styles.profileLink}>
+                <FaUserCircle /> Profile
+              </Link>
               <button onClick={handleLogout} style={styles.logoutBtn}>
-                <FaSignOutAlt />
+                <FaSignOutAlt /> Logout
               </button>
             </div>
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div style={styles.errorBanner}>
+            <FaExclamationTriangle />
+            <span>{error}</span>
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div style={styles.statsGrid}>
@@ -218,9 +271,9 @@ const WikiDashboard = () => {
             {/* Profile Card */}
             <div style={styles.profileCard}>
               <div style={styles.profileHeader}>
-                {user?.profile?.avatar_url ? (
+                {profile?.avatar_url ? (
                   <img 
-                    src={user.profile.avatar_url} 
+                    src={profile.avatar_url} 
                     alt="Profile" 
                     style={styles.profileAvatar}
                   />
@@ -228,10 +281,18 @@ const WikiDashboard = () => {
                   <FaUserCircle style={styles.profileAvatarIcon} />
                 )}
                 <div style={styles.profileInfo}>
-                  <h3 style={styles.profileName}>{user?.full_name || user?.username}</h3>
-                  <p style={styles.profileUsername}>@{user?.username}</p>
+                  <h3 style={styles.profileName}>{user?.full_name || user?.username || 'Contributor'}</h3>
+                  <p style={styles.profileUsername}>@{user?.username || 'username'}</p>
+                  <p style={styles.profileEmail}>{user?.email}</p>
                 </div>
               </div>
+              
+              {profile?.bio && (
+                <div style={styles.profileBio}>
+                  <p>{profile.bio}</p>
+                </div>
+              )}
+
               <div style={styles.profileStats}>
                 <div style={styles.profileStat}>
                   <span style={styles.profileStatValue}>{stats.todayEdits || 0}</span>
@@ -246,13 +307,14 @@ const WikiDashboard = () => {
                   <span style={styles.profileStatLabel}>Rank</span>
                 </div>
               </div>
+
               <div style={styles.profileBadges}>
-                {user?.profile?.is_verified && (
+                {profile?.is_verified && (
                   <span style={styles.verifiedBadge}>
                     <FaCheckCircle /> Verified Contributor
                   </span>
                 )}
-                {stats.reputationPoints > 100 && (
+                {(stats.reputationPoints || 0) > 100 && (
                   <span style={styles.contributorBadge}>
                     <FaTrophy /> Top Contributor
                   </span>
@@ -264,18 +326,18 @@ const WikiDashboard = () => {
             <div style={styles.quickActionsCard}>
               <h3 style={styles.cardTitle}>Quick Actions</h3>
               <div style={styles.actionButtons}>
-                <button style={styles.actionButton}>
-                  <FaFileAlt /> <Link to={`/wiki/new-articles`}>New Article</Link> 
-                </button>
-                <button style={styles.actionButton}>
-                  <FaUpload /><Link to={`/wiki/media/upload`}>Upload Media</Link> 
-                </button>
-                <button style={styles.actionButton}>
+                <Link to="/wiki/articles/new" style={styles.actionLink}>
+                  <FaFileAlt /> New Article
+                </Link>
+                <Link to="/wiki/media/upload" style={styles.actionLink}>
+                  <FaUpload /> Upload Media
+                </Link>
+                <Link to="/wiki/activity" style={styles.actionLink}>
                   <FaHistory /> Recent Changes
-                </button>
-                <button style={styles.actionButton}>
+                </Link>
+                <Link to="/wiki/analytics" style={styles.actionLink}>
                   <FaChartLine /> My Analytics
-                </button>
+                </Link>
               </div>
             </div>
 
@@ -290,16 +352,22 @@ const WikiDashboard = () => {
                         {notif.type === 'mention' && <FaComment />}
                         {notif.type === 'edit' && <FaEdit />}
                         {notif.type === 'achievement' && <FaTrophy />}
+                        {!notif.type && <FaBell />}
                       </div>
                       <div style={styles.notificationContent}>
                         <p style={styles.notificationText}>{notif.message}</p>
-                        <span style={styles.notificationTime}>{formatDate(notif.created_at)}</span>
+                        <span style={styles.notificationTime}>
+                          {formatDate(notif.created_at)}
+                        </span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p style={styles.noData}>No new notifications</p>
+                <div style={styles.emptyState}>
+                  <FaBell style={styles.emptyIcon} />
+                  <p>No notifications yet</p>
+                </div>
               )}
             </div>
           </div>
@@ -343,10 +411,11 @@ const WikiDashboard = () => {
                               {activity.type === 'create' && <FaFileAlt style={{color: '#4CAF50'}} />}
                               {activity.type === 'edit' && <FaEdit style={{color: '#2196F3'}} />}
                               {activity.type === 'upload' && <FaUpload style={{color: '#FF9800'}} />}
+                              {!activity.type && <FaClock style={{color: '#999'}} />}
                             </div>
                             <div style={styles.activityContent}>
                               <p style={styles.activityText}>
-                                <strong>{activity.action}</strong> {activity.details}
+                                <strong>{activity.action || 'Activity'}</strong> {activity.details || ''}
                               </p>
                               <span style={styles.activityTime}>
                                 <FaClock /> {formatDate(activity.created_at)}
@@ -356,7 +425,13 @@ const WikiDashboard = () => {
                         ))}
                       </div>
                     ) : (
-                      <p style={styles.noData}>No recent activity</p>
+                      <div style={styles.emptyState}>
+                        <FaRegClock style={styles.emptyIcon} />
+                        <p>No recent activity</p>
+                        <Link to="/wiki/articles/new" style={styles.emptyStateLink}>
+                          Create your first article →
+                        </Link>
+                      </div>
                     )}
                   </div>
 
@@ -389,27 +464,36 @@ const WikiDashboard = () => {
                 <div style={styles.activityTab}>
                   <div style={styles.timelineCard}>
                     <h3 style={styles.cardTitle}>Activity Timeline</h3>
-                    <div style={styles.timeline}>
-                      {recentActivity.map((activity, index) => (
-                        <div key={index} style={styles.timelineItem}>
-                          <div style={styles.timelineDot} />
-                          <div style={styles.timelineContent}>
-                            <div style={styles.timelineHeader}>
-                              <span style={styles.timelineType}>{activity.type}</span>
-                              <span style={styles.timelineDate}>
-                                {new Date(activity.created_at).toLocaleString()}
-                              </span>
+                    {recentActivity.length > 0 ? (
+                      <div style={styles.timeline}>
+                        {recentActivity.map((activity, index) => (
+                          <div key={index} style={styles.timelineItem}>
+                            <div style={styles.timelineDot} />
+                            <div style={styles.timelineContent}>
+                              <div style={styles.timelineHeader}>
+                                <span style={styles.timelineType}>
+                                  {activity.type || 'activity'}
+                                </span>
+                                <span style={styles.timelineDate}>
+                                  {activity.created_at ? new Date(activity.created_at).toLocaleString() : 'N/A'}
+                                </span>
+                              </div>
+                              <p style={styles.timelineText}>{activity.details || 'No details'}</p>
+                              {activity.article?.slug && (
+                                <Link to={`/wiki/article/${activity.article.slug}`} style={styles.timelineLink}>
+                                  View Article →
+                                </Link>
+                              )}
                             </div>
-                            <p style={styles.timelineText}>{activity.details}</p>
-                            {activity.article && (
-                              <a href={`/wiki/article/${activity.article.slug}`} style={styles.timelineLink}>
-                                View Article →
-                              </a>
-                            )}
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={styles.emptyState}>
+                        <FaRegClock style={styles.emptyIcon} />
+                        <p>No activity yet</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -425,8 +509,12 @@ const WikiDashboard = () => {
                             <div style={styles.articleInfo}>
                               <h4 style={styles.articleTitle}>{article.title}</h4>
                               <div style={styles.articleMeta}>
-                                <span style={styles.articleStatus}>
-                                  {article.status}
+                                <span style={{
+                                  ...styles.articleStatus,
+                                  backgroundColor: article.status === 'published' ? '#4CAF50' :
+                                                  article.status === 'draft' ? '#FF9800' : '#2196F3'
+                                }}>
+                                  {article.status || 'draft'}
                                 </span>
                                 <span style={styles.articleDate}>
                                   {formatDate(article.created_at)}
@@ -441,7 +529,13 @@ const WikiDashboard = () => {
                         ))}
                       </div>
                     ) : (
-                      <p style={styles.noData}>No articles created yet</p>
+                      <div style={styles.emptyState}>
+                        <FaBookOpen style={styles.emptyIcon} />
+                        <p>No articles created yet</p>
+                        <Link to="/wiki/articles/new" style={styles.emptyStateLink}>
+                          Create your first article →
+                        </Link>
+                      </div>
                     )}
 
                     <h3 style={{...styles.cardTitle, marginTop: '30px'}}>Recent Edits</h3>
@@ -451,7 +545,7 @@ const WikiDashboard = () => {
                           <div key={index} style={styles.editItem}>
                             <div style={styles.editInfo}>
                               <p style={styles.editText}>
-                                <strong>{edit.article_title}</strong> - {edit.summary || 'No summary'}
+                                <strong>{edit.article_title || 'Unknown article'}</strong> - {edit.summary || 'No summary'}
                               </p>
                               <span style={styles.editTime}>
                                 <FaClock /> {formatDate(edit.created_at)}
@@ -461,7 +555,10 @@ const WikiDashboard = () => {
                         ))}
                       </div>
                     ) : (
-                      <p style={styles.noData}>No edits yet</p>
+                      <div style={styles.emptyState}>
+                        <FaEdit style={styles.emptyIcon} />
+                        <p>No edits yet</p>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -472,96 +569,6 @@ const WikiDashboard = () => {
       </div>
     </>
   );
-};
-
-// Mock data for demonstration
-const mockActivity = [
-  {
-    type: 'create',
-    action: 'Created new article',
-    details: '"Oromo Language History"',
-    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    type: 'edit',
-    action: 'Edited article',
-    details: '"Gadaa System" - added references',
-    created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    type: 'upload',
-    action: 'Uploaded media',
-    details: 'Image of traditional Oromo ceremony',
-    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    type: 'edit',
-    action: 'Edited article',
-    details: '"Irreecha Festival" - fixed typos',
-    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-  }
-];
-
-const mockContributions = {
-  articles: [
-    {
-      title: 'Oromo Language History',
-      status: 'published',
-      views: 1245,
-      edit_count: 8,
-      created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
-    },
-    {
-      title: 'Gadaa System',
-      status: 'published',
-      views: 3456,
-      edit_count: 15,
-      created_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString()
-    }
-  ],
-  edits: [
-    {
-      article_title: 'Irreecha Festival',
-      summary: 'Added historical context',
-      created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-    },
-    {
-      article_title: 'Oromo Music',
-      summary: 'Added references',
-      created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
-    }
-  ]
-};
-
-const mockNotifications = [
-  {
-    type: 'mention',
-    message: '@Abdi mentioned you in Gadaa System discussion',
-    created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    type: 'edit',
-    message: 'Your article "Oromo Language" was edited',
-    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    type: 'achievement',
-    message: 'Congratulations! You reached 100 edits',
-    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
-  }
-];
-
-const mockStats = {
-  totalArticles: 5,
-  totalEdits: 47,
-  totalUploads: 12,
-  reputationPoints: 245,
-  todayEdits: 3,
-  todayArticles: 1,
-  todayUploads: 0,
-  todayViews: 156,
-  articlesThisMonth: 2,
-  rank: 'Bronze'
 };
 
 /* STYLES */
@@ -601,6 +608,8 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+    flexWrap: "wrap",
+    gap: "20px",
   },
   welcomeSection: {
     flex: 1,
@@ -619,51 +628,18 @@ const styles = {
     display: "flex",
     gap: "15px",
   },
-  notificationBtn: {
+  profileLink: {
     background: "rgba(255,255,255,0.1)",
-    border: "none",
-    borderRadius: "50%",
-    width: "45px",
-    height: "45px",
+    border: "1px solid rgba(255,255,255,0.2)",
+    borderRadius: "30px",
+    padding: "10px 20px",
     color: "white",
-    fontSize: "1.2rem",
-    cursor: "pointer",
-    position: "relative",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    transition: "all 0.3s ease",
-    ":hover": {
-      background: "rgba(255,255,255,0.2)",
-    },
-  },
-  notificationBadge: {
-    position: "absolute",
-    top: "-5px",
-    right: "-5px",
-    background: "#C9A227",
-    color: "#0F3D2E",
-    fontSize: "0.7rem",
-    width: "18px",
-    height: "18px",
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: "bold",
-  },
-  settingsBtn: {
-    background: "rgba(255,255,255,0.1)",
-    border: "none",
-    borderRadius: "50%",
-    width: "45px",
-    height: "45px",
-    color: "white",
-    fontSize: "1.2rem",
+    fontSize: "0.95rem",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
+    gap: "8px",
+    textDecoration: "none",
     transition: "all 0.3s ease",
     ":hover": {
       background: "rgba(255,255,255,0.2)",
@@ -671,20 +647,32 @@ const styles = {
   },
   logoutBtn: {
     background: "rgba(255,255,255,0.1)",
-    border: "none",
-    borderRadius: "50%",
-    width: "45px",
-    height: "45px",
+    border: "1px solid rgba(255,255,255,0.2)",
+    borderRadius: "30px",
+    padding: "10px 20px",
     color: "white",
-    fontSize: "1.2rem",
+    fontSize: "0.95rem",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
+    gap: "8px",
     transition: "all 0.3s ease",
     ":hover": {
       background: "rgba(255,68,68,0.3)",
+      borderColor: "#ff4444",
     },
+  },
+  errorBanner: {
+    maxWidth: "1200px",
+    margin: "0 auto 20px",
+    padding: "15px 20px",
+    background: "#fff3cd",
+    border: "1px solid #ffeeba",
+    borderRadius: "10px",
+    color: "#856404",
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
   },
   statsGrid: {
     display: "grid",
@@ -757,7 +745,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "15px",
-    marginBottom: "20px",
+    marginBottom: "15px",
   },
   profileAvatar: {
     width: "70px",
@@ -775,13 +763,28 @@ const styles = {
   profileName: {
     fontSize: "1.2rem",
     margin: 0,
-    marginBottom: "5px",
+    marginBottom: "3px",
     color: "#0F3D2E",
   },
   profileUsername: {
     fontSize: "0.9rem",
     color: "#666",
     margin: 0,
+    marginBottom: "3px",
+  },
+  profileEmail: {
+    fontSize: "0.8rem",
+    color: "#999",
+    margin: 0,
+  },
+  profileBio: {
+    background: "#f8f9fa",
+    padding: "15px",
+    borderRadius: "10px",
+    marginBottom: "15px",
+    fontSize: "0.95rem",
+    color: "#555",
+    lineHeight: 1.5,
   },
   profileStats: {
     display: "flex",
@@ -847,7 +850,7 @@ const styles = {
     gridTemplateColumns: "repeat(2, 1fr)",
     gap: "10px",
   },
-  actionButton: {
+  actionLink: {
     padding: "12px",
     background: "#f8f9fa",
     border: "1px solid #eaeef2",
@@ -859,6 +862,7 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     gap: "8px",
+    textDecoration: "none",
     transition: "all 0.3s ease",
     ":hover": {
       background: "#C9A227",
@@ -1020,6 +1024,34 @@ const styles = {
     fontWeight: "600",
     color: "#0F3D2E",
   },
+  emptyState: {
+    textAlign: "center",
+    padding: "40px 20px",
+    background: "#f8f9fa",
+    borderRadius: "10px",
+    color: "#999",
+  },
+  emptyIcon: {
+    fontSize: "3rem",
+    marginBottom: "15px",
+    color: "#ddd",
+  },
+  emptyStateLink: {
+    display: "inline-block",
+    marginTop: "15px",
+    padding: "8px 20px",
+    background: "#C9A227",
+    color: "#0F3D2E",
+    textDecoration: "none",
+    borderRadius: "20px",
+    fontSize: "0.9rem",
+    fontWeight: "500",
+    transition: "all 0.3s ease",
+    ":hover": {
+      transform: "translateY(-2px)",
+      boxShadow: "0 5px 15px rgba(201,162,39,0.3)",
+    },
+  },
   timelineCard: {
     width: "100%",
   },
@@ -1115,8 +1147,7 @@ const styles = {
   },
   articleStatus: {
     fontSize: "0.8rem",
-    color: "#4CAF50",
-    background: "rgba(76, 175, 80, 0.1)",
+    color: "white",
     padding: "2px 8px",
     borderRadius: "12px",
   },
@@ -1144,11 +1175,14 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+    flexWrap: "wrap",
+    gap: "10px",
   },
   editText: {
     margin: 0,
     fontSize: "0.9rem",
     color: "#333",
+    flex: 1,
   },
   editTime: {
     fontSize: "0.8rem",
@@ -1156,14 +1190,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "5px",
-  },
-  noData: {
-    textAlign: "center",
-    color: "#999",
-    padding: "30px",
-    background: "#f8f9fa",
-    borderRadius: "10px",
-    margin: 0,
+    whiteSpace: "nowrap",
   },
 };
 

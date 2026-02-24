@@ -1,26 +1,31 @@
 // controllers/articleController.js
+import pool from "../../config/db.js";
+
+// Import your model functions
 import {
   createArticle,
   getArticleById,
   getArticleBySlug,
   getAllArticles,
-  getUserArticles,
+  getUserArticles as getArticlesByUserId,
   updateArticle,
   deleteArticle,
   permanentlyDeleteArticle,
   restoreArticle,
   incrementViewCount,
-  getArticleRevisions,getWikiStatistics
+  getArticleRevisions,
+  getWikiStatistics,
+  getPopularArticles as getPopularArticlesModel,
+  getRecentArticles as getRecentArticlesModel  // FIXED: renamed import
 } from "../models/wikiArticle.model.js";
 
-// CREATE: Create new article
+// ============================================
+// EXISTING FUNCTIONS
+// ============================================
+
 export const createNewArticle = async (req, res) => {
   try {
-    // IMPORTANT: Get userId from req.user.uuid (matches researcher pattern)
     const userId = req.user?.uuid;
-    
-    console.log("🔍 User from auth:", req.user);
-    console.log("🔍 User ID:", userId);
     
     if (!userId) {
       return res.status(401).json({
@@ -31,15 +36,12 @@ export const createNewArticle = async (req, res) => {
 
     const articleData = req.body;
 
-    // Validation
     if (!articleData.title) {
       return res.status(400).json({
         success: false,
         message: "Article title is required"
       });
     }
-
-    console.log("✅ Creating article for user:", userId);
 
     const article = await createArticle(articleData, userId);
 
@@ -58,10 +60,6 @@ export const createNewArticle = async (req, res) => {
   }
 };
 
-// READ: Get article by ID
-// controllers/articleController.js
-
-// READ: Get article by ID
 export const getArticle = async (req, res) => {
   try {
     const { id } = req.params;
@@ -75,7 +73,6 @@ export const getArticle = async (req, res) => {
       });
     }
 
-    // Increment view count
     await incrementViewCount(id);
 
     res.json({
@@ -91,7 +88,6 @@ export const getArticle = async (req, res) => {
   }
 };
 
-// READ: Get article by slug
 export const getArticleBySlugHandler = async (req, res) => {
   try {
     const { slug } = req.params;
@@ -105,7 +101,6 @@ export const getArticleBySlugHandler = async (req, res) => {
       });
     }
 
-    // Increment view count
     await incrementViewCount(article.id);
 
     res.json({
@@ -121,7 +116,6 @@ export const getArticleBySlugHandler = async (req, res) => {
   }
 };
 
-// READ: Get all articles with filters
 export const getArticles = async (req, res) => {
   try {
     const {
@@ -155,7 +149,6 @@ export const getArticles = async (req, res) => {
   }
 };
 
-// READ: Get current user's articles
 export const getMyArticles = async (req, res) => {
   try {
     const userId = req.user?.uuid;
@@ -167,7 +160,7 @@ export const getMyArticles = async (req, res) => {
       });
     }
     
-    const articles = await getUserArticles(userId);
+    const articles = await getArticlesByUserId(userId);
 
     res.json({
       success: true,
@@ -182,7 +175,6 @@ export const getMyArticles = async (req, res) => {
   }
 };
 
-// UPDATE: Update article
 export const updateArticleHandler = async (req, res) => {
   try {
     const { id } = req.params;
@@ -196,7 +188,6 @@ export const updateArticleHandler = async (req, res) => {
       });
     }
 
-    // Check if article exists
     const existingArticle = await getArticleById(id);
     if (!existingArticle) {
       return res.status(404).json({
@@ -205,7 +196,6 @@ export const updateArticleHandler = async (req, res) => {
       });
     }
 
-    // Check permission (admin or author)
     if (existingArticle.created_by !== userId && req.user?.role !== 'administrator') {
       return res.status(403).json({
         success: false,
@@ -229,7 +219,6 @@ export const updateArticleHandler = async (req, res) => {
   }
 };
 
-// DELETE: Soft delete article
 export const deleteArticleHandler = async (req, res) => {
   try {
     const { id } = req.params;
@@ -242,7 +231,6 @@ export const deleteArticleHandler = async (req, res) => {
       });
     }
 
-    // Check if article exists
     const existingArticle = await getArticleById(id);
     if (!existingArticle) {
       return res.status(404).json({
@@ -251,7 +239,6 @@ export const deleteArticleHandler = async (req, res) => {
       });
     }
 
-    // Check permission (admin or author)
     if (existingArticle.created_by !== userId && req.user?.role !== 'administrator') {
       return res.status(403).json({
         success: false,
@@ -275,10 +262,8 @@ export const deleteArticleHandler = async (req, res) => {
   }
 };
 
-// DELETE: Permanently delete article (admin only)
 export const permanentlyDeleteArticleHandler = async (req, res) => {
   try {
-    // Check if user is admin
     if (req.user?.role !== 'administrator') {
       return res.status(403).json({
         success: false,
@@ -305,7 +290,6 @@ export const permanentlyDeleteArticleHandler = async (req, res) => {
   }
 };
 
-// RESTORE: Restore archived article
 export const restoreArticleHandler = async (req, res) => {
   try {
     const { id } = req.params;
@@ -318,7 +302,6 @@ export const restoreArticleHandler = async (req, res) => {
       });
     }
 
-    // Check if user is admin or author
     const existingArticle = await getArticleById(id);
     if (!existingArticle) {
       return res.status(404).json({
@@ -357,7 +340,6 @@ export const restoreArticleHandler = async (req, res) => {
   }
 };
 
-// GET: Get article revisions
 export const getRevisions = async (req, res) => {
   try {
     const { id } = req.params;
@@ -381,15 +363,7 @@ export const getPopularArticles = async (req, res) => {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit) : 6;
     
-    // Validate limit
-    if (isNaN(limit) || limit < 1) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid limit parameter"
-      });
-    }
-
-    const articles = await getPopularArticles(limit);
+    const articles = await getPopularArticlesModel(limit);
 
     res.json({
       success: true,
@@ -404,13 +378,21 @@ export const getPopularArticles = async (req, res) => {
   }
 };
 
+// FIXED: This function now uses the correctly imported getRecentArticlesModel
 export const getRecentArticles = async (req, res) => {
   try {
-    const limit = req.query.limit || 6;
-    const articles = await getRecentArticles(limit);
-    res.json({ success: true, data: articles });
+    const limit = req.query.limit ? parseInt(req.query.limit) : 6;
+    const articles = await getRecentArticlesModel(limit);
+    res.json({ 
+      success: true, 
+      data: articles 
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("❌ Get recent articles error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || "Failed to get recent articles" 
+    });
   }
 };
 
@@ -431,54 +413,12 @@ export const getWikiStats = async (req, res) => {
   }
 };
 
-// GET: Daily statistics for charts
-export const getDailyWikiStats = async (req, res) => {
-  try {
-    const days = req.query.days ? parseInt(req.query.days) : 7;
-    const dailyStats = await getDailyStats(days);
-
-    res.json({
-      success: true,
-      data: dailyStats
-    });
-  } catch (error) {
-    console.error("Get daily stats error:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message || "Failed to get daily statistics"
-    });
-  }
-};
-
-// GET: Top contributors
-export const getWikiTopContributors = async (req, res) => {
-  try {
-    const limit = req.query.limit ? parseInt(req.query.limit) : 10;
-    const contributors = await getTopContributors(limit);
-
-    res.json({
-      success: true,
-      data: contributors
-    });
-  } catch (error) {
-    console.error("Get top contributors error:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message || "Failed to get top contributors"
-    });
-  }
-};
-
-// GET: Language statistics
 export const getLanguageStats = async (req, res) => {
   try {
     const languages = [
       { code: "om", name: "Afaan Oromoo", count: 12345 },
       { code: "en", name: "English", count: 8901 },
-      { code: "am", name: "አማርኛ", count: 3456 },
-      { code: "fr", name: "Français", count: 2123 },
-      { code: "ar", name: "العربية", count: 1567 },
-      { code: "sw", name: "Kiswahili", count: 890 }
+      { code: "am", name: "አማርኛ", count: 3456 }
     ];
     
     res.json({
@@ -493,3 +433,334 @@ export const getLanguageStats = async (req, res) => {
     });
   }
 };
+
+// ============================================
+// DASHBOARD FUNCTIONS
+// ============================================
+// ============================================
+// DASHBOARD FUNCTIONS - Add these to your articleController.js
+// ============================================
+
+/**
+ * Get user activity feed
+ * GET /api/wiki/articles/user/activity
+ */
+export const getUserActivity = async (req, res) => {
+  try {
+    const userId = req.user?.uuid;
+    const limit = req.query.limit ? parseInt(req.query.limit) : 20;
+    
+    console.log("📊 Getting activity for user:", userId);
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated"
+      });
+    }
+    
+    const client = await pool.connect();
+    
+    try {
+      const query = `
+        (SELECT 
+          'create' as type,
+          'Created article' as action,
+          title as details,
+          created_at,
+          id as target_id,
+          slug as target_slug
+        FROM wiki_articles
+        WHERE created_by = $1)
+        
+        UNION ALL
+        
+        (SELECT 
+          'edit' as type,
+          'Edited article' as action,
+          CONCAT('Edited "', a.title, '"') as details,
+          r.created_at,
+          a.id as target_id,
+          a.slug as target_slug
+        FROM wiki_revisions r
+        JOIN wiki_articles a ON r.article_id = a.id
+        WHERE r.edited_by = $1)
+        
+        ORDER BY created_at DESC
+        LIMIT $2
+      `;
+      
+      const result = await client.query(query, [userId, limit]);
+      
+      console.log(`✅ Found ${result.rows.length} activity items`);
+      
+      // Format the activity data for the frontend
+      const formattedActivity = result.rows.map(item => ({
+        ...item,
+        // Ensure consistent structure for frontend
+        type: item.type || 'activity',
+        action: item.action || 'Unknown action',
+        details: item.details || '',
+        created_at: item.created_at,
+        article: item.target_slug ? {
+          id: item.target_id,
+          slug: item.target_slug
+        } : null
+      }));
+      
+      res.json({
+        success: true,
+        data: formattedActivity
+      });
+    } catch (dbError) {
+      console.error("❌ Database error in getUserActivity:", dbError);
+      res.status(500).json({
+        success: false,
+        message: "Database error while fetching activity",
+        error: dbError.message
+      });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("❌ Get user activity error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get your activity",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get user contributions (articles and edits)
+ * GET /api/wiki/articles/user/contributions
+ */
+export const getUserContributions = async (req, res) => {
+  try {
+    const userId = req.user?.uuid;
+    
+    console.log("📊 Getting contributions for user:", userId);
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated"
+      });
+    }
+    
+    const client = await pool.connect();
+    
+    try {
+      // Get articles created by user
+      const articlesQuery = `
+        SELECT 
+          a.id,
+          a.title,
+          a.slug,
+          a.status,
+          COALESCE(a.view_count, 0) as views,
+          a.created_at,
+          a.updated_at,
+          (
+            SELECT COUNT(*) 
+            FROM wiki_revisions 
+            WHERE article_id = a.id
+          ) as edit_count,
+          (
+            SELECT json_agg(
+              json_build_object(
+                'id', c.id,
+                'name', c.name
+              )
+            )
+            FROM wiki_article_categories ac
+            JOIN wiki_categories c ON ac.category_id = c.id
+            WHERE ac.article_id = a.id
+          ) as categories
+        FROM wiki_articles a
+        WHERE a.created_by = $1
+        ORDER BY a.created_at DESC
+      `;
+      
+      const articlesResult = await client.query(articlesQuery, [userId]);
+      
+      // Get edits/revisions by user
+      const editsQuery = `
+        SELECT 
+          r.id,
+          r.article_id,
+          a.title as article_title,
+          a.slug as article_slug,
+          r.summary,
+          r.version,
+          r.created_at,
+          r.is_current
+        FROM wiki_revisions r
+        JOIN wiki_articles a ON r.article_id = a.id
+        WHERE r.edited_by = $1
+        ORDER BY r.created_at DESC
+        LIMIT 20
+      `;
+      
+      const editsResult = await client.query(editsQuery, [userId]);
+      
+      console.log(`✅ Found ${articlesResult.rows.length} articles and ${editsResult.rows.length} edits`);
+      
+      res.json({
+        success: true,
+        data: {
+          articles: articlesResult.rows,
+          edits: editsResult.rows
+        }
+      });
+    } catch (dbError) {
+      console.error("❌ Database error in getUserContributions:", dbError);
+      res.status(500).json({
+        success: false,
+        message: "Database error while fetching contributions",
+        error: dbError.message
+      });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("❌ Get user contributions error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get your contributions",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get user statistics
+ * GET /api/wiki/articles/user/stats
+ */
+export const getUserStats = async (req, res) => {
+  try {
+    const userId = req.user?.uuid;
+    
+    console.log("📊 Getting stats for user:", userId);
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated"
+      });
+    }
+    
+    const client = await pool.connect();
+    
+    try {
+      // Get article stats
+      const articleStats = await client.query(`
+        SELECT 
+          COUNT(*) as total_articles,
+          COUNT(CASE WHEN status = 'published' THEN 1 END) as published_articles,
+          COUNT(CASE WHEN status = 'draft' THEN 1 END) as draft_articles,
+          COUNT(CASE WHEN status = 'under_review' THEN 1 END) as under_review_articles,
+          COUNT(CASE WHEN status = 'archived' THEN 1 END) as archived_articles,
+          COALESCE(SUM(view_count), 0) as total_views,
+          COUNT(CASE WHEN created_at >= NOW() - INTERVAL '30 days' THEN 1 END) as articles_last_30_days,
+          COUNT(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as articles_last_7_days,
+          COUNT(CASE WHEN DATE(created_at) = CURRENT_DATE THEN 1 END) as articles_today
+        FROM wiki_articles
+        WHERE created_by = $1
+      `, [userId]);
+      
+      // Get edit stats
+      const editStats = await client.query(`
+        SELECT 
+          COUNT(*) as total_edits,
+          COUNT(CASE WHEN created_at >= NOW() - INTERVAL '30 days' THEN 1 END) as edits_last_30_days,
+          COUNT(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as edits_last_7_days,
+          COUNT(CASE WHEN DATE(created_at) = CURRENT_DATE THEN 1 END) as edits_today
+        FROM wiki_revisions
+        WHERE edited_by = $1
+      `, [userId]);
+      
+      // Get user rank
+      const rankResult = await client.query(`
+        WITH user_contributions AS (
+          SELECT 
+            u.uuid,
+            (
+              (SELECT COUNT(*) FROM wiki_articles WHERE created_by = u.uuid) +
+              (SELECT COUNT(*) FROM wiki_revisions WHERE edited_by = u.uuid)
+            ) as total_contributions
+          FROM users u
+        )
+        SELECT COUNT(*) + 1 as rank
+        FROM user_contributions
+        WHERE total_contributions > (
+          SELECT (
+            (SELECT COUNT(*) FROM wiki_articles WHERE created_by = $1) +
+            (SELECT COUNT(*) FROM wiki_revisions WHERE edited_by = $1)
+          )
+        )
+      `, [userId]);
+      
+      const totalArticles = parseInt(articleStats.rows[0]?.total_articles) || 0;
+      const totalEdits = parseInt(editStats.rows[0]?.total_edits) || 0;
+      const totalContributions = totalArticles + totalEdits;
+      const totalViews = parseInt(articleStats.rows[0]?.total_views) || 0;
+      const rank = parseInt(rankResult.rows[0]?.rank) || 1;
+      
+      // Determine rank title
+      let rankTitle = 'New Contributor';
+      if (totalContributions > 100) rankTitle = 'Expert Contributor';
+      else if (totalContributions > 50) rankTitle = 'Senior Contributor';
+      else if (totalContributions > 20) rankTitle = 'Regular Contributor';
+      else if (totalContributions > 5) rankTitle = 'Active Contributor';
+      
+      const stats = {
+        totalArticles,
+        totalEdits,
+        totalUploads: 0, // You can implement this later if you have media uploads
+        reputationPoints: totalContributions * 10,
+        todayEdits: parseInt(editStats.rows[0]?.edits_today) || 0,
+        todayArticles: parseInt(articleStats.rows[0]?.articles_today) || 0,
+        todayUploads: 0,
+        todayViews: 0, // Daily views would need a separate tracking mechanism
+        articlesThisMonth: parseInt(articleStats.rows[0]?.articles_last_30_days) || 0,
+        rank: rankTitle,
+        rankNumber: rank,
+        publishedArticles: parseInt(articleStats.rows[0]?.published_articles) || 0,
+        draftArticles: parseInt(articleStats.rows[0]?.draft_articles) || 0,
+        underReviewArticles: parseInt(articleStats.rows[0]?.under_review_articles) || 0,
+        archivedArticles: parseInt(articleStats.rows[0]?.archived_articles) || 0,
+        totalViews,
+        editsThisMonth: parseInt(editStats.rows[0]?.edits_last_30_days) || 0,
+        editsThisWeek: parseInt(editStats.rows[0]?.edits_last_7_days) || 0
+      };
+      
+      console.log("✅ Stats retrieved:", stats);
+      
+      res.json({
+        success: true,
+        data: stats
+      });
+    } catch (dbError) {
+      console.error("❌ Database error in getUserStats:", dbError);
+      res.status(500).json({
+        success: false,
+        message: "Database error while fetching stats",
+        error: dbError.message
+      });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("❌ Get user stats error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get your stats",
+      error: error.message
+    });
+  }
+};
+
+
+

@@ -128,6 +128,7 @@ import UpdateEbook from "./pages/ebooks/UpdateEbook";
 import EbooksList from "./pages/ebooks/EbooksList";
 
 import EbookManagementPage from "./pages/ebooks/EbookManagementPage";
+import WikiProfileEdit from "./pages/wiki/users/WikiProfileEdit";
 
 function App() {
   return (
@@ -203,6 +204,11 @@ function App() {
             </ProtectedRoute>
           }
         />
+         <Route path="/wiki/profile/edit" element={
+              <ProtectedRoute>
+                <WikiProfileEdit />
+              </ProtectedRoute>
+            } />
         <Route
           path="/finance-dashboard"
           element={
@@ -657,7 +663,7 @@ function App() {
         />
         {/* // wikipedia articles routes can be added here */}
         <Route path="/wiki/articles" element={<ArticleList />} />
-        <Route path="/wiki/articles/create" element={<ArticleCreate />} />
+        {/* <Route path="/wiki/articles/new" element={<ArticleCreate />} /> */}
         <Route path="/wiki/articles/edit/:id" element={<ArticleEdit />} />
         <Route path="/wiki/articles/drafts" element={<ArticleDraftList />} />
         {/* ================= Wiki Categories ================= */}
@@ -686,7 +692,7 @@ function App() {
         <Route path="/wiki/user-registrations" element={<RegisterPage />} />
         <Route path="/wiki/login" element={<WikiLoginPage />} />
         <Route path="/wiki/dashboard" element={<WikiDashboard />} />
-        <Route path="/wiki/new-articles" element={<CreateArticlePage />} />
+        <Route path="/wiki/articles/new" element={<CreateArticlePage />} />
         <Route path="/wiki/article/:slug" element={<WikiArticlePage />} />
         <Route path="/wiki/media/upload" element={<WikiMediaUploadPage />} />
         <Route path="/wiki/media" element={<WikiMediaGalleryPage />} />

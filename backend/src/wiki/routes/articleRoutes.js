@@ -7,6 +7,9 @@ import {
   getArticle,
   getArticleBySlugHandler,
   getMyArticles,
+  getUserContributions, // You need to add this to controller
+  getUserStats,        // You need to add this to controller
+  getUserActivity,     // You need to add this to controller
   updateArticleHandler,
   deleteArticleHandler,
   permanentlyDeleteArticleHandler,
@@ -14,22 +17,30 @@ import {
   getRevisions,
   getPopularArticles,
   getRecentArticles,
-  getWikiStats,getLanguageStats
+  getWikiStats,
+  getLanguageStats
 } from "../controllers/articleController.js";
 
 const router = express.Router();
 
 // Public routes
 router.get("/", getArticles);
-router.get("/slug/:slug", getArticleBySlugHandler);
+router.get("/popular", getPopularArticles);
+router.get("/recent", getRecentArticles);
 router.get("/stats", getWikiStats);
-
-router.get("/my-articles", authenticate, getMyArticles); // Protected route for user's articles
+router.get("/languages/stats", getLanguageStats);
+router.get("/slug/:slug", getArticleBySlugHandler);
 router.get("/:id", getArticle);
-// routes/statsRoutes.js
 
 // Protected routes (require authentication)
 router.post("/", authenticate, createNewArticle);
+router.get("/my-articles", authenticate, getMyArticles);
+
+// THESE ARE THE MISSING ROUTES - ADD THEM
+router.get("/user/activity", authenticate, getUserActivity);
+router.get("/user/contributions", authenticate, getUserContributions);
+router.get("/user/stats", authenticate, getUserStats);
+
 router.put("/:id", authenticate, updateArticleHandler);
 router.delete("/:id", authenticate, deleteArticleHandler);
 router.post("/:id/restore", authenticate, restoreArticleHandler);
@@ -37,11 +48,5 @@ router.get("/:id/revisions", authenticate, getRevisions);
 
 // Admin only routes
 router.delete("/:id/permanent", authenticate, permanentlyDeleteArticleHandler);
-
-router.get("/popular", getPopularArticles);
-router.get("/recent", getRecentArticles);
-router.get('/languages/stats', getLanguageStats);
-
-
 
 export default router;
