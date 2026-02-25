@@ -689,7 +689,7 @@ function App() {
         {/* research-network/groups  */}
         <Route path="research-network/groups" element={<AdminGroups />} />
         <Route path="/admin/groups/:uuid" element={<AdminGroupDetails />} />
-        <Route path="/wiki/user-registrations" element={<RegisterPage />} />
+        <Route path="/wiki/register" element={<RegisterPage />} />
         <Route path="/wiki/login" element={<WikiLoginPage />} />
         <Route path="/wiki/dashboard" element={<WikiDashboard />} />
         <Route path="/wiki/articles/new" element={<CreateArticlePage />} />

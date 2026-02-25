@@ -17,7 +17,7 @@ import {
   getRevisions,
   getPopularArticles,
   getRecentArticles,
-  getWikiStats,
+  getWikiStats,getAdminUserActivity,
   getLanguageStats
 } from "../controllers/articleController.js";
 
@@ -37,12 +37,13 @@ router.post("/", authenticate, createNewArticle);
 router.get("/my-articles", authenticate, getMyArticles);
 
 // THESE ARE THE MISSING ROUTES - ADD THEM
-router.get("/user/activity", authenticate, getUserActivity);
+router.get("/user/activity", getUserActivity);
+router.get("/admin/activity", getAdminUserActivity);
 router.get("/user/contributions", authenticate, getUserContributions);
 router.get("/user/stats", authenticate, getUserStats);
 
 router.put("/:id", authenticate, updateArticleHandler);
-router.delete("/:id", authenticate, deleteArticleHandler);
+router.delete("/:id",authenticate, deleteArticleHandler);
 router.post("/:id/restore", authenticate, restoreArticleHandler);
 router.get("/:id/revisions", authenticate, getRevisions);
 

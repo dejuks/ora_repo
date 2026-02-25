@@ -149,6 +149,7 @@ export const getArticles = async (req, res) => {
   }
 };
 
+
 export const getMyArticles = async (req, res) => {
   try {
     const userId = req.user?.uuid;
@@ -472,6 +473,94 @@ export const getUserActivity = async (req, res) => {
           slug as target_slug
         FROM wiki_articles
         WHERE created_by = $1)
+        
+        UNION ALL
+        
+        (SELECT 
+          'edit' as type,
+          'Edited article' as action,
+          CONCAT('Edited "', a.title, '"') as details,
+          r.created_at,
+          a.id as target_id,
+          a.slug as target_slug
+        FROM wiki_revisions r
+        JOIN wiki_articles a ON r.article_id = a.id
+        WHERE r.edited_by = $1)
+        
+        ORDER BY created_at DESC
+        LIMIT $2
+      `;
+      
+      const result = await client.query(query, [userId, limit]);
+      
+      console.log(`✅ Found ${result.rows.length} activity items`);
+      
+      // Format the activity data for the frontend
+      const formattedActivity = result.rows.map(item => ({
+        ...item,
+        // Ensure consistent structure for frontend
+        type: item.type || 'activity',
+        action: item.action || 'Unknown action',
+        details: item.details || '',
+        created_at: item.created_at,
+        article: item.target_slug ? {
+          id: item.target_id,
+          slug: item.target_slug
+        } : null
+      }));
+      
+      res.json({
+        success: true,
+        data: formattedActivity
+      });
+    } catch (dbError) {
+      console.error("❌ Database error in getUserActivity:", dbError);
+      res.status(500).json({
+        success: false,
+        message: "Database error while fetching activity",
+        error: dbError.message
+      });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("❌ Get user activity error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get your activity",
+      error: error.message
+    });
+  }
+};
+
+
+//getAdminUserActivity
+export const getAdminUserActivity = async (req, res) => {
+  try {
+    const userId = req.user?.uuid;
+    const limit = req.query.limit ? parseInt(req.query.limit) : 20;
+    
+    // console.log("📊 Getting activity for user:", userId);
+    
+    // if (!userId) {
+    //   return res.status(401).json({
+    //     success: false,
+    //     message: "User not authenticated"
+    //   });
+    // }
+    
+    const client = await pool.connect();
+    
+    try {
+      const query = `
+        (SELECT 
+          'create' as type,
+          'Created article' as action,
+          title as details,
+          created_at,
+          id as target_id,
+          slug as target_slug
+        FROM wiki_articles)
         
         UNION ALL
         

@@ -11,6 +11,7 @@ const generateSlug = (title) => {
   });
 };
 
+
 // CREATE: Create new article
 export const createArticle = async (articleData, userId) => {
   const client = await pool.connect();
@@ -215,36 +216,11 @@ export const getArticleBySlug = async (slug) => {
   }
 };
 
-// READ: Get all articles with pagination and filters
-export const getAllArticles = async (filters = {}, page = 1, limit = 10) => {
+export const getAllArticles = async (filters = {}) => {
   const client = await pool.connect();
-  
-  try {
-    const offset = (page - 1) * limit;
-    
-    // Build count query
-    let countQuery = `SELECT COUNT(*) as total FROM wiki_articles WHERE 1=1`;
-    const countParams = [];
-    
-    if (filters.status) {
-      countQuery += ` AND status = $${countParams.length + 1}`;
-      countParams.push(filters.status);
-    }
-    
-    // Execute count query
-    let total = 0;
-    try {
-      const countResult = countParams.length > 0 
-        ? await client.query(countQuery, countParams)
-        : await client.query(countQuery);
-      
-      total = countResult.rows[0]?.total ? parseInt(countResult.rows[0].total) : 0;
-    } catch (countErr) {
-      console.error("Count query error:", countErr);
-      total = 0;
-    }
 
-    // Main query for articles
+  try {
+    // Main query for all articles
     let query = `
       SELECT 
         a.id,
@@ -256,36 +232,30 @@ export const getAllArticles = async (filters = {}, page = 1, limit = 10) => {
         a.created_at,
         a.updated_at,
         a.created_by,
-        u.username as author_username,
         u.full_name as author_name,
-        wp.display_name as author_display_name,
-        wp.avatar_url as author_avatar,
-        (
-          SELECT COUNT(*) FROM wiki_revisions WHERE article_id = a.id
-        ) as revision_count,
-        (
-          SELECT json_agg(
-            json_build_object(
-              'id', c.id,
-              'name', c.name
-            )
-          )
-          FROM wiki_article_categories ac
-          JOIN wiki_categories c ON ac.category_id = c.id
-          WHERE ac.article_id = a.id
-          LIMIT 3
-        ) as categories,
-        LEFT(r.content, 200) as excerpt
+        COALESCE(r.revision_count, 0) as revision_count,
+        c.categories,
+        LEFT(COALESCE(rev.content,''), 200) as excerpt
       FROM wiki_articles a
       LEFT JOIN users u ON a.created_by = u.uuid
       LEFT JOIN wiki_profiles wp ON a.created_by = wp.user_id
-      LEFT JOIN wiki_revisions r ON a.current_revision_id = r.id
-      WHERE 1=1
+      LEFT JOIN (
+        SELECT article_id, COUNT(*) as revision_count
+        FROM wiki_revisions
+        GROUP BY article_id
+      ) r ON a.id = r.article_id
+      LEFT JOIN LATERAL (
+        SELECT json_agg(json_build_object('id', c.id, 'name', c.name)) as categories
+        FROM wiki_article_categories ac
+        JOIN wiki_categories c ON ac.category_id = c.id
+        WHERE ac.article_id = a.id
+      ) c ON true
+      LEFT JOIN wiki_revisions rev ON a.current_revision_id = rev.id
     `;
 
     const queryParams = [];
 
-    // Apply filters to main query
+    // Apply filters
     if (filters.status) {
       query += ` AND a.status = $${queryParams.length + 1}`;
       queryParams.push(filters.status);
@@ -302,47 +272,24 @@ export const getAllArticles = async (filters = {}, page = 1, limit = 10) => {
     }
 
     if (filters.search) {
-      query += ` AND (a.title ILIKE $${queryParams.length + 1} OR r.content ILIKE $${queryParams.length + 1})`;
+      query += ` AND (a.title ILIKE $${queryParams.length + 1} OR COALESCE(rev.content,'') ILIKE $${queryParams.length + 1})`;
       queryParams.push(`%${filters.search}%`);
     }
 
-    // Add pagination
-    query += ` ORDER BY a.created_at DESC LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
-    queryParams.push(limit, offset);
+    query += ` ORDER BY a.created_at DESC`;
 
     // Execute main query
     const result = await client.query(query, queryParams);
 
-    return {
-      articles: result.rows || [],
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit) || 1,
-        hasNext: page < Math.ceil(total / limit),
-        hasPrev: page > 1
-      }
-    };
+    return result.rows || [];
 
   } catch (err) {
     console.error("Error in getAllArticles:", err);
-    return {
-      articles: [],
-      pagination: {
-        page,
-        limit,
-        total: 0,
-        pages: 1,
-        hasNext: false,
-        hasPrev: false
-      }
-    };
+    return [];
   } finally {
     client.release();
   }
 };
-
 // GET articles by user ID
 export const getUserArticles = async (userId) => {
   const client = await pool.connect();
@@ -707,52 +654,107 @@ export const updateArticle = async (articleId, updateData, userId) => {
   }
 };
 
-// DELETE: Soft delete article (archive)
-export const deleteArticle = async (articleId, userId) => {
+export const getAllByAdminArticles = async (filters = {}) => {
   const client = await pool.connect();
-  
+
   try {
-    await client.query("BEGIN");
+    let query = `
+      SELECT 
+        a.id,
+        a.title,
+        a.slug,
+        a.status,
+        a.view_count,
+        a.is_featured,
+        a.created_at,
+        a.updated_at,
+        a.created_by,
+        a.is_deleted,
+        u.full_name as author_name,
+        COALESCE(r.revision_count, 0) as revision_count,
+        c.categories,
+        LEFT(COALESCE(rev.content,''), 200) as excerpt
+      FROM wiki_articles a
+      LEFT JOIN users u ON a.created_by = u.uuid
+      LEFT JOIN wiki_profiles wp ON a.created_by = wp.user_id
+      LEFT JOIN (
+        SELECT article_id, COUNT(*) as revision_count
+        FROM wiki_revisions
+        GROUP BY article_id
+      ) r ON a.id = r.article_id
+      LEFT JOIN LATERAL (
+        SELECT json_agg(
+          json_build_object('id', c.id, 'name', c.name)
+        ) as categories
+        FROM wiki_article_categories ac
+        JOIN wiki_categories c ON ac.category_id = c.id
+        WHERE ac.article_id = a.id
+      ) c ON true
+      LEFT JOIN wiki_revisions rev ON a.current_revision_id = rev.id
+      WHERE a.is_deleted IS NOT TRUE
+    `;
 
-    // Update article status to archived
-    await client.query(
-      `
-      UPDATE wiki_articles 
-      SET status = 'archived', updated_at = NOW() 
-      WHERE id = $1
-      `,
-      [articleId]
-    );
+    const queryParams = [];
 
-    // Record in audit log
-    await client.query(
-      `
-      INSERT INTO wiki_audit_logs (
-        user_id,
-        action,
-        target_type,
-        target_id,
-        created_at
-      )
-      VALUES ($1, $2, $3, $4, NOW())
-      `,
-      [userId, 'delete', 'article', articleId]
-    );
+    // Apply filters
+    if (filters.status) {
+      query += ` AND a.status = $${queryParams.length + 1}`;
+      queryParams.push(filters.status);
+    }
 
-    await client.query("COMMIT");
+    if (filters.author) {
+      query += ` AND a.created_by = $${queryParams.length + 1}`;
+      queryParams.push(filters.author);
+    }
 
-    return { id: articleId, status: 'archived' };
+    if (filters.is_featured !== undefined && filters.is_featured !== null) {
+      query += ` AND a.is_featured = $${queryParams.length + 1}`;
+      queryParams.push(filters.is_featured);
+    }
+
+    if (filters.search) {
+      query += ` AND (a.title ILIKE $${queryParams.length + 1} 
+                  OR COALESCE(rev.content,'') ILIKE $${queryParams.length + 1})`;
+      queryParams.push(`%${filters.search}%`);
+    }
+
+    query += ` ORDER BY a.created_at DESC`;
+
+    const result = await client.query(query, queryParams);
+
+    return result.rows || [];
+
   } catch (err) {
-    await client.query("ROLLBACK");
-    throw err;
+    console.error("Error in getAllArticles:", err);
+    return [];
   } finally {
     client.release();
   }
 };
 
+// DELETE: Soft delete article (archive)
+// Soft delete (archive) an article
+export const deleteArticle = async (id, userId) => {
+  try {
+    const query = `
+      UPDATE wiki_articles
+      SET deleted_at = NOW(),
+          deleted_by = $2,
+          is_deleted=true
+      WHERE id = $1
+      RETURNING *;
+    `;
+    const result = await pool.query(query, [id, userId]); // use pool
+    return result.rows[0];
+  } catch (error) {
+    console.error("Soft delete error:", error);
+    throw error;
+  }
+};
+
 // DELETE: Permanently delete article (admin only)
 export const permanentlyDeleteArticle = async (articleId, userId) => {
-  const client = await pool.connect();
+  const client = await client.connect();
   
   try {
     await client.query("BEGIN");
@@ -1011,7 +1013,12 @@ export const getWikiStatistics = async () => {
       FROM wiki_articles 
       WHERE status = 'published'
     `);
-    
+ const articlesDraftToday = await client.query(`
+  SELECT COUNT(*) as total 
+  FROM wiki_articles 
+  WHERE status = 'draft' 
+  AND DATE(created_at) = CURRENT_DATE
+`);
     const usersResult = await client.query(`
       SELECT COUNT(DISTINCT created_by) as total
       FROM wiki_articles
@@ -1021,12 +1028,53 @@ export const getWikiStatistics = async () => {
       SELECT COUNT(*) as total
       FROM wiki_revisions
     `);
+
+    // Get draft articles count with month-by-month breakdown
+const articleByMonth = await client.query(`
+  SELECT 
+    DATE_TRUNC('month', created_at) AS month,
+    COUNT(*) AS total
+  FROM wiki_articles
+  WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '11 months'
+  GROUP BY month
+  ORDER BY month DESC
+`);
+
+const wikimediaUplaoded = await client.query(`
+  SELECT 
+    DATE_TRUNC('month', created_at) AS month,
+    COUNT(*) AS total
+  FROM wiki_media
+  WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '11 months'
+  GROUP BY month
+  ORDER BY month DESC
+`);
+
+const wikimediaUploadedFilesize = await client.query(`
+  SELECT 
+    ROUND(
+      SUM(file_size::BIGINT)::NUMERIC / 1024 / 1024,
+      2
+    ) AS total
+  FROM wiki_media
+  WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '11 months'
+`);
+// Articles this week
+const articlesThisWeek = await client.query(`
+  SELECT COUNT(*) AS total
+  FROM wiki_articles
+  WHERE created_at >= date_trunc('week', CURRENT_DATE)
+`);
     
     return {
       totalArticles: parseInt(articlesResult.rows[0]?.total) || 0,
       totalAuthors: parseInt(usersResult.rows[0]?.total) || 0,
-      totalEdits: parseInt(editsResult.rows[0]?.total) || 0
-    };
+      totalEdits: parseInt(editsResult.rows[0]?.total) || 0,
+      articlesDraftToday: parseInt(articlesDraftToday.rows[0]?.total) || 0,
+      articleByMonth: parseInt(articleByMonth.rows[0]?.total) || 0,
+      articlesThisWeek: parseInt(articlesThisWeek.rows[0]?.total) || 0,
+      wikimediaUplaoded: parseInt(wikimediaUplaoded.rows[0]?.total) || 0,
+wikimediaUploadedfilesize: parseFloat(wikimediaUploadedFilesize.rows[0]?.total) || 0,    };
   } catch (err) {
     console.error("Error in getWikiStatistics:", err);
     throw err;

@@ -54,7 +54,8 @@ export default function OromoWikipedia() {
       // Fetch featured articles
       const featuredRes = await fetch('http://localhost:5000/api/wiki/articles?is_featured=true&limit=4');
       const featuredData = await featuredRes.json();
-      setFeaturedArticles(featuredData.data?.articles || []);
+      // API returns data directly in data array
+      setFeaturedArticles(featuredData.data || []);
 
       // Fetch popular articles
       const popularRes = await fetch('http://localhost:5000/api/wiki/articles/popular?limit=6');
@@ -64,7 +65,7 @@ export default function OromoWikipedia() {
       // Fetch recent articles
       const recentRes = await fetch('http://localhost:5000/api/wiki/articles?limit=6');
       const recentData = await recentRes.json();
-      setRecentArticles(recentData.data?.articles || []);
+      setRecentArticles(recentData.data || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     }
@@ -83,13 +84,39 @@ export default function OromoWikipedia() {
         url += `&category=${selectedCategory}`;
       }
 
+      if (selectedLang && selectedLang !== 'all') {
+        url += `&language=${selectedLang}`;
+      }
+
       const res = await fetch(url);
       const data = await res.json();
       
-      setArticles(data.data?.articles || []);
-      setTotalPages(data.data?.pagination?.pages || 1);
+      // Check the structure of your API response
+      console.log('API Response:', data);
+      
+      // Handle different response structures
+      if (data.success && data.data) {
+        // If data.data is an array
+        if (Array.isArray(data.data)) {
+          setArticles(data.data);
+          setTotalPages(Math.ceil(data.data.length / 12) || 1);
+        } 
+        // If data.data has articles and pagination properties
+        else if (data.data.articles) {
+          setArticles(data.data.articles);
+          setTotalPages(data.data.pagination?.pages || 1);
+        }
+      } else if (Array.isArray(data)) {
+        // If response is directly an array
+        setArticles(data);
+        setTotalPages(Math.ceil(data.length / 12) || 1);
+      } else {
+        setArticles([]);
+        setTotalPages(1);
+      }
     } catch (error) {
       console.error('Error fetching articles:', error);
+      setArticles([]);
     } finally {
       setLoading(false);
     }
@@ -298,13 +325,13 @@ export default function OromoWikipedia() {
                 Trending Topics
               </h3>
               <div style={styles.trendingList}>
-                {popularArticles.slice(0, 5).map((article) => (
+                {popularArticles.slice(0, 5).map((article, index) => (
                   <Link 
                     key={article.id}
                     to={`/wiki/article/${article.slug}`}
                     style={styles.trendingItem}
                   >
-                    <span style={styles.trendingRank}>#{article.rank || '•'}</span>
+                    <span style={styles.trendingRank}>#{index + 1}</span>
                     <span style={styles.trendingTitle}>{article.title}</span>
                     <span style={styles.trendingViews}>{formatNumber(article.view_count)} views</span>
                   </Link>
@@ -381,48 +408,54 @@ export default function OromoWikipedia() {
               ) : (
                 <>
                   <div style={styles.articlesGrid}>
-                    {articles.map((article) => (
-                      <Link 
-                        key={article.id}
-                        to={`/wiki/article/${article.slug}`}
-                        style={styles.articleCard}
-                      >
-                        <div style={styles.articleCardContent}>
-                          <h3 style={styles.articleCardTitle}>{article.title}</h3>
-                          <p style={styles.articleCardDesc}>
-                            {article.excerpt?.substring(0, 120)}...
-                          </p>
-                          <div style={styles.articleCardFooter}>
-                            <div style={styles.articleCardAuthor}>
-                              <FaUser style={styles.authorIcon} />
-                              <span>{article.author_name || article.author_username}</span>
+                    {articles.length > 0 ? (
+                      articles.map((article) => (
+                        <Link 
+                          key={article.id}
+                          to={`/wiki/article/${article.slug}`}
+                          style={styles.articleCard}
+                        >
+                          <div style={styles.articleCardContent}>
+                            <h3 style={styles.articleCardTitle}>{article.title}</h3>
+                            <p style={styles.articleCardDesc}>
+                              {article.excerpt?.substring(0, 120)}...
+                            </p>
+                            <div style={styles.articleCardFooter}>
+                              <div style={styles.articleCardAuthor}>
+                                <FaUser style={styles.authorIcon} />
+                                <span>{article.author_name || article.author_username || 'Unknown'}</span>
+                              </div>
+                              <div style={styles.articleCardStats}>
+                                <span title="Views">
+                                  <FaEye /> {formatNumber(article.view_count)}
+                                </span>
+                                <span title="Last edited">
+                                  <FaClock /> {formatDate(article.updated_at)}
+                                </span>
+                              </div>
                             </div>
-                            <div style={styles.articleCardStats}>
-                              <span title="Views">
-                                <FaEye /> {formatNumber(article.view_count)}
-                              </span>
-                              <span title="Last edited">
-                                <FaClock /> {formatDate(article.updated_at)}
-                              </span>
-                            </div>
+                            {article.categories && article.categories.length > 0 && (
+                              <div style={styles.articleCardCategories}>
+                                {article.categories.slice(0, 2).map(cat => (
+                                  <span key={cat.id} style={styles.articleCardCategory}>
+                                    {cat.name}
+                                  </span>
+                                ))}
+                                {article.categories.length > 2 && (
+                                  <span style={styles.articleCardCategoryMore}>
+                                    +{article.categories.length - 2}
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
-                          {article.categories && article.categories.length > 0 && (
-                            <div style={styles.articleCardCategories}>
-                              {article.categories.slice(0, 2).map(cat => (
-                                <span key={cat.id} style={styles.articleCardCategory}>
-                                  {cat.name}
-                                </span>
-                              ))}
-                              {article.categories.length > 2 && (
-                                <span style={styles.articleCardCategoryMore}>
-                                  +{article.categories.length - 2}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </Link>
-                    ))}
+                        </Link>
+                      ))
+                    ) : (
+                      <div style={styles.noResults}>
+                        <p>No articles found. Try adjusting your search or filters.</p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Pagination */}
@@ -930,6 +963,12 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
     gap: "20px",
+  },
+  noResults: {
+    gridColumn: "span 2",
+    textAlign: "center",
+    padding: "40px",
+    color: "#a0aec0",
   },
 
   // Article Cards
