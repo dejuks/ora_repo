@@ -82,7 +82,7 @@ app.use(
   Now this works:
   http://localhost:5000/uploads/manuscripts/1769311484305-224593152.pdf
 */
-
+app.set('trust proxy', 1);
 /* =======================
    API ROUTES
 ======================= */

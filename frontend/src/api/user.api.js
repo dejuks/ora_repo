@@ -12,3 +12,24 @@ export const getAuthors = () =>
   api.get(
     "/users?role_id=1d67d32d-dcee-4302-8369-26ca00385a09"
   );
+
+  export const getUserRoles = async (userId) => {
+  try {
+    const response = await api.get(`/users/${userId}/roles`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching user roles:", error);
+    throw error;
+  }
+};
+
+// Get all available roles
+export const getAllRoles = async () => {
+  try {
+    const response = await api.get('/roles');
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching roles:", error);
+    throw error;
+  }
+};

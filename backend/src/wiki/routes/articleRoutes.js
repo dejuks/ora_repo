@@ -1,4 +1,3 @@
-// routes/articleRoutes.js
 import express from "express";
 import { authenticate } from "../../middleware/auth.middleware.js";
 import {
@@ -7,23 +6,28 @@ import {
   getArticle,
   getArticleBySlugHandler,
   getMyArticles,
-  getUserContributions, // You need to add this to controller
-  getUserStats,        // You need to add this to controller
-  getUserActivity,     // You need to add this to controller
-  updateArticleHandler,
+  getUserContributions,
+  getUserStats,
+  getUserActivity,
   deleteArticleHandler,
   permanentlyDeleteArticleHandler,
   restoreArticleHandler,
   getRevisions,
   getPopularArticles,
   getRecentArticles,
-  getWikiStats,getAdminUserActivity,
-  getLanguageStats
+  getWikiStats,
+  getAdminUserActivity,
+  updateArticleHandler,
+  getLanguageStats,
+  // VANDALISM FUNCTIONS - FIXED IMPORTS
+  reportVandalism,           // For POST /:id/report-vandalism
+  reviewVandalismReport,      // For PUT /vandalism/reports/:id/review
+  getVandalismReports         // For GET /vandalism/reports
 } from "../controllers/articleController.js";
 
 const router = express.Router();
 
-// Public routes
+// ==================== PUBLIC ROUTES ====================
 router.get("/", getArticles);
 router.get("/popular", getPopularArticles);
 router.get("/recent", getRecentArticles);
@@ -32,22 +36,27 @@ router.get("/languages/stats", getLanguageStats);
 router.get("/slug/:slug", getArticleBySlugHandler);
 router.get("/:id", getArticle);
 
-// Protected routes (require authentication)
+// ==================== VANDALISM ROUTES ====================
+// Report vandalism (any authenticated user) - THIS IS THE FIX
+router.post("/:id/report-vandalism", authenticate, reportVandalism);
+
+// Admin vandalism management routes
+router.get("/vandalism/reports", authenticate, getVandalismReports);
+router.put("/vandalism/reports/:id/review", authenticate, reviewVandalismReport);
+
+// ==================== PROTECTED ROUTES ====================
 router.post("/", authenticate, createNewArticle);
 router.get("/my-articles", authenticate, getMyArticles);
-
-// THESE ARE THE MISSING ROUTES - ADD THEM
-router.get("/user/activity", getUserActivity);
-router.get("/admin/activity", getAdminUserActivity);
+router.get("/user/activity", authenticate, getUserActivity);
+router.get("/admin/activity", authenticate, getAdminUserActivity);
 router.get("/user/contributions", authenticate, getUserContributions);
 router.get("/user/stats", authenticate, getUserStats);
-
 router.put("/:id", authenticate, updateArticleHandler);
-router.delete("/:id",authenticate, deleteArticleHandler);
+router.delete("/:id", authenticate, deleteArticleHandler);
 router.post("/:id/restore", authenticate, restoreArticleHandler);
 router.get("/:id/revisions", authenticate, getRevisions);
 
-// Admin only routes
+// ==================== ADMIN ONLY ROUTES ====================
 router.delete("/:id/permanent", authenticate, permanentlyDeleteArticleHandler);
 
 export default router;

@@ -13,7 +13,9 @@ const generateSlug = (title) => {
 
 
 // CREATE: Create new article
-export const createArticle = async (articleData, userId) => {
+// CREATE: Create new article
+// CREATE: Create new article
+export const createArticle = async (articleData, userId, ipAddress) => {
   const client = await pool.connect();
   
   try {
@@ -31,7 +33,7 @@ export const createArticle = async (articleData, userId) => {
       throw new Error("Article with similar title already exists");
     }
 
-    // Insert article
+    // Insert article with IP address
     const articleResult = await client.query(
       `
       INSERT INTO wiki_articles (
@@ -42,9 +44,10 @@ export const createArticle = async (articleData, userId) => {
         view_count,
         is_featured,
         created_at,
-        updated_at
+        updated_at,
+        ip_address  -- New column
       )
-      VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+      VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW(), $7)
       RETURNING *
       `,
       [
@@ -53,13 +56,14 @@ export const createArticle = async (articleData, userId) => {
         articleData.status || 'draft',
         userId,
         0,
-        articleData.is_featured || false
+        articleData.is_featured || false,
+        ipAddress  // Pass IP address here
       ]
     );
 
     const article = articleResult.rows[0];
 
-    // Create first revision
+    // Create first revision (with IP if you want to track)
     const revisionResult = await client.query(
       `
       INSERT INTO wiki_revisions (
@@ -69,9 +73,10 @@ export const createArticle = async (articleData, userId) => {
         version,
         edited_by,
         is_current,
-        created_at
+        created_at,
+        ip_address  -- Optional: track IP in revisions too
       )
-      VALUES ($1, $2, $3, $4, $5, $6, NOW())
+      VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)
       RETURNING id
       `,
       [
@@ -80,7 +85,8 @@ export const createArticle = async (articleData, userId) => {
         articleData.summary || 'Initial creation',
         1,
         userId,
-        true
+        true,
+        ipAddress  // Pass IP if you added this column
       ]
     );
 
@@ -108,7 +114,7 @@ export const createArticle = async (articleData, userId) => {
       }
     }
 
-    // Record contribution
+    // Record contribution with IP address
     await client.query(
       `
       INSERT INTO wiki_user_contributions (
@@ -117,11 +123,19 @@ export const createArticle = async (articleData, userId) => {
         revision_id,
         action,
         contribution_type,
-        created_at
+        created_at,
+        ip_address  -- New column
       )
-      VALUES ($1, $2, $3, $4, $5, NOW())
+      VALUES ($1, $2, $3, $4, $5, NOW(), $6)
       `,
-      [userId, article.id, revisionResult.rows[0].id, 'create', 'article']
+      [
+        userId, 
+        article.id, 
+        revisionResult.rows[0].id, 
+        'create', 
+        'article',
+        ipAddress  // Pass IP address here
+      ]
     );
 
     await client.query("COMMIT");
@@ -136,6 +150,7 @@ export const createArticle = async (articleData, userId) => {
     client.release();
   }
 };
+
 
 // READ: Get article by ID with all details
 export const getArticleById = async (articleId) => {

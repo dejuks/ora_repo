@@ -55,6 +55,60 @@ CREATE TABLE wiki_media (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+
+
+
+-- Add vandalism reports table
+CREATE TABLE IF NOT EXISTS wiki_vandalism_reports (
+    id SERIAL PRIMARY KEY,
+    article_id INTEGER REFERENCES wiki_articles(id) ON DELETE CASCADE,
+    revision_id INTEGER REFERENCES wiki_revisions(id),
+    reported_by UUID REFERENCES users(uuid),
+    report_reason TEXT NOT NULL,
+    report_details JSONB,
+    status VARCHAR(20) DEFAULT 'pending', -- pending, reviewed, dismissed, action_taken
+    reviewed_by UUID REFERENCES users(uuid),
+    reviewed_at TIMESTAMP,
+    action_taken TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    ip_address VARCHAR(45)
+);
+
+-- Add vandalism reports table
+CREATE TABLE IF NOT EXISTS wiki_vandalism_reports (
+    id SERIAL PRIMARY KEY,
+    article_id UUID REFERENCES wiki_articles(id) ON DELETE CASCADE,
+    revision_id UUID REFERENCES wiki_revisions(id),
+    reported_by UUID REFERENCES users(uuid),
+    report_reason TEXT NOT NULL,
+    report_details JSONB,
+    status VARCHAR(20) DEFAULT 'pending', -- pending, reviewed, dismissed, action_taken
+    reviewed_by UUID REFERENCES users(uuid),
+    reviewed_at TIMESTAMP,
+    action_taken TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    ip_address VARCHAR(45)
+);
+
+-- Add article protection table
+CREATE TABLE IF NOT EXISTS wiki_article_protection (
+    id SERIAL PRIMARY KEY,
+    article_id UUID REFERENCES wiki_articles(id) ON DELETE CASCADE,
+    protection_level VARCHAR(20) NOT NULL, -- semi, full
+    protected_by UUID REFERENCES users(uuid),
+    protected_at TIMESTAMP DEFAULT NOW(),
+    expires_at TIMESTAMP,
+    reason TEXT,
+    is_active BOOLEAN DEFAULT true
+);
+
+-- Add indexes
+CREATE INDEX idx_vandalism_status ON wiki_vandalism_reports(status);
+CREATE INDEX idx_vandalism_article ON wiki_vandalism_reports(article_id);
+CREATE INDEX idx_protection_article ON wiki_article_protection(article_id) WHERE is_active = true;
+
+
+
 -- 7. PAGE PROTECTION (For Admins)
 CREATE TABLE wiki_page_protection (
     article_id UUID PRIMARY KEY REFERENCES wiki_articles(id) ON DELETE CASCADE,

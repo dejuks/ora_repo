@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { getArticles, deleteArticle, restoreArticle, permanentlyDeleteArticle } from "../../api/wikiArticle.api";
-import { getUserRoles } from "../../api/user.api";
 import MainLayout from "../../components/layout/MainLayout";
 import { Link } from "react-router-dom";
 import { 
@@ -18,9 +17,7 @@ import {
   FaCalendar,
   FaTag,
   FaGlobe,
-  FaShieldAlt,
-  FaUserCog,
-  FaUserTie
+  FaShieldAlt
 } from "react-icons/fa";
 
 export default function ArticleList() {
@@ -28,90 +25,23 @@ export default function ArticleList() {
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [rolesLoading, setRolesLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [categories, setCategories] = useState([]);
   
-  // User state
+  // Get current user from localStorage
   const [currentUser, setCurrentUser] = useState(() => {
     const user = localStorage.getItem("user");
     return user ? JSON.parse(user) : null;
   });
   
-  const [userRoles, setUserRoles] = useState([]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [userPermissions, setUserPermissions] = useState({
-    canEdit: false,
-    canDelete: false,
-    canRestore: false,
-    canPermanentDelete: false,
-    canViewIp: false,
-    canManageUsers: false
-  });
-
-  // Admin role names from database
-  const ADMIN_ROLES = ['Wikipedia Administrator', 'sysop', 'admin', 'administrator'];
-
-  // Fetch user roles from database
-  const fetchUserRoles = async () => {
-    if (!currentUser?.uuid) {
-      setRolesLoading(false);
-      return;
-    }
-
-    try {
-      const response = await getUserRoles(currentUser.uuid);
-      const roles = response.data || [];
-      setUserRoles(roles);
-      
-      // Check if user has any admin role
-      const hasAdminRole = roles.some(role => 
-        ADMIN_ROLES.includes(role.name) || 
-        role.name.toLowerCase().includes('admin') ||
-        role.name.toLowerCase().includes('sysop')
-      );
-      
-      setIsAdmin(hasAdminRole);
-      
-      // Set detailed permissions based on roles
-      setUserPermissions({
-        canEdit: hasAdminRole || roles.some(r => r.name === 'editor' || r.name === 'contributor'),
-        canDelete: hasAdminRole || roles.some(r => r.name === 'editor'),
-        canRestore: hasAdminRole,
-        canPermanentDelete: hasAdminRole,
-        canViewIp: hasAdminRole,
-        canManageUsers: hasAdminRole
-      });
-      
-      console.log("User Roles from DB:", roles);
-      console.log("Is Admin:", hasAdminRole);
-      console.log("Permissions:", {
-        canEdit: hasAdminRole || roles.some(r => r.name === 'editor' || r.name === 'contributor'),
-        canDelete: hasAdminRole || roles.some(r => r.name === 'editor'),
-        canRestore: hasAdminRole,
-        canPermanentDelete: hasAdminRole,
-        canViewIp: hasAdminRole
-      });
-      
-    } catch (error) {
-      console.error("Error fetching user roles:", error);
-      // Fallback to localStorage role if API fails
-      const storedRole = currentUser?.role;
-      const hasAdminRole = ADMIN_ROLES.includes(storedRole);
-      setIsAdmin(hasAdminRole);
-      setUserPermissions({
-        canEdit: hasAdminRole || storedRole === 'editor',
-        canDelete: hasAdminRole || storedRole === 'editor',
-        canRestore: hasAdminRole,
-        canPermanentDelete: hasAdminRole,
-        canViewIp: hasAdminRole,
-        canManageUsers: hasAdminRole
-      });
-    } finally {
-      setRolesLoading(false);
-    }
-  };
+  // Check if user is admin
+  const isAdmin = currentUser?.role === 'Wikipedia Administrator' || 
+                  currentUser?.role === 'sysop' || 
+                  currentUser?.role === 'admin';
+  
+  console.log("Current User:", currentUser);
+  console.log("Is Admin:", isAdmin);
 
   // Fetch articles
   const fetchArticles = async () => {
@@ -147,11 +77,6 @@ export default function ArticleList() {
     }
   };
 
-  // Fetch user roles on component mount
-  useEffect(() => {
-    fetchUserRoles();
-  }, [currentUser]);
-
   useEffect(() => {
     fetchArticles();
   }, []);
@@ -172,11 +97,6 @@ export default function ArticleList() {
       result = result.filter(a => a.status === statusFilter);
     }
     
-    // Non-admins can't see archived articles
-    if (!isAdmin) {
-      result = result.filter(a => a.status !== 'archived');
-    }
-    
     if (categoryFilter !== "all" && categoryFilter) {
       result = result.filter(a => 
         a.categories?.some(cat => cat.id === categoryFilter || cat.name === categoryFilter)
@@ -184,7 +104,7 @@ export default function ArticleList() {
     }
     
     setFiltered(result);
-  }, [search, statusFilter, categoryFilter, articles, isAdmin]);
+  }, [search, statusFilter, categoryFilter, articles]);
 
   // Delete article
   const remove = async (id, title) => {
@@ -273,30 +193,16 @@ export default function ArticleList() {
     </span>;
   };
 
-  // Check if current user is the author
-  const isAuthor = (article) => {
-    return currentUser?.uuid === article.created_by;
-  };
-
   return (
     <MainLayout>
       <div className="container-fluid py-4">
-        {/* Header with Role Badge */}
+        {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
             <h2 className="mb-1">Wiki Articles</h2>
             <p className="text-muted mb-0">
               {filtered.length} articles found
-              {isAdmin && !rolesLoading && (
-                <span className="ms-2 badge bg-danger">
-                  <FaShieldAlt className="me-1" /> Admin
-                </span>
-              )}
-              {!isAdmin && userRoles.length > 0 && !rolesLoading && (
-                <span className="ms-2 badge bg-info">
-                  <FaUserCog className="me-1" /> {userRoles[0]?.name || 'User'}
-                </span>
-              )}
+            <span className="ms-2 badge bg-danger">Admin View</span>
             </p>
           </div>
           <Link to="/wiki/articles/create" className="btn btn-primary">
@@ -304,31 +210,14 @@ export default function ArticleList() {
           </Link>
         </div>
 
-        {/* User Roles Info - Visible to all users */}
-        {!rolesLoading && userRoles.length > 0 && (
-          <div className="alert alert-light d-flex align-items-center mb-4 border">
-            <FaUserTie className="me-3 text-primary" size={24} />
-            <div>
-              <strong>Your Roles:</strong>
-              <div className="d-flex flex-wrap gap-2 mt-1">
-                {userRoles.map(role => (
-                  <span key={role.id} className="badge bg-secondary">
-                    {role.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Admin Info Banner - Only visible to admins */}
-        {isAdmin && (
+        
           <div className="alert alert-info d-flex align-items-center mb-4">
             <FaShieldAlt className="me-3" size={24} />
             <div>
               <strong>Admin Dashboard</strong>
               <p className="mb-0 small">
-                You have administrative privileges based on your roles: {userRoles.map(r => r.name).join(', ')}. 
+                You have administrative privileges. 
                 Total Articles: {articles.length} | 
                 Published: {articles.filter(a => a.status === 'published').length} | 
                 Drafts: {articles.filter(a => a.status === 'draft').length} | 
@@ -336,7 +225,7 @@ export default function ArticleList() {
               </p>
             </div>
           </div>
-        )}
+    
 
         {/* Filters */}
         <div className="card mb-4">
@@ -365,7 +254,7 @@ export default function ArticleList() {
                   <option value="published">Published</option>
                   <option value="draft">Draft</option>
                   <option value="under_review">Under Review</option>
-                  {isAdmin && <option value="archived">Archived</option>}
+                  <option value="archived">Archived</option>
                 </select>
               </div>
               <div className="col-md-4">
@@ -437,7 +326,7 @@ export default function ArticleList() {
               <div className="card border-warning">
                 <div className="card-body">
                   <h6 className="text-warning">
-                    <FaHistory className="me-2" /> Under Review
+                    <i className="bi bi-clock"></i> Under Review
                   </h6>
                   <h3>{articles.filter(a => a.status === 'under_review').length}</h3>
                 </div>
@@ -465,7 +354,7 @@ export default function ArticleList() {
             </div>
           </div>
           <div className="card-body">
-            {loading || rolesLoading ? (
+            {loading ? (
               <div className="text-center py-5">
                 <div className="spinner-border text-primary" role="status">
                   <span className="visually-hidden">Loading...</span>
@@ -511,7 +400,6 @@ export default function ArticleList() {
                             <FaUser className="me-1 text-muted small" />
                             {article.author_name || 'Unknown'}
                           </div>
-                          {/* Show IP only to admins */}
                           {isAdmin && article.ip_address && (
                             <div className="small text-muted">
                               <FaGlobe className="me-1" /> {article.ip_address}
@@ -564,20 +452,18 @@ export default function ArticleList() {
                             <FaEye />
                           </Link>
 
-                          {/* Edit button - visible if user can edit or is author of draft */}
-                          {(userPermissions.canEdit || isAuthor(article) || isAdmin) && (
-                            <Link
-                              to={`/wiki/articles/edit/${article.id}`}
-                              className="btn btn-sm btn-outline-warning me-1"
-                              title="Edit Article"
-                            >
-                              <FaEdit />
-                            </Link>
-                          )}
+                          {/* Edit button - visible to everyone */}
+                          <Link
+                            to={`/wiki/articles/edit/${article.id}`}
+                            className="btn btn-sm btn-outline-warning me-1"
+                            title="Edit Article"
+                          >
+                            <FaEdit />
+                          </Link>
 
-                          {/* Delete/Restore buttons */}
+                          {/* Delete/Restore buttons - conditional based on article status */}
                           {article.status === 'archived' ? (
-                            // Archived article actions - admins only
+                            // Archived article actions - visible to admins only
                             isAdmin && (
                               <>
                                 <button
@@ -597,8 +483,8 @@ export default function ArticleList() {
                               </>
                             )
                           ) : (
-                            // Non-archived article - delete if user has permission
-                            (userPermissions.canDelete || isAuthor(article) || isAdmin) && (
+                            // Non-archived article - delete button visible based on status
+                            (article.status === 'draft' || article.status === 'under_review' || isAdmin) && (
                               <button
                                 className="btn btn-sm btn-outline-danger"
                                 onClick={() => remove(article.id, article.title)}

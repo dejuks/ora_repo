@@ -129,6 +129,8 @@ import EbooksList from "./pages/ebooks/EbooksList";
 
 import EbookManagementPage from "./pages/ebooks/EbookManagementPage";
 import WikiProfileEdit from "./pages/wiki/users/WikiProfileEdit";
+import ArticleDetails from "./pages/wiki/ArticleDetails";
+import VandalismCheck from "./pages/wiki/VandalismCheck";
 
 function App() {
   return (
@@ -666,6 +668,21 @@ function App() {
         {/* <Route path="/wiki/articles/new" element={<ArticleCreate />} /> */}
         <Route path="/wiki/articles/edit/:id" element={<ArticleEdit />} />
         <Route path="/wiki/articles/drafts" element={<ArticleDraftList />} />
+
+        
+
+        <Route path="/wiki/articles" element={<ArticleList />} />
+        <Route path="/wiki/articles/:slug" element={<ArticleDetails />} />
+        
+    
+        
+        {/* Admin Routes */}
+          <Route path="/wiki/vandalism/check" element={<VandalismCheck />} />
+       
+
+
+
+
         {/* ================= Wiki Categories ================= */}
         <Route path="/wiki/categories" element={<WikiCategoryList />} />
         <Route path="/wiki/categories/create" element={<WikiCategoryForm />} />

@@ -23,14 +23,12 @@ const ROLES = {
   LIBRARY_MANAGER: "5042b3f2-2cd6-4a1b-8015-6774c3956409",
   RESEARCHER_NETWORK_MANAGER: "d2db77c2-177c-44e6-921a-d635abd674d3",
 
-
   JOURNAL_MANAGER: "311b2831-99d3-426b-9a7c-6453756d5d9a",
   JOURNAL_AUTHOR: "1d67d32d-dcee-4302-8369-26ca00385a09",
   REVIEWER: "5c6f2f3e-8f4b-4d3a-9f7a-2e5e8b6c4d2b",
   JOURNAL_EIC: "ad657069-0dd4-4bd1-8a19-ee6733dd303d",
   JOURNAL_ASSOCIATE_EDITOR: "45494844-658a-4837-8df6-f6fc61348bbb",
   JOURNAL_REFREE: "30d22914-dc7f-4532-ba19-31be2beb2e9d",
-
 
   // Repository Roles (Updated to match SRS terminology)
   REPOSITORY_ADMIN: "5205b388-a2e4-4e40-baae-8fe018e08d18",
@@ -182,11 +180,7 @@ export default function Sidebar() {
         name: "Dashboard",
         path: "/journal-dashboard",
         icon: "fas fa-tachometer-alt",
-        roles: [
-          ROLES.JOURNAL_MANAGER,
-          ROLES.EDITOR,
-          ROLES.REVIEWER,
-        ],
+        roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR, ROLES.REVIEWER],
       },
 
       /* ================= USERS & ROLES ================= */
@@ -214,7 +208,6 @@ export default function Sidebar() {
         icon: "fas fa-book",
         roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
         subMenu: [
-         
           {
             name: "Add Journal",
             path: "/journal/create",
@@ -228,167 +221,161 @@ export default function Sidebar() {
         name: "Dashboard",
         path: "/journal/author-dashboard",
         icon: "fas fa-tachometer-alt",
-        roles: [
-          ROLES.JOURNAL_AUTHOR
-        ],
+        roles: [ROLES.JOURNAL_AUTHOR],
       },
       {
-  name: "Submissions", // OJS uses “Submissions”
-  icon: "fas fa-file-alt",
-  roles: [ROLES.JOURNAL_MANAGER, ROLES.JOURNAL_AUTHOR, ROLES.EDITOR],
-  subMenu: [
-    /* ----- AUTHOR (OJS Author Role) ----- */
-    
-    
-    {
-      name: "My Submissions", // 
-      path: "/journal/manuscripts",
-      icon: "fas fa-inbox",
-      roles: [ROLES.JOURNAL_AUTHOR],
-    },
-    {
-      name: "New Submission", // 
-      path: "/manuscripts/create",
-      icon: "fas fa-paper-plane",
-      roles: [ROLES.JOURNAL_AUTHOR],
-    },
-    {
-      name: "IncompleteSubmissions", // OJS wording
-      path: "/manuscript/draft-manuscript",
-      icon: "fas fa-file",
-      roles: [ROLES.JOURNAL_AUTHOR],
-    },
-    {
-      name: "Revisions", // OJS standard label
-      path: "/journal/manuscripts/revisions",
-      icon: "fas fa-edit",
-      roles: [ROLES.JOURNAL_AUTHOR],
-    },
-  ],
-},
-// ---EIC---
-{
-  name: "Editorial Oversight",
-  icon: "fas fa-user-shield",
-  roles: [ROLES.JOURNAL_EIC],
-  subMenu: [
-    {
-      name: "All Submissions",
-      path: "/journal/eic/submissions",
-      icon: "fas fa-folder-open",
-    },
-    {
-      name: "Publication Payments",
-      path: "/eic/payment-orders",
-      icon: "fas fa-payment",
-    },
-    {
-      name: "Final Decisions",
-      path: "/journal/eic/final-decisions",
-      icon: "fas fa-gavel",
-    },
-    {
-      name: "Ethics & Compliance",
-      path: "/journal/eic/ethics",
-      icon: "fas fa-balance-scale",
-    },
-    {
-      name: "Production Approval",
-      path: "/journal/eic/production",
-      icon: "fas fa-check-double",
-    },
-    {
-      name: "Issue Scheduling",
-      path: "/journal/eic/issues",
-      icon: "fas fa-calendar-alt",
-    },
-    {
-      name: "Editorial Reports",
-      path: "/journal/eic/reports",
-      icon: "fas fa-chart-line",
-    },
-  ],
-}
-,
+        name: "Submissions", // OJS uses “Submissions”
+        icon: "fas fa-file-alt",
+        roles: [ROLES.JOURNAL_MANAGER, ROLES.JOURNAL_AUTHOR, ROLES.EDITOR],
+        subMenu: [
+          /* ----- AUTHOR (OJS Author Role) ----- */
 
-// ---Associate Editor---
-{
-  name: "Manuscript Handling",
-  icon: "fas fa-user-edit",
-  roles: [ROLES.JOURNAL_ASSOCIATE_EDITOR], // "45494844-658a-4837-8df6-f6fc61348bbb"
-  subMenu: [
-    {
-      name: "Submitted Manuscripts",
-      path: "/manuscript/ae/assigned-manuscripts",
-      icon: "fas fa-folder-open",
-    },
-    {
-      name: "Initial Screening",
-      path: "/manuscription/ae/screening",
-      icon: "fas fa-search",
-    },
-    {
-      name: "Review Evaluation",
-      path: "/journal/ae/review-evaluation",
-      icon: "fas fa-check-circle",
-    },
-    {
-      name: "Recommendations to EIC",
-      path: "/journal/ae/recommendations",
-      icon: "fas fa-gavel",
-    },
-    {
-      name: "Ethics & Compliance",
-      path: "/journal/ae/ethics",
-      icon: "fas fa-balance-scale",
-    },
-    {
-      name: "Production Tracking",
-      path: "/journal/ae/production",
-      icon: "fas fa-industry",
-    },
-  ],
-}
-,
-/* ================= REVIEWER / REFEREE ================= */
-{
-  name: "Peer Review",
-  icon: "fas fa-user-check",
-  roles: [ROLES.JOURNAL_REFREE], // "30d22914-dc7f-4532-ba19-31be2beb2e9d"
-  subMenu: [
-    {
-      name: "Assigned Reviews",
-      path: "/journal/reviewer/assigned",
-      icon: "fas fa-inbox",
-    },
-    {
-      name: "Review Workspace",
-      path: "/journal/reviewer/workspace",
-      icon: "fas fa-file-alt",
-    },
-    {
-      name: "Submit Review Report",
-      path: "/journal/reviewer/submit-review",
-      icon: "fas fa-paper-plane",
-    },
-    {
-      name: "Blind Review Files",
-      path: "/journal/reviewer/files",
-      icon: "fas fa-user-secret",
-    },
-    {
-      name: "Ethics & COPE Compliance",
-      path: "/journal/reviewer/ethics",
-      icon: "fas fa-balance-scale",
-    },
-    {
-      name: "Completed Reviews",
-      path: "/journal/reviewer/completed",
-      icon: "fas fa-check-circle",
-    },
-  ],
-}
-,
+          {
+            name: "My Submissions", //
+            path: "/journal/manuscripts",
+            icon: "fas fa-inbox",
+            roles: [ROLES.JOURNAL_AUTHOR],
+          },
+          {
+            name: "New Submission", //
+            path: "/manuscripts/create",
+            icon: "fas fa-paper-plane",
+            roles: [ROLES.JOURNAL_AUTHOR],
+          },
+          {
+            name: "IncompleteSubmissions", // OJS wording
+            path: "/manuscript/draft-manuscript",
+            icon: "fas fa-file",
+            roles: [ROLES.JOURNAL_AUTHOR],
+          },
+          {
+            name: "Revisions", // OJS standard label
+            path: "/journal/manuscripts/revisions",
+            icon: "fas fa-edit",
+            roles: [ROLES.JOURNAL_AUTHOR],
+          },
+        ],
+      },
+      // ---EIC---
+      {
+        name: "Editorial Oversight",
+        icon: "fas fa-user-shield",
+        roles: [ROLES.JOURNAL_EIC],
+        subMenu: [
+          {
+            name: "All Submissions",
+            path: "/journal/eic/submissions",
+            icon: "fas fa-folder-open",
+          },
+          {
+            name: "Publication Payments",
+            path: "/eic/payment-orders",
+            icon: "fas fa-payment",
+          },
+          {
+            name: "Final Decisions",
+            path: "/journal/eic/final-decisions",
+            icon: "fas fa-gavel",
+          },
+          {
+            name: "Ethics & Compliance",
+            path: "/journal/eic/ethics",
+            icon: "fas fa-balance-scale",
+          },
+          {
+            name: "Production Approval",
+            path: "/journal/eic/production",
+            icon: "fas fa-check-double",
+          },
+          {
+            name: "Issue Scheduling",
+            path: "/journal/eic/issues",
+            icon: "fas fa-calendar-alt",
+          },
+          {
+            name: "Editorial Reports",
+            path: "/journal/eic/reports",
+            icon: "fas fa-chart-line",
+          },
+        ],
+      },
+
+      // ---Associate Editor---
+      {
+        name: "Manuscript Handling",
+        icon: "fas fa-user-edit",
+        roles: [ROLES.JOURNAL_ASSOCIATE_EDITOR], // "45494844-658a-4837-8df6-f6fc61348bbb"
+        subMenu: [
+          {
+            name: "Submitted Manuscripts",
+            path: "/manuscript/ae/assigned-manuscripts",
+            icon: "fas fa-folder-open",
+          },
+          {
+            name: "Initial Screening",
+            path: "/manuscription/ae/screening",
+            icon: "fas fa-search",
+          },
+          {
+            name: "Review Evaluation",
+            path: "/journal/ae/review-evaluation",
+            icon: "fas fa-check-circle",
+          },
+          {
+            name: "Recommendations to EIC",
+            path: "/journal/ae/recommendations",
+            icon: "fas fa-gavel",
+          },
+          {
+            name: "Ethics & Compliance",
+            path: "/journal/ae/ethics",
+            icon: "fas fa-balance-scale",
+          },
+          {
+            name: "Production Tracking",
+            path: "/journal/ae/production",
+            icon: "fas fa-industry",
+          },
+        ],
+      },
+      /* ================= REVIEWER / REFEREE ================= */
+      {
+        name: "Peer Review",
+        icon: "fas fa-user-check",
+        roles: [ROLES.JOURNAL_REFREE], // "30d22914-dc7f-4532-ba19-31be2beb2e9d"
+        subMenu: [
+          {
+            name: "Assigned Reviews",
+            path: "/journal/reviewer/assigned",
+            icon: "fas fa-inbox",
+          },
+          {
+            name: "Review Workspace",
+            path: "/journal/reviewer/workspace",
+            icon: "fas fa-file-alt",
+          },
+          {
+            name: "Submit Review Report",
+            path: "/journal/reviewer/submit-review",
+            icon: "fas fa-paper-plane",
+          },
+          {
+            name: "Blind Review Files",
+            path: "/journal/reviewer/files",
+            icon: "fas fa-user-secret",
+          },
+          {
+            name: "Ethics & COPE Compliance",
+            path: "/journal/reviewer/ethics",
+            icon: "fas fa-balance-scale",
+          },
+          {
+            name: "Completed Reviews",
+            path: "/journal/reviewer/completed",
+            icon: "fas fa-check-circle",
+          },
+        ],
+      },
       /* ================= REVIEWS ================= */
       {
         name: "Reviews",
@@ -432,8 +419,6 @@ export default function Sidebar() {
           },
         ],
       },
-
-    
 
       /* ================= PROFILE ================= */
       {
@@ -489,166 +474,202 @@ export default function Sidebar() {
       },
     ],
 
- /* ================= OROMO WIKIPEDIA ================= */
-[MODULES.ORO_WIKI]: 
-[
-/* ===============================
+    /* ================= OROMO WIKIPEDIA ================= */
+    [MODULES.ORO_WIKI]: [
+      /* ===============================
    WIKI MANAGER VIEW
 =============================== */
-{
-  name: "Manager Dashboard",
-  path: "/wiki/dashboard",
-  icon: "fas fa-globe",
-  roles: [ROLES.ORO_WIKI_MANAGER],
-},
-{
-  name: "Content Management",
-  icon: "fas fa-file-alt",
-  roles: [ROLES.ORO_WIKI_MANAGER],
-  subMenu: [
-    { name: "All Articles", path: "/wiki/articles", icon: "fas fa-list" },
-    { name: "Publishing Queue", path: "/wiki/articles/publish", icon: "fas fa-upload" },
-  ],
-},
-{
-  name: "Categories",
-  icon: "fas fa-folder",
-  roles: [ROLES.ORO_WIKI_MANAGER],
-  subMenu: [
-    { name: "All Categories", path: "/wiki/categories", icon: "fas fa-list" },
-    { name: "Create Category", path: "/wiki/categories/create", icon: "fas fa-plus" },
-  ],
-},
-{
-  name: "Media Library",
-  icon: "fas fa-photo-video",
-  roles: [ROLES.ORO_WIKI_MANAGER],
-  subMenu: [
-    { name: "All Media", path: "/wiki/media", icon: "fas fa-images" },
-    { name: "Upload Media", path: "/wiki/media/upload", icon: "fas fa-upload" },
-  ],
-},
-{
-  name: "Users & Roles",
-  icon: "fas fa-users",
-  roles: [ROLES.ORO_WIKI_MANAGER],
-  subMenu: [
-    { name: "All Users", path: "/wiki/users", icon: "fas fa-user" },
-    { name: "Roles", path: "/wiki/roles", icon: "fas fa-user-tag" },
-  ],
-},
-{
-  name: "Settings",
-  path: "/wiki/settings",
-  icon: "fas fa-cogs",
-  roles: [ROLES.ORO_WIKI_MANAGER],
-},
-{
-  name: "Reports",
-  path: "/wiki/reports",
-  icon: "fas fa-chart-bar",
-  roles: [ROLES.ORO_WIKI_MANAGER],
-},
+      {
+        name: "Manager Dashboard",
+        path: "/wiki/dashboard",
+        icon: "fas fa-globe",
+        roles: [ROLES.ORO_WIKI_MANAGER],
+      },
+      {
+        name: "Content Management",
+        icon: "fas fa-file-alt",
+        roles: [ROLES.ORO_WIKI_MANAGER],
+        subMenu: [
+          { name: "All Articles", path: "/wiki/articles", icon: "fas fa-list" },
+          {
+            name: "Recent Changes",
+            path: "/wiki/recent-changes",
+            icon: "fa-clock",
+          },
+          { name: "Popular Articles", path: "/wiki/popular", icon: "fa-star" },
+          { name: "Random Article", path: "/wiki/random", icon: "fa-random" },
+          {
+            name: "Check Vandalism",
+            path: "/wiki/vandalism/check",
+            icon: "fa-flag",
+          },
+        ],
+      },
+      {
+        name: "Categories",
+        icon: "fas fa-folder",
+        roles: [ROLES.ORO_WIKI_MANAGER],
+        subMenu: [
+          {
+            name: "All Categories",
+            path: "/wiki/categories",
+            icon: "fas fa-list",
+          },
+          {
+            name: "Create Category",
+            path: "/wiki/categories/create",
+            icon: "fas fa-plus",
+          },
+        ],
+      },
+      {
+        name: "Media Library",
+        icon: "fas fa-photo-video",
+        roles: [ROLES.ORO_WIKI_MANAGER],
+        subMenu: [
+          { name: "All Media", path: "/wiki/media", icon: "fas fa-images" },
+          {
+            name: "Upload Media",
+            path: "/wiki/media/upload",
+            icon: "fas fa-upload",
+          },
+        ],
+      },
+      {
+        name: "Users & Roles",
+        icon: "fas fa-users",
+        roles: [ROLES.ORO_WIKI_MANAGER],
+        subMenu: [
+          { name: "All Users", path: "/wiki/users", icon: "fas fa-user" },
+          { name: "Roles", path: "/wiki/roles", icon: "fas fa-user-tag" },
+        ],
+      },
+      {
+        name: "Settings",
+        path: "/wiki/settings",
+        icon: "fas fa-cogs",
+        roles: [ROLES.ORO_WIKI_MANAGER],
+      },
+      {
+        name: "Reports",
+        path: "/wiki/reports",
+        icon: "fas fa-chart-bar",
+        roles: [ROLES.ORO_WIKI_MANAGER],
+      },
 
-/* ===============================
+      /* ===============================
    WIKI EDITOR VIEW
 =============================== */
-{
-  name: "Editor Dashboard",
-  path: "/wiki/dashboard",
-  icon: "fas fa-globe",
-  roles: [ROLES.ORO_WIKI_EDITOR],
-},
-{
-  name: "My Articles",
-  icon: "fas fa-file-alt",
-  roles: [ROLES.ORO_WIKI_EDITOR],
-  subMenu: [
-    { name: "All Articles", path: "/wiki/articles", icon: "fas fa-list" },
-    { name: "Create Article", path: "/wiki/articles/create", icon: "fas fa-plus" },
-    { name: "Drafts", path: "/wiki/articles/drafts", icon: "fas fa-edit" },
-  ],
-},
-{
-  name: "Media Library",
-  icon: "fas fa-photo-video",
-  roles: [ROLES.ORO_WIKI_EDITOR],
-  subMenu: [
-    { name: "All Media", path: "/wiki/media", icon: "fas fa-images" },
-    { name: "Upload Media", path: "/wiki/media/upload", icon: "fas fa-upload" },
-  ],
-},
+      {
+        name: "Editor Dashboard",
+        path: "/wiki/dashboard",
+        icon: "fas fa-globe",
+        roles: [ROLES.ORO_WIKI_EDITOR],
+      },
+      {
+        name: "My Articles",
+        icon: "fas fa-file-alt",
+        roles: [ROLES.ORO_WIKI_EDITOR],
+        subMenu: [
+          { name: "All Articles", path: "/wiki/articles", icon: "fas fa-list" },
+          {
+            name: "Create Article",
+            path: "/wiki/articles/create",
+            icon: "fas fa-plus",
+          },
+          {
+            name: "Drafts",
+            path: "/wiki/articles/drafts",
+            icon: "fas fa-edit",
+          },
+        ],
+      },
+      {
+        name: "Media Library",
+        icon: "fas fa-photo-video",
+        roles: [ROLES.ORO_WIKI_EDITOR],
+        subMenu: [
+          { name: "All Media", path: "/wiki/media", icon: "fas fa-images" },
+          {
+            name: "Upload Media",
+            path: "/wiki/media/upload",
+            icon: "fas fa-upload",
+          },
+        ],
+      },
 
-/* ===============================
+      /* ===============================
    WIKI PUBLISHER VIEW
 =============================== */
-{
-  name: "Publisher Dashboard",
-  path: "/wiki/dashboard",
-  icon: "fas fa-globe",
-  roles: [ROLES.ORO_WIKI_PUBLISHER],
-},
-{
-  name: "Publishing",
-  icon: "fas fa-upload",
-  roles: [ROLES.ORO_WIKI_PUBLISHER],
-  subMenu: [
-    { name: "Publishing Queue", path: "/wiki/articles/publish", icon: "fas fa-upload" },
-    { name: "All Articles", path: "/wiki/articles", icon: "fas fa-list" },
-  ],
-},
-{
-  name: "Media Library",
-  icon: "fas fa-photo-video",
-  roles: [ROLES.ORO_WIKI_PUBLISHER],
-  subMenu: [
-    { name: "All Media", path: "/wiki/media", icon: "fas fa-images" },
-  ],
-},
+      {
+        name: "Publisher Dashboard",
+        path: "/wiki/dashboard",
+        icon: "fas fa-globe",
+        roles: [ROLES.ORO_WIKI_PUBLISHER],
+      },
+      {
+        name: "Publishing",
+        icon: "fas fa-upload",
+        roles: [ROLES.ORO_WIKI_PUBLISHER],
+        subMenu: [
+          {
+            name: "Publishing Queue",
+            path: "/wiki/articles/publish",
+            icon: "fas fa-upload",
+          },
+          { name: "All Articles", path: "/wiki/articles", icon: "fas fa-list" },
+        ],
+      },
+      {
+        name: "Media Library",
+        icon: "fas fa-photo-video",
+        roles: [ROLES.ORO_WIKI_PUBLISHER],
+        subMenu: [
+          { name: "All Media", path: "/wiki/media", icon: "fas fa-images" },
+        ],
+      },
 
-/* ===============================
+      /* ===============================
    WIKI BUREAUCRAT VIEW
 =============================== */
-{
-  name: "Governance Dashboard",
-  path: "/wiki/dashboard",
-  icon: "fas fa-globe",
-  roles: [ROLES.ORO_WIKI_BUREAUCRAT],
-},
-{
-  name: "Users & Roles",
-  icon: "fas fa-users",
-  roles: [ROLES.ORO_WIKI_BUREAUCRAT],
-  subMenu: [
-    { name: "All Users", path: "/wiki/users", icon: "fas fa-user" },
-    { name: "Roles", path: "/wiki/roles", icon: "fas fa-user-tag" },
-  ],
-},
-{
-  name: "Reports",
-  path: "/wiki/reports",
-  icon: "fas fa-chart-bar",
-  roles: [ROLES.ORO_WIKI_BUREAUCRAT],
-},
+      {
+        name: "Governance Dashboard",
+        path: "/wiki/dashboard",
+        icon: "fas fa-globe",
+        roles: [ROLES.ORO_WIKI_BUREAUCRAT],
+      },
+      {
+        name: "Users & Roles",
+        icon: "fas fa-users",
+        roles: [ROLES.ORO_WIKI_BUREAUCRAT],
+        subMenu: [
+          { name: "All Users", path: "/wiki/users", icon: "fas fa-user" },
+          { name: "Roles", path: "/wiki/roles", icon: "fas fa-user-tag" },
+        ],
+      },
+      {
+        name: "Reports",
+        path: "/wiki/reports",
+        icon: "fas fa-chart-bar",
+        roles: [ROLES.ORO_WIKI_BUREAUCRAT],
+      },
 
-/* ===============================
+      /* ===============================
    WIKI OVERSIGHTER VIEW
 =============================== */
-{
-  name: "Oversight Dashboard",
-  path: "/wiki/dashboard",
-  icon: "fas fa-globe",
-  roles: [ROLES.ORO_WIKI_OVERSIGHTER],
-},
-{
-  name: "Moderation",
-  path: "/wiki/moderation",
-  icon: "fas fa-shield-alt",
-  roles: [ROLES.ORO_WIKI_OVERSIGHTER],
-},
-
-],
-
+      {
+        name: "Oversight Dashboard",
+        path: "/wiki/dashboard",
+        icon: "fas fa-globe",
+        roles: [ROLES.ORO_WIKI_OVERSIGHTER],
+      },
+      {
+        name: "Moderation",
+        path: "/wiki/moderation",
+        icon: "fas fa-shield-alt",
+        roles: [ROLES.ORO_WIKI_OVERSIGHTER],
+      },
+    ],
 
     /* ================ REPOSITORY MODULE ================ */
     [MODULES.REPOSITORY]: [
@@ -811,7 +832,7 @@ export default function Sidebar() {
           },
         ],
       },
-      
+
       {
         name: "Collections",
         icon: "fas fa-folder-open",
@@ -1126,7 +1147,10 @@ export default function Sidebar() {
         name: "Dashboard",
         path: "/research-network/dashboard",
         icon: "fas fa-network-wired",
-        roles: [ROLES.RESEARCHER_NETWORK_MANAGER, ROLES.RESEARCHER_NETWORK_MODERATOR],
+        roles: [
+          ROLES.RESEARCHER_NETWORK_MANAGER,
+          ROLES.RESEARCHER_NETWORK_MODERATOR,
+        ],
       },
 
       {
@@ -1254,46 +1278,46 @@ export default function Sidebar() {
       },
       /* ================= GROUP MODERATOR ================= */
 
-  {
-    name: "Groups & Moderation",
-    icon: "fas fa-users-cog",
-    roles: [
-      ROLES.RESEARCHER_NETWORK_MODERATOR,
-      ROLES.RESEARCHER_NETWORK_MANAGER,
-    ],
-    subMenu: [
       {
-        name: "Research Groups",
-        path: "/research-network/groups",
-        icon: "fas fa-layer-group",
+        name: "Groups & Moderation",
+        icon: "fas fa-users-cog",
+        roles: [
+          ROLES.RESEARCHER_NETWORK_MODERATOR,
+          ROLES.RESEARCHER_NETWORK_MANAGER,
+        ],
+        subMenu: [
+          {
+            name: "Research Groups",
+            path: "/research-network/groups",
+            icon: "fas fa-layer-group",
+          },
+          {
+            name: "Membership Requests",
+            path: "/research-network/groups/requests",
+            icon: "fas fa-user-check",
+          },
+          {
+            name: "Group Discussions",
+            path: "/research-network/groups/discussions",
+            icon: "fas fa-comments",
+          },
+          {
+            name: "Reported Issues",
+            path: "/research-network/groups/reports",
+            icon: "fas fa-flag",
+          },
+          {
+            name: "Conflict Resolution",
+            path: "/research-network/groups/conflicts",
+            icon: "fas fa-balance-scale",
+          },
+          {
+            name: "Community Guidelines",
+            path: "/research-network/guidelines",
+            icon: "fas fa-book",
+          },
+        ],
       },
-      {
-        name: "Membership Requests",
-        path: "/research-network/groups/requests",
-        icon: "fas fa-user-check",
-      },
-      {
-        name: "Group Discussions",
-        path: "/research-network/groups/discussions",
-        icon: "fas fa-comments",
-      },
-      {
-        name: "Reported Issues",
-        path: "/research-network/groups/reports",
-        icon: "fas fa-flag",
-      },
-      {
-        name: "Conflict Resolution",
-        path: "/research-network/groups/conflicts",
-        icon: "fas fa-balance-scale",
-      },
-      {
-        name: "Community Guidelines",
-        path: "/research-network/guidelines",
-        icon: "fas fa-book",
-      },
-    ],
-  },
     ],
   };
 
