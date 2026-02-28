@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginResearcher } from "../../api/researcher.api";
+import Navbar from "../../landing/components/Navbar";
 
 export default function ResearcherLogin() {
 
@@ -86,6 +87,8 @@ handleResearcherRedirect(res.user);
 
   /* ================= UI ================= */
   return (
+<>
+    <Navbar />
     <div style={{ background: "#f3f6f8", minHeight: "100vh" }}>
       <div className="container py-5">
         <div className="row align-items-center">
@@ -166,5 +169,6 @@ handleResearcherRedirect(res.user);
         </div>
       </div>
     </div>
+    </>
   );
 }

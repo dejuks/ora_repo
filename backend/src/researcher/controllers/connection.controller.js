@@ -22,7 +22,7 @@ export const sendConnectionRequest = async (req, res) => {
     if (requesterId === researcherId) {
       return res.status(400).json({ 
         success: false, 
-        message: "You cannot send a connection request to yourself" 
+        message: "You cannot send a coxnnection request to yourself" 
       });
     }
 

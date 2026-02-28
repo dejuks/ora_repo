@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { registerResearcher } from "../../api/researcher.api";
+import Navbar from "../../landing/components/Navbar";
 
 export default function ResearcherRegister() {
 
@@ -78,7 +79,9 @@ const handleSubmit = async (e) => {
 };
 
 
-  return (
+  return ( 
+    <>
+    <Navbar />
     <div style={{ background: "#f3f6f8", minHeight: "100vh" }}>
       <div className="container py-5">
         <div className="row align-items-center">
@@ -239,5 +242,6 @@ const handleSubmit = async (e) => {
         </div>
       </div>
     </div>
+    </>
   );
 }

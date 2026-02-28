@@ -1,4 +1,3 @@
-// WikipediaArticlesPage.jsx
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
@@ -20,6 +19,7 @@ import {
   FaUsers,
   FaMapMarkedAlt
 } from "react-icons/fa";
+import wikiApi from "../../api/api";
 
 export default function OromoWikipedia() {
   const [articles, setArticles] = useState([]);
@@ -51,65 +51,59 @@ export default function OromoWikipedia() {
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch featured articles
-      const featuredRes = await fetch('http://localhost:5000/api/wiki/articles?is_featured=true&limit=4');
-      const featuredData = await featuredRes.json();
-      // API returns data directly in data array
-      setFeaturedArticles(featuredData.data || []);
+      // Fetch all dashboard data in parallel
+      const [featuredRes, popularRes, recentRes] = await Promise.all([
+        wikiApi.getFeaturedArticles(4),
+        wikiApi.getPopularArticles(6),
+        wikiApi.getArticles({ limit: 6 })
+      ]);
 
-      // Fetch popular articles
-      const popularRes = await fetch('http://localhost:5000/api/wiki/articles/popular?limit=6');
-      const popularData = await popularRes.json();
-      setPopularArticles(popularData.data || []);
-
-      // Fetch recent articles
-      const recentRes = await fetch('http://localhost:5000/api/wiki/articles?limit=6');
-      const recentData = await recentRes.json();
-      setRecentArticles(recentData.data || []);
+      setFeaturedArticles(featuredRes.data || []);
+      setPopularArticles(popularRes.data || []);
+      setRecentArticles(recentRes.data || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      // Optional: Show error toast/notification here
     }
   };
 
   const fetchArticles = async () => {
     setLoading(true);
     try {
-      let url = `http://localhost:5000/api/wiki/articles?page=${currentPage}&limit=12`;
+      const params = {
+        page: currentPage,
+        limit: 12
+      };
       
       if (searchQuery) {
-        url += `&search=${encodeURIComponent(searchQuery)}`;
+        params.search = searchQuery;
       }
       
       if (selectedCategory && selectedCategory !== 'all') {
-        url += `&category=${selectedCategory}`;
+        params.category = selectedCategory;
       }
 
       if (selectedLang && selectedLang !== 'all') {
-        url += `&language=${selectedLang}`;
+        params.language = selectedLang;
       }
 
-      const res = await fetch(url);
-      const data = await res.json();
+      const response = await wikiApi.getArticles(params);
       
-      // Check the structure of your API response
-      console.log('API Response:', data);
+      console.log('API Response:', response);
       
       // Handle different response structures
-      if (data.success && data.data) {
-        // If data.data is an array
-        if (Array.isArray(data.data)) {
-          setArticles(data.data);
-          setTotalPages(Math.ceil(data.data.length / 12) || 1);
+      if (response.success && response.data) {
+        if (Array.isArray(response.data)) {
+          setArticles(response.data);
+          setTotalPages(Math.ceil(response.data.length / 12) || 1);
         } 
-        // If data.data has articles and pagination properties
-        else if (data.data.articles) {
-          setArticles(data.data.articles);
-          setTotalPages(data.data.pagination?.pages || 1);
+        else if (response.data.articles) {
+          setArticles(response.data.articles);
+          setTotalPages(response.data.pagination?.pages || 1);
         }
-      } else if (Array.isArray(data)) {
-        // If response is directly an array
-        setArticles(data);
-        setTotalPages(Math.ceil(data.length / 12) || 1);
+      } else if (Array.isArray(response)) {
+        setArticles(response);
+        setTotalPages(Math.ceil(response.length / 12) || 1);
       } else {
         setArticles([]);
         setTotalPages(1);
@@ -117,6 +111,7 @@ export default function OromoWikipedia() {
     } catch (error) {
       console.error('Error fetching articles:', error);
       setArticles([]);
+      // Optional: Show error toast/notification here
     } finally {
       setLoading(false);
     }
@@ -124,9 +119,8 @@ export default function OromoWikipedia() {
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/wiki/categories');
-      const data = await res.json();
-      setCategories(data.data || []);
+      const response = await wikiApi.getCategories();
+      setCategories(response.data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
@@ -134,9 +128,8 @@ export default function OromoWikipedia() {
 
   const fetchLanguages = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/wiki/articles/languages/stats');
-      const data = await res.json();
-      setLanguages(data.data || []);
+      const response = await wikiApi.getLanguagesStats();
+      setLanguages(response.data || []);
     } catch (error) {
       console.error('Error fetching languages:', error);
     }
@@ -144,12 +137,26 @@ export default function OromoWikipedia() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/wiki/articles/stats');
-      const data = await res.json();
-      setStats(data.data || {});
+      const response = await wikiApi.getArticlesStats();
+      setStats(response.data || {});
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
+  };
+
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1); // Reset to first page on new search
+  };
+
+  const handleLanguageChange = (langCode) => {
+    setSelectedLang(langCode);
+    setCurrentPage(1);
+  };
+
+  const handleCategoryChange = (categoryId) => {
+    setSelectedCategory(categoryId);
+    setCurrentPage(1);
   };
 
   const formatNumber = (num) => {
@@ -208,7 +215,7 @@ export default function OromoWikipedia() {
                     placeholder="Search articles..."
                     style={styles.searchInput}
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={handleSearch}
                   />
                 </div>
                 <Link to="/wiki/create" style={styles.createButton}>
@@ -249,7 +256,7 @@ export default function OromoWikipedia() {
                   ...styles.langButton,
                   ...(selectedLang === 'all' ? styles.langActive : {})
                 }}
-                onClick={() => setSelectedLang('all')}
+                onClick={() => handleLanguageChange('all')}
               >
                 <span style={styles.langName}>All Languages</span>
               </button>
@@ -260,7 +267,7 @@ export default function OromoWikipedia() {
                     ...styles.langButton,
                     ...(selectedLang === lang.code ? styles.langActive : {})
                   }}
-                  onClick={() => setSelectedLang(lang.code)}
+                  onClick={() => handleLanguageChange(lang.code)}
                 >
                   <span style={styles.langName}>{lang.name}</span>
                   <span style={styles.langCount}>{formatNumber(lang.count)}</span>
@@ -296,7 +303,7 @@ export default function OromoWikipedia() {
                     ...styles.categoryButton,
                     ...(selectedCategory === 'all' ? styles.categoryActive : {})
                   }}
-                  onClick={() => setSelectedCategory('all')}
+                  onClick={() => handleCategoryChange('all')}
                 >
                   <span style={styles.categoryIcon}>📚</span>
                   <span style={styles.categoryName}>All Articles</span>
@@ -309,7 +316,7 @@ export default function OromoWikipedia() {
                       ...styles.categoryButton,
                       ...(selectedCategory === cat.id ? styles.categoryActive : {})
                     }}
-                    onClick={() => setSelectedCategory(cat.id)}
+                    onClick={() => handleCategoryChange(cat.id)}
                   >
                     <span style={styles.categoryIcon}>{getCategoryIcon(cat.name)}</span>
                     <span style={styles.categoryName}>{cat.name}</span>
@@ -589,7 +596,9 @@ export default function OromoWikipedia() {
   );
 }
 
+// ... (keep all the styles object exactly as it was) ...
 const styles = {
+  // ... (copy all the styles from your original code here) ...
   container: {
     width: "100%",
     minHeight: "100vh",

@@ -91,13 +91,11 @@ export const getPublishedManuscriptById = async (req, res) => {
         m.published_at,
         u.full_name as author_name,
         u.email as author_email,
-        u.affiliation as author_affiliation,
         (
           SELECT json_agg(
             json_build_object(
               'id', f.id,
               'file_path', f.file_path,
-              'file_name', f.file_name,
               'file_type', f.file_type
             )
           )

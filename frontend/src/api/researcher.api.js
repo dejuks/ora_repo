@@ -1,5 +1,5 @@
 import axios from "axios";
-
+import axiosInstance from './axios';
 const API = axios.create({
   baseURL: "http://localhost:5000/api",
 });
@@ -493,4 +493,185 @@ export const logoutResearcher = () => {
   localStorage.removeItem("authToken");
   localStorage.removeItem("user");
   window.location.href = '/login';
+};
+
+/// Researcher public networks
+
+export const researcherAPI = {
+  // Get featured researchers
+  getFeaturedResearchers: async (limit = 3) => {
+    try {
+      const response = await axiosInstance.get('/researchers/featured', {
+        params: { limit }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching featured researchers:', error);
+      throw error;
+    }
+  },
+
+  // Get researchers with filters
+  getResearchers: async (params = {}) => {
+    try {
+      const response = await axiosInstance.get('/researchers', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching researchers:', error);
+      throw error;
+    }
+  },
+
+  // Get researcher by ID
+  getResearcherById: async (id) => {
+    try {
+      const response = await axiosInstance.get(`/researchers/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching researcher:', error);
+      throw error;
+    }
+  },
+
+  // Get researcher publications
+  getResearcherPublications: async (id, params = {}) => {
+    try {
+      const response = await axiosInstance.get(`/researchers/${id}/publications`, { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching researcher publications:', error);
+      throw error;
+    }
+  },
+
+  // Get researcher stats
+  getResearcherStats: async (id) => {
+    try {
+      const response = await axiosInstance.get(`/researchers/${id}/stats`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching researcher stats:', error);
+      throw error;
+    }
+  },
+
+  // Get recent publications
+  getRecentPublications: async (limit = 5) => {
+    try {
+      const response = await axiosInstance.get('/publications/recent', {
+        params: { limit }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching recent publications:', error);
+      throw error;
+    }
+  },
+
+  // Get upcoming events
+  getUpcomingEvents: async (limit = 3) => {
+    try {
+      const response = await axiosInstance.get('/events/upcoming', {
+        params: { limit }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching upcoming events:', error);
+      throw error;
+    }
+  },
+
+  // Get research fields with counts
+  getResearchFields: async () => {
+    try {
+      const response = await axiosInstance.get('/research/fields');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching research fields:', error);
+      throw error;
+    }
+  },
+
+  // Get testimonials
+  getTestimonials: async (limit = 3) => {
+    try {
+      const response = await axiosInstance.get('/testimonials', {
+        params: { limit }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching testimonials:', error);
+      throw error;
+    }
+  },
+
+  // Get network stats
+  getNetworkStats: async () => {
+    try {
+      const response = await axiosInstance.get('/network/stats');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching network stats:', error);
+      throw error;
+    }
+  },
+
+  // Search researchers
+  searchResearchers: async (query, params = {}) => {
+    try {
+      const response = await axiosInstance.get('/researchers/search', {
+        params: { q: query, ...params }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error searching researchers:', error);
+      throw error;
+    }
+  },
+
+  // Connect with researcher
+  connectWithResearcher: async (researcherId) => {
+    try {
+      const response = await axiosInstance.post(`/researchers/${researcherId}/connect`);
+      return response.data;
+    } catch (error) {
+      console.error('Error connecting with researcher:', error);
+      throw error;
+    }
+  },
+
+  // Follow researcher
+  followResearcher: async (researcherId) => {
+    try {
+      const response = await axiosInstance.post(`/researchers/${researcherId}/follow`);
+      return response.data;
+    } catch (error) {
+      console.error('Error following researcher:', error);
+      throw error;
+    }
+  },
+
+  // Get recommended researchers
+  getRecommendedResearchers: async (limit = 3) => {
+    try {
+      const response = await axiosInstance.get('/researchers/recommended', {
+        params: { limit }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching recommended researchers:', error);
+      throw error;
+    }
+  },
+
+  // Subscribe to newsletter
+  subscribeNewsletter: async (email) => {
+    try {
+      const response = await axiosInstance.post('/newsletter/subscribe', { email });
+      return response.data;
+    } catch (error) {
+      console.error('Error subscribing to newsletter:', error);
+      throw error;
+    }
+  }
 };

@@ -1,7 +1,7 @@
+// src/api/repository/public.api.js
 import axios from "axios";
 
 /* ================= AXIOS INSTANCE ================= */
-
 const API = axios.create({
   baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000/api",
   timeout: 15000, // 15 seconds timeout
@@ -10,20 +10,7 @@ const API = axios.create({
   },
 });
 
-/* ================= OPTIONAL AUTH TOKEN ================= */
-// Enable if needed later
-/*
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-*/
-
 /* ================= GLOBAL ERROR HANDLER ================= */
-
 const handleError = (error) => {
   if (error.response) {
     console.error("API Error:", error.response.data);
@@ -48,7 +35,6 @@ const handleError = (error) => {
 };
 
 /* ================= PUBLICATION API ================= */
-
 export const publicationAPI = {
   /* ===== Get All Published Manuscripts ===== */
   getPublishedManuscripts: async (page = 1, limit = 6, search = "") => {
@@ -60,7 +46,6 @@ export const publicationAPI = {
           ...(search && { search }),
         },
       });
-
       return response.data;
     } catch (error) {
       return handleError(error);
@@ -83,7 +68,6 @@ export const publicationAPI = {
       const response = await API.get("/publications/manuscripts/recent", {
         params: { limit },
       });
-
       return response.data;
     } catch (error) {
       return handleError(error);
@@ -99,43 +83,37 @@ export const publicationAPI = {
       return handleError(error);
     }
   },
-  /* ===== Get Single Manuscript by ID ===== */
-  getManuscriptById: async (id) => {
-    try {
-      const response = await API.get(`/publications/manuscripts/${id}`);
-      return response.data;
-    } catch (error) {
-      return handleError(error);
-    }
-  },
 
-  /* ===== Get Article by ID (Alias for getManuscriptById) ===== */
-  getArticleById: async (id) => {
+  /* ===== Search Public Items ===== */
+  searchPublicItems: async (query = "", page = 1, limit = 10) => {
     try {
-      const response = await API.get(`/publications/manuscripts/${id}`);
-      return response.data;
-    } catch (error) {
-      return handleError(error);
-    }
-  },
-
-  /* ===== Get Recent Manuscripts ===== */
-  getRecentManuscripts: async (limit = 5) => {
-    try {
-      const response = await API.get("/publications/manuscripts/recent", {
-        params: { limit },
+      const response = await API.get("/publications/search", {
+        params: { q: query, page, limit },
       });
-
       return response.data;
     } catch (error) {
       return handleError(error);
     }
   },
 
-  /* ===== Get Journal Stats ===== */
-  getJournalStats: async () => {
+  /* ===== Track Manuscript View ===== */
+  trackView: async (manuscriptId) => {
     try {
-      const response = await API.get("/publications/stats");
+      const response = await API.post(
+        `/publications/manuscripts/${manuscriptId}/view`
+      );
+      return response.data;
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+
+  /* ===== Track Manuscript Download ===== */
+  trackDownload: async (manuscriptId) => {
+    try {
+      const response = await API.post(
+        `/publications/manuscripts/${manuscriptId}/download`
+      );
       return response.data;
     } catch (error) {
       return handleError(error);
@@ -154,12 +132,13 @@ export const publicationAPI = {
     }
   },
 
-  /* ===== Download Article File ===== */
+  /* ===== Download Manuscript File ===== */
   downloadFile: async (fileId) => {
     try {
-      const response = await API.get(`/publications/files/${fileId}/download`, {
-        responseType: 'blob',
-      });
+      const response = await API.get(
+        `/publications/files/${fileId}/download`,
+        { responseType: "blob" }
+      );
       return response.data;
     } catch (error) {
       return handleError(error);

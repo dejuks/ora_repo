@@ -107,13 +107,13 @@ export default function Navbar() {
     }
     return 'U';
   };
-
-  const modules = [
+const modules = [
     { path: "/journal", label: "Journal", icon: "📚", description: "Academic journals and publications" },
     { path: "/repository", label: "Repository", icon: "🗂️", description: "Research data and papers" },
     { path: "/ebooks", label: "eBooks", icon: "📱", description: "Digital books and audiobooks" },
     { path: "/library", label: "Library", icon: "🏛️", description: "Digital library catalog" },
     { path: "/wikipedia", label: "Wikipedia", icon: "🌐", description: "Collaborative encyclopedia" },
+    { path: "/researcher", label: "Researcher Network", icon: "👥", description: "Connect with Oromo researchers worldwide" },
   ];
 
   const isActive = (path) => location.pathname === path;

@@ -131,6 +131,7 @@ import EbookManagementPage from "./pages/ebooks/EbookManagementPage";
 import WikiProfileEdit from "./pages/wiki/users/WikiProfileEdit";
 import ArticleDetails from "./pages/wiki/ArticleDetails";
 import VandalismCheck from "./pages/wiki/VandalismCheck";
+import JournalArticleDetail from "./landing/pages/JournalArticleDetail";
 
 function App() {
   return (
@@ -432,6 +433,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+
         <Route
           path="repository/curator/review/:uuid"
           element={
@@ -651,6 +654,9 @@ function App() {
           path="/journal/manuscripts/edit/:id"
           element={<ManuscriptEdit />}
         />
+
+        {/* Journal list */}
+        <Route path="journal/manuscript/:id" element={<JournalArticleDetail/>} />
         <Route
           path="/journal/manuscripts/show/:id"
           element={<ManuscriptShow />}
