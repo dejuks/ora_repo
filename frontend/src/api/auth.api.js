@@ -1,11 +1,16 @@
 // src/api/auth.api.js
-import API from "./axios";
+import axios from "axios";
 
-export const login = async ({ email, password }) => {
-  const { data } = await API.post("/auth/login", {
-    email,
-    password,
+const API = axios.create({
+  baseURL: "http://localhost:5000/api",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+export const login = (data) => {
+  return API.post("/auth/login", {
+    email: data.email,
+    password: data.password,
   });
-
-  return data; // returns { token, user }
 };

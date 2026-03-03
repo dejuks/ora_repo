@@ -26,7 +26,7 @@ import manuscriptAERoutes from "./manuscription/routes/associateEditor.routes.js
 import manuscriptReviewerRoutes from "./manuscription/routes/reviewer.routes.js";
 import workflowStage from "./manuscription/workflowstages/routes/workflowStage.routes.js";
 import ManuscriptFileRoute from "./manuscription/files/routes/files.routes.js";
-import ManuscriptCategoryies from "./manuscriptCategories/routes/routes.categories.js";
+import ManuscriptCategoryies from "./manuscription/routes/manuscript.category.routes.js";
 
 import publicationRoutes from "./publication/routes/publication.routes.js";
 
@@ -85,7 +85,7 @@ app.use("/api/permissions", permissionRoutes);
 app.use("/api/role-permissions", rolePermissionRoutes);
 app.use("/api/user-roles", userRoleRoutes);
 app.use("/api/modules", moduleRoutes);
-app.use("/api/categories", ManuscriptCategoryies);
+app.use("/api/manuscript", ManuscriptCategoryies);
 
 app.use("/api/journals", journalRoutes);
 app.use("/api", journalSectionRoutes);

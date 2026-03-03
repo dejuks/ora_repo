@@ -30,11 +30,11 @@ const ROLES = {
   JOURNAL_ASSOCIATE_EDITOR: "45494844-658a-4837-8df6-f6fc61348bbb",
   JOURNAL_REFREE: "30d22914-dc7f-4532-ba19-31be2beb2e9d",
 
-  // Repository Roles (Updated to match SRS terminology)
+  // Repository Roles
   REPOSITORY_ADMIN: "5205b388-a2e4-4e40-baae-8fe018e08d18",
   REPOSITORY_CURATOR: "7047bc22-6575-436c-9777-e06869004a4a",
   REPOSITORY_CONTENT_REVIEWER: "9ef6032d-85da-4d1b-910e-72469e4f068c",
-  RESEARCHER_AUTHOR: "bcb471d4-e59c-45f3-b512-e7c17a03c46c", // For depositing
+  RESEARCHER_AUTHOR: "bcb471d4-e59c-45f3-b512-e7c17a03c46c",
   REPOSITORY_PUBLIC_USER: "bcb471d4-e59c-45f3-b512-e7c17a03c46c",
   REPOSITORY_GUEST: "efdda7b9-6884-42c7-b6f3-bed7ab4eb92e",
 
@@ -85,7 +85,7 @@ export default function Sidebar() {
       })
       .filter(Boolean);
 
-  // MODULE ROUTES
+  // MODULE ROUTES (same as before - keep your existing routes object)
   const moduleRoutes = {
     [MODULES.SYSTEM_WIDE]: [
       // Dashboard
@@ -224,32 +224,30 @@ export default function Sidebar() {
         roles: [ROLES.JOURNAL_AUTHOR],
       },
       {
-        name: "Submissions", // OJS uses “Submissions”
+        name: "Submissions",
         icon: "fas fa-file-alt",
         roles: [ROLES.JOURNAL_MANAGER, ROLES.JOURNAL_AUTHOR, ROLES.EDITOR],
         subMenu: [
-          /* ----- AUTHOR (OJS Author Role) ----- */
-
           {
-            name: "My Submissions", //
+            name: "My Submissions",
             path: "/journal/manuscripts",
             icon: "fas fa-inbox",
             roles: [ROLES.JOURNAL_AUTHOR],
           },
           {
-            name: "New Submission", //
+            name: "New Submission",
             path: "/manuscripts/create",
             icon: "fas fa-paper-plane",
             roles: [ROLES.JOURNAL_AUTHOR],
           },
           {
-            name: "IncompleteSubmissions", // OJS wording
+            name: "Incomplete Submissions",
             path: "/manuscript/draft-manuscript",
             icon: "fas fa-file",
             roles: [ROLES.JOURNAL_AUTHOR],
           },
           {
-            name: "Revisions", // OJS standard label
+            name: "Revisions",
             path: "/journal/manuscripts/revisions",
             icon: "fas fa-edit",
             roles: [ROLES.JOURNAL_AUTHOR],
@@ -270,7 +268,7 @@ export default function Sidebar() {
           {
             name: "Publication Payments",
             path: "/eic/payment-orders",
-            icon: "fas fa-payment",
+            icon: "fas fa-credit-card",
           },
           {
             name: "Final Decisions",
@@ -304,7 +302,7 @@ export default function Sidebar() {
       {
         name: "Manuscript Handling",
         icon: "fas fa-user-edit",
-        roles: [ROLES.JOURNAL_ASSOCIATE_EDITOR], // "45494844-658a-4837-8df6-f6fc61348bbb"
+        roles: [ROLES.JOURNAL_ASSOCIATE_EDITOR],
         subMenu: [
           {
             name: "Submitted Manuscripts",
@@ -342,7 +340,7 @@ export default function Sidebar() {
       {
         name: "Peer Review",
         icon: "fas fa-user-check",
-        roles: [ROLES.JOURNAL_REFREE], // "30d22914-dc7f-4532-ba19-31be2beb2e9d"
+        roles: [ROLES.JOURNAL_REFREE],
         subMenu: [
           {
             name: "Assigned Reviews",
@@ -383,7 +381,7 @@ export default function Sidebar() {
         roles: [
           ROLES.JOURNAL_MANAGER,
           ROLES.REVIEWER,
-          ROLES.JOURNAL_AUTHOR, // only if author is also reviewer
+          ROLES.JOURNAL_AUTHOR,
           ROLES.EDITOR,
         ],
         subMenu: [
@@ -445,7 +443,7 @@ export default function Sidebar() {
       },
     ],
 
-    // ================= LIBRARY MODULE ================= */
+    // ================= LIBRARY MODULE =================
     [MODULES.LIBRARY]: [
       {
         name: "Dashboard",
@@ -476,9 +474,6 @@ export default function Sidebar() {
 
     /* ================= OROMO WIKIPEDIA ================= */
     [MODULES.ORO_WIKI]: [
-      /* ===============================
-   WIKI MANAGER VIEW
-=============================== */
       {
         name: "Manager Dashboard",
         path: "/wiki/dashboard",
@@ -494,14 +489,14 @@ export default function Sidebar() {
           {
             name: "Recent Changes",
             path: "/wiki/recent-changes",
-            icon: "fa-clock",
+            icon: "fas fa-clock",
           },
-          { name: "Popular Articles", path: "/wiki/popular", icon: "fa-star" },
-          { name: "Random Article", path: "/wiki/random", icon: "fa-random" },
+          { name: "Popular Articles", path: "/wiki/popular", icon: "fas fa-star" },
+          { name: "Random Article", path: "/wiki/random", icon: "fas fa-random" },
           {
             name: "Check Vandalism",
             path: "/wiki/vandalism/check",
-            icon: "fa-flag",
+            icon: "fas fa-flag",
           },
         ],
       },
@@ -556,10 +551,6 @@ export default function Sidebar() {
         icon: "fas fa-chart-bar",
         roles: [ROLES.ORO_WIKI_MANAGER],
       },
-
-      /* ===============================
-   WIKI EDITOR VIEW
-=============================== */
       {
         name: "Editor Dashboard",
         path: "/wiki/dashboard",
@@ -597,10 +588,6 @@ export default function Sidebar() {
           },
         ],
       },
-
-      /* ===============================
-   WIKI PUBLISHER VIEW
-=============================== */
       {
         name: "Publisher Dashboard",
         path: "/wiki/dashboard",
@@ -628,10 +615,6 @@ export default function Sidebar() {
           { name: "All Media", path: "/wiki/media", icon: "fas fa-images" },
         ],
       },
-
-      /* ===============================
-   WIKI BUREAUCRAT VIEW
-=============================== */
       {
         name: "Governance Dashboard",
         path: "/wiki/dashboard",
@@ -653,10 +636,6 @@ export default function Sidebar() {
         icon: "fas fa-chart-bar",
         roles: [ROLES.ORO_WIKI_BUREAUCRAT],
       },
-
-      /* ===============================
-   WIKI OVERSIGHTER VIEW
-=============================== */
       {
         name: "Oversight Dashboard",
         path: "/wiki/dashboard",
@@ -673,9 +652,6 @@ export default function Sidebar() {
 
     /* ================ REPOSITORY MODULE ================ */
     [MODULES.REPOSITORY]: [
-      /* ===============================
-     REPOSITORY ADMINISTRATOR VIEW
-  =============================== */
       {
         name: "Dashboard",
         path: "/repository/admin/dashboard",
@@ -795,10 +771,6 @@ export default function Sidebar() {
           },
         ],
       },
-
-      /* ===============================
-     REPOSITORY CURATOR VIEW
-  =============================== */
       {
         name: "Curation Dashboard",
         path: "/repository/curator/dashboard",
@@ -832,7 +804,6 @@ export default function Sidebar() {
           },
         ],
       },
-
       {
         name: "Collections",
         icon: "fas fa-folder-open",
@@ -859,32 +830,24 @@ export default function Sidebar() {
             name: "Submission Trends",
             path: "/repository/reports/trends",
             icon: "fas fa-chart-bar",
-            roles: [ROLES.REPOSITORY_CURATOR],
           },
           {
             name: "Processing Times",
             path: "/repository/reports/timelines",
             icon: "fas fa-clock",
-            roles: [ROLES.REPOSITORY_CURATOR],
           },
           {
             name: "Curator Performance",
             path: "/repository/reports/curator-performance",
             icon: "fas fa-user-check",
-            roles: [ROLES.REPOSITORY_CURATOR],
           },
           {
             name: "My Analytics",
             path: "/repository/reports/my-analytics",
-            icon: "fas fa-chart-pie", // ✅ correct
-            roles: [ROLES.REPOSITORY_CURATOR],
+            icon: "fas fa-chart-pie",
           },
         ],
       },
-
-      /* ===============================
-     CONTENT REVIEWER VIEW
-  =============================== */
       {
         name: "Reviewer Dashboard",
         path: "/repository/reviewer/dashboard",
@@ -950,10 +913,6 @@ export default function Sidebar() {
           },
         ],
       },
-
-      /* ===============================
-     RESEARCHER/AUTHOR VIEW
-  =============================== */
       {
         name: "My Repository",
         path: "/repository/author/dashboard",
@@ -993,7 +952,7 @@ export default function Sidebar() {
             icon: "fas fa-hourglass-half",
           },
           {
-            name: "Returned to Revission",
+            name: "Returned to Revision",
             path: "/repository/author/deposits/returned",
             icon: "fas fa-redo",
           },
@@ -1009,10 +968,6 @@ export default function Sidebar() {
           },
         ],
       },
-
-      /* ===============================
-     PUBLIC USER VIEW
-  =============================== */
       {
         name: "Search",
         path: "/repository/search",
@@ -1030,110 +985,106 @@ export default function Sidebar() {
             icon: "fas fa-folder",
           },
           {
-            name: "👥 By Author",
+            name: "By Author",
             path: "/repository/browse/authors",
             icon: "fas fa-user-graduate",
           },
           {
-            name: "🏷️ By Subject",
+            name: "By Subject",
             path: "/repository/browse/subjects",
             icon: "fas fa-tags",
           },
           {
-            name: "📅 By Date",
+            name: "By Date",
             path: "/repository/browse/date",
             icon: "fas fa-calendar",
           },
           {
-            name: "🎓 By Department",
+            name: "By Department",
             path: "/repository/browse/department",
             icon: "fas fa-building",
           },
         ],
       },
       {
-        name: "⭐ Featured",
+        name: "Featured",
         icon: "fas fa-star",
         roles: [ROLES.REPOSITORY_PUBLIC_USER, ROLES.REPOSITORY_GUEST],
         subMenu: [
           {
-            name: "🆕 Recent Additions",
+            name: "Recent Additions",
             path: "/repository/featured/recent",
             icon: "fas fa-clock",
           },
           {
-            name: "📈 Most Viewed",
+            name: "Most Viewed",
             path: "/repository/featured/popular",
             icon: "fas fa-fire",
           },
           {
-            name: "⬇️ Most Downloaded",
+            name: "Most Downloaded",
             path: "/repository/featured/downloaded",
             icon: "fas fa-download",
           },
           {
-            name: "🏆 Editor's Picks",
+            name: "Editor's Picks",
             path: "/repository/featured/picks",
             icon: "fas fa-award",
           },
         ],
       },
       {
-        name: "🛠️ Tools",
+        name: "Tools",
         icon: "fas fa-toolbox",
         roles: [ROLES.REPOSITORY_PUBLIC_USER, ROLES.REPOSITORY_GUEST],
         subMenu: [
           {
-            name: "📋 Citation Generator",
+            name: "Citation Generator",
             path: "/repository/tools/citation",
             icon: "fas fa-quote-right",
           },
           {
-            name: "💾 Export Citations",
+            name: "Export Citations",
             path: "/repository/tools/export",
             icon: "fas fa-file-export",
           },
           {
-            name: "🔖 Save to List",
+            name: "Save to List",
             path: "/repository/tools/savelist",
             icon: "fas fa-bookmark",
           },
           {
-            name: "📧 Email Alert",
+            name: "Email Alert",
             path: "/repository/tools/alerts",
             icon: "fas fa-envelope",
           },
         ],
       },
-
-      /* ===============================
-     SHARED REPORTS (Multiple Roles)
-  =============================== */
       {
         name: "Reports",
         icon: "fas fa-chart-bar",
         roles: [ROLES.REPOSITORY_ADMIN, ROLES.REPOSITORY_CONTENT_REVIEWER],
         subMenu: [
           {
-            name: "📈 Submission Trends",
+            name: "Submission Trends",
             path: "/repository/reports/trends",
             icon: "fas fa-chart-line",
             roles: [ROLES.REPOSITORY_ADMIN],
           },
           {
-            name: "⏱️ Processing Times",
+            name: "Processing Times",
             path: "/repository/reports/timelines",
             icon: "fas fa-stopwatch",
             roles: [ROLES.REPOSITORY_ADMIN],
           },
           {
-            name: "📊 Curator Performance",
+            name: "Curator Performance",
             path: "/repository/reports/curator-performance",
             icon: "fas fa-user-chart",
             roles: [ROLES.REPOSITORY_ADMIN],
           },
           {
-            name: "👁️ My Analytics",
+            name: "My Analytics",
             path: "/repository/reports/my-analytics",
             icon: "fas fa-chart-pie",
             roles: [ROLES.REPOSITORY_CURATOR],
@@ -1152,7 +1103,6 @@ export default function Sidebar() {
           ROLES.RESEARCHER_NETWORK_MODERATOR,
         ],
       },
-
       {
         name: "Users & Roles",
         icon: "fas fa-users",
@@ -1170,7 +1120,6 @@ export default function Sidebar() {
           },
         ],
       },
-
       {
         name: "Research Projects",
         icon: "fas fa-flask",
@@ -1180,29 +1129,24 @@ export default function Sidebar() {
             name: "All Projects",
             path: "/research-network/projects",
             icon: "fas fa-list",
-            roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
           },
           {
             name: "Create Project",
             path: "/research-network/projects/create",
             icon: "fas fa-plus",
-            roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
           },
           {
             name: "Ongoing Projects",
             path: "/research-network/projects/ongoing",
             icon: "fas fa-spinner",
-            roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
           },
           {
             name: "Completed Projects",
             path: "/research-network/projects/completed",
             icon: "fas fa-check",
-            roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
           },
         ],
       },
-
       {
         name: "Collaborations",
         icon: "fas fa-handshake",
@@ -1212,17 +1156,14 @@ export default function Sidebar() {
             name: "All Collaborations",
             path: "/research-network/collaborations",
             icon: "fas fa-list",
-            roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
           },
           {
             name: "New Collaboration",
             path: "/research-network/collaborations/create",
             icon: "fas fa-plus",
-            roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
           },
         ],
       },
-
       {
         name: "Researchers",
         icon: "fas fa-user-graduate",
@@ -1232,17 +1173,14 @@ export default function Sidebar() {
             name: "All Researchers",
             path: "/research-network/researchers",
             icon: "fas fa-list",
-            roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
           },
           {
             name: "Invite Researcher",
             path: "/research-network/researchers/invite",
             icon: "fas fa-user-plus",
-            roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
           },
         ],
       },
-
       {
         name: "Funding",
         icon: "fas fa-hand-holding-usd",
@@ -1252,32 +1190,26 @@ export default function Sidebar() {
             name: "All Funding",
             path: "/research-network/funding",
             icon: "fas fa-list",
-            roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
           },
           {
             name: "Add Funding",
             path: "/research-network/funding/create",
             icon: "fas fa-plus",
-            roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
           },
         ],
       },
-
       {
         name: "Reports",
         path: "/research-network/reports",
         icon: "fas fa-chart-bar",
         roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
       },
-
       {
         name: "Settings",
         path: "/research-network/settings",
         icon: "fas fa-cogs",
         roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
       },
-      /* ================= GROUP MODERATOR ================= */
-
       {
         name: "Groups & Moderation",
         icon: "fas fa-users-cog",
@@ -1331,42 +1263,311 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="main-sidebar sidebar-dark-primary elevation-4">
+    <aside className="main-sidebar sidebar-modern elevation-4">
+      <style jsx>{`
+        .sidebar-modern {
+          background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+          border-right: 1px solid rgba(0, 0, 0, 0.05);
+          box-shadow: 4px 0 20px rgba(0, 0, 0, 0.02);
+          min-height: 100vh;
+          width: 250px;
+          position: fixed;
+          left: 0;
+          top: 0;
+          transition: all 0.3s ease;
+          z-index: 1030;
+          font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        .brand-link {
+          display: flex;
+          align-items: center;
+          padding: 1.2rem 1rem;
+          background: rgba(255, 255, 255, 0.9);
+          border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+          text-decoration: none;
+          transition: all 0.3s ease;
+        }
+
+        .brand-text {
+          font-size: 1.25rem;
+          font-weight: 600;
+          background: linear-gradient(135deg, #2c3e50, #3498db);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          letter-spacing: 0.5px;
+        }
+
+        .user-panel {
+          padding: 1.2rem 1rem;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+          background: rgba(255, 255, 255, 0.5);
+          backdrop-filter: blur(5px);
+        }
+
+        .user-panel .image img {
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
+          border: 2px solid white;
+          box-shadow: 0 4px 10px rgba(52, 152, 219, 0.15);
+          object-fit: cover;
+        }
+
+        .user-panel .info a {
+          color: #2c3e50;
+          font-weight: 600;
+          font-size: 0.95rem;
+          text-decoration: none;
+          transition: color 0.3s ease;
+        }
+
+        .user-panel .info a:hover {
+          color: #3498db;
+        }
+
+        .user-panel .info small {
+          color: #7f8c8d;
+          font-size: 0.75rem;
+          display: block;
+          margin-top: 2px;
+        }
+
+        .nav-sidebar {
+          padding: 1rem 0.5rem;
+        }
+
+        .nav-item {
+          margin-bottom: 0.25rem;
+          list-style: none;
+        }
+
+        .nav-link {
+          display: flex;
+          align-items: center;
+          padding: 0.7rem 1rem;
+          border-radius: 12px;
+          color: #4a5568;
+          font-weight: 500;
+          font-size: 0.9rem;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          text-decoration: none;
+          position: relative;
+          overflow: hidden;
+          background: transparent;
+        }
+
+        .nav-link::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 0;
+          height: 100%;
+          width: 0;
+          background: linear-gradient(90deg, rgba(52, 152, 219, 0.1), transparent);
+          transition: width 0.3s ease;
+          z-index: -1;
+        }
+
+        .nav-link:hover {
+          background: linear-gradient(90deg, #f0f7ff, #ffffff);
+          color: #3498db;
+          transform: translateX(5px);
+          box-shadow: 0 4px 12px rgba(52, 152, 219, 0.1);
+        }
+
+        .nav-link:hover::before {
+          width: 100%;
+        }
+
+        .nav-link.active {
+          background: linear-gradient(135deg, #3498db, #2980b9);
+          color: white;
+          box-shadow: 0 6px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .nav-link.active i {
+          color: white;
+        }
+
+        .nav-link i {
+          margin-right: 12px;
+          font-size: 1.1rem;
+          width: 24px;
+          text-align: center;
+          color: #7f8c8d;
+          transition: all 0.3s ease;
+        }
+
+        .nav-link:hover i {
+          color: #3498db;
+          transform: scale(1.1);
+        }
+
+        .nav-link p {
+          margin: 0;
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .nav-link .right {
+          font-size: 0.8rem;
+          opacity: 0.7;
+          transition: transform 0.3s ease;
+        }
+
+        .nav-item.menu-open .nav-link .right {
+          transform: rotate(-90deg);
+        }
+
+        .nav-treeview {
+          padding-left: 2.5rem;
+          margin: 0.25rem 0;
+          list-style: none;
+        }
+
+        .nav-treeview .nav-link {
+          padding: 0.5rem 1rem;
+          font-size: 0.85rem;
+          background: transparent;
+          border-radius: 10px;
+        }
+
+        .nav-treeview .nav-link i {
+          font-size: 0.7rem;
+          margin-right: 8px;
+          color: #95a5a6;
+        }
+
+        .nav-treeview .nav-link:hover {
+          background: linear-gradient(90deg, #f8faff, #ffffff);
+          color: #3498db;
+        }
+
+        .nav-treeview .nav-link.active {
+          background: linear-gradient(135deg, #3498db20, #2980b920);
+          color: #2980b9;
+          font-weight: 600;
+        }
+
+        .nav-treeview .nav-link.active i {
+          color: #3498db;
+        }
+
+        .logout-btn {
+          margin-top: 2rem;
+          padding: 0 0.5rem;
+        }
+
+        .logout-btn .nav-link {
+          background: linear-gradient(135deg, #fee2e2, #fff5f5);
+          color: #e74c3c;
+          border: 1px solid rgba(231, 76, 60, 0.1);
+        }
+
+        .logout-btn .nav-link i {
+          color: #e74c3c;
+        }
+
+        .logout-btn .nav-link:hover {
+          background: linear-gradient(135deg, #e74c3c, #c0392b);
+          color: white;
+          transform: translateX(5px);
+          box-shadow: 0 6px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .logout-btn .nav-link:hover i {
+          color: white;
+        }
+
+        /* Custom scrollbar */
+        .sidebar-modern::-webkit-scrollbar {
+          width: 4px;
+        }
+
+        .sidebar-modern::-webkit-scrollbar-track {
+          background: #f1f1f1;
+        }
+
+        .sidebar-modern::-webkit-scrollbar-thumb {
+          background: #cbd5e0;
+          border-radius: 4px;
+        }
+
+        .sidebar-modern::-webkit-scrollbar-thumb:hover {
+          background: #a0aec0;
+        }
+
+        /* Gradient backgrounds for menu sections */
+        .nav-section-title {
+          padding: 1rem 1rem 0.5rem;
+          font-size: 0.7rem;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: #95a5a6;
+          font-weight: 600;
+        }
+
+        /* Animation for menu items */
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateX(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        .nav-item {
+          animation: slideIn 0.3s ease forwards;
+        }
+
+        .nav-item:nth-child(n) {
+          animation-delay: calc(n * 0.05s);
+        }
+      `}</style>
+
       <Link to="/" className="brand-link">
-        <span className="brand-text font-weight-light">UMS</span>
+        <span className="brand-text font-weight-light">ORA</span>
       </Link>
 
       <div className="sidebar">
         {/* User Panel */}
-        <div className="user-panel mt-3 pb-3 mb-3 d-flex">
-          <div className="image">
-            <img src="ora.png" className="img-circle elevation-2" alt="User" />
-          </div>
-          <div className="info">
-            <Link to="/profile" className="d-block">
-              {user.full_name}
-            </Link>
-            <small className="text-muted">{user.module_name}</small>
+        <div className="user-panel">
+          <div className="d-flex align-items-center">
+            <div className="image me-3">
+              <img src="/ora.png" className="img-circle" alt="User" />
+            </div>
+            <div className="info">
+              <Link to="/profile" className="d-block">
+                {user.full_name}
+              </Link>
+              <small className="text-muted">{user.module_name}</small>
+            </div>
           </div>
         </div>
 
         {/* Menu */}
-        <nav className="mt-2">
-          <ul
-            className="nav nav-pills nav-sidebar flex-column"
-            data-widget="treeview"
-            role="menu"
-            data-accordion="false"
-          >
+        <nav className="mt-3">
+          <ul className="nav nav-pills nav-sidebar flex-column">
+            {routes.length > 0 && (
+              <li className="nav-section-title">MAIN NAVIGATION</li>
+            )}
+            
             {routes.map((route, i) => {
               if (!route.subMenu) {
                 return (
-                  <li className="nav-item" key={i}>
+                  <li className="nav-item" key={i} style={{ animationDelay: `${i * 0.05}s` }}>
                     <Link
                       to={route.path}
                       className={`nav-link ${isActive(route.path) ? "active" : ""}`}
                     >
-                      <i className={`nav-icon ${route.icon}`} />
+                      <i className={route.icon} />
                       <p>{route.name}</p>
                     </Link>
                   </li>
@@ -1378,6 +1579,7 @@ export default function Sidebar() {
                 <li
                   key={i}
                   className={`nav-item has-treeview ${open ? "menu-open" : ""}`}
+                  style={{ animationDelay: `${i * 0.05}s` }}
                 >
                   <a
                     href="#"
@@ -1387,7 +1589,7 @@ export default function Sidebar() {
                       toggleMenu(route.name);
                     }}
                   >
-                    <i className={`nav-icon ${route.icon}`} />
+                    <i className={route.icon} />
                     <p>
                       {route.name}
                       <i className="right fas fa-angle-left" />
@@ -1400,7 +1602,7 @@ export default function Sidebar() {
                           to={sub.path}
                           className={`nav-link ${isActive(sub.path) ? "active" : ""}`}
                         >
-                          <i className={`far fa-circle nav-icon ${sub.icon}`} />
+                          <i className={`far fa-circle ${sub.icon}`} />
                           <p>{sub.name}</p>
                         </Link>
                       </li>
@@ -1410,18 +1612,28 @@ export default function Sidebar() {
               );
             })}
 
-            {/* Logout */}
-            <li className="nav-item mt-3">
+            {/* Logout Button */}
+            <li className="nav-item logout-btn">
               <button
-                className="nav-link btn btn-danger btn-sm text-left"
+                className="nav-link w-100 text-start border-0"
                 onClick={handleLogout}
+                style={{ background: 'none', cursor: 'pointer' }}
               >
-                <i className="nav-icon fas fa-sign-out-alt" />
+                <i className="fas fa-sign-out-alt" />
                 <p>Logout</p>
               </button>
             </li>
           </ul>
         </nav>
+
+        {/* Decorative gradient line */}
+        <div style={{
+          height: '4px',
+          background: 'linear-gradient(90deg, #3498db, #9b59b6, #e74c3c)',
+          margin: '1rem 0',
+          borderRadius: '2px',
+          opacity: 0.3
+        }} />
       </div>
     </aside>
   );

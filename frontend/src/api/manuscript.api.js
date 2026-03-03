@@ -1,27 +1,11 @@
-// src/api/manuscript.api.js
-import axios from "axios";
+import api from './axios';
 
 /* ==============================
-   AXIOS INSTANCE
-============================== */
-const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000/api/manuscripts", // use env variable for production
-  headers: { "Content-Type": "application/json" },
-});
-
-/* 🔐 AUTO ATTACH TOKEN */
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
-
-/* ==============================
-   HELPER
+   HELPER FUNCTIONS
 ============================== */
 const handleResponse = (res) => res.data;
 const handleError = (err) => {
-  console.error(err);
+  console.error('API Error:', err);
   throw err.response?.data || err.message || "API request failed";
 };
 
@@ -30,7 +14,7 @@ const handleError = (err) => {
 ============================== */
 export const fetchManuscripts = async (params = {}) => {
   try {
-    const res = await API.get("/", { params });
+    const res = await api.get('/manuscripts', { params });
     return handleResponse(res);
   } catch (err) {
     handleError(err);
@@ -40,7 +24,7 @@ export const fetchManuscripts = async (params = {}) => {
 export const fetchManuscript = async (id) => {
   if (!id) throw new Error("Manuscript ID is required");
   try {
-    const res = await API.get(`/${id}`);
+    const res = await api.get(`/manuscripts/${id}`);
     return handleResponse(res);
   } catch (err) {
     handleError(err);
@@ -50,7 +34,7 @@ export const fetchManuscript = async (id) => {
 export const createManuscript = async (data) => {
   if (!data) throw new Error("Manuscript data is required");
   try {
-    const res = await API.post("/", data);
+    const res = await api.post('/manuscripts', data);
     return handleResponse(res);
   } catch (err) {
     handleError(err);
@@ -61,7 +45,7 @@ export const updateManuscript = async (id, data) => {
   if (!id) throw new Error("Manuscript ID is required");
   if (!data) throw new Error("Update data is required");
   try {
-    const res = await API.put(`/${id}`, data);
+    const res = await api.put(`/manuscripts/${id}`, data);
     return handleResponse(res);
   } catch (err) {
     handleError(err);
@@ -71,7 +55,7 @@ export const updateManuscript = async (id, data) => {
 export const deleteManuscript = async (id) => {
   if (!id) throw new Error("Manuscript ID is required");
   try {
-    const res = await API.delete(`/${id}`);
+    const res = await api.delete(`/manuscripts/${id}`);
     return handleResponse(res);
   } catch (err) {
     handleError(err);
@@ -80,7 +64,7 @@ export const deleteManuscript = async (id) => {
 
 export const fetchScreenedManuscripts = async (params = {}) => {
   try {
-    const res = await API.get("/screening", { params });
+    const res = await api.get('/manuscripts/screening', { params });
     return handleResponse(res);
   } catch (err) {
     handleError(err);
