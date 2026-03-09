@@ -126,6 +126,8 @@ import CreateEbook from "./pages/ebooks/CreateEbook";
 import UpdateEbook from "./pages/ebooks/UpdateEbook";
 import EbooksList from "./pages/ebooks/EbooksList";
 import EbookManagementPage from "./pages/ebooks/EbookManagementPage";
+import EBookDashboards from "./pages/ebooks/EBookDashboards";
+
 import WikiProfileEdit from "./pages/wiki/users/WikiProfileEdit";
 import ArticleDetails from "./pages/wiki/ArticleDetails";
 import VandalismCheck from "./pages/wiki/VandalismCheck";
@@ -135,6 +137,14 @@ import JournalAuthorLoginPage from "./pages/journals/authors/JournalAuthorLoginP
 import ManuscriptContributePage from "./pages/journals/manuscriptions/pages/ManuscriptContributePage";
 import AuthorManuscriptView from "./pages/manuscription/AuthorManuscriptView";
 import UnderReviewAE from "./pages/manuscription/ae/UnderReviewAE";
+
+import AuthorSubmitManuscript from "./pages/ebooks/AuthorSubmitManuscript";
+import AuthorMySubmissions from "./pages/ebooks/AuthorMySubmissions";
+import ManuscriptDetail from "./pages/ebooks/ManuscriptDetail";
+import EditManuscript from "./pages/ebooks/EditManuscript";
+import EditorScreeningQueue from "./pages/ebooks/EditorScreeningQueue";
+
+
 
 function App() {
   return (
