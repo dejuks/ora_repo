@@ -3,6 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import e from 'express';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -81,11 +82,46 @@ export const getAllManuscripts = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+// it must display to public when it is status is published and it must display to author when it is in draft or submitted or screening or rejected 
 
-/* ===============================
-   GET BY ID
-================================= */
-export const getManuscriptById = async (req, res) => {
+export const getAllPublicManuscripts = async (req, res) => {
+  try {
+    // Fetch all manuscripts without user restriction
+    const result = await pool.query(`
+      SELECT 
+        m.*,
+        ws.name AS stage_name,
+        c.name AS category_name,
+        CONCAT(u.full_name) AS author_name,
+        (
+          SELECT COALESCE(json_agg(json_build_object(
+            'id', f.id,
+            'file_path', f.file_path,
+            'file_type', f.file_type,
+            'file_size', f.file_size,
+            'uploaded_at', f.uploaded_at
+          )), '[]'::json)
+          FROM files f
+          WHERE f.manuscript_id = m.id
+        ) AS files
+      FROM manuscripts m
+      LEFT JOIN workflow_stages ws ON m.current_stage_id = ws.id
+      LEFT JOIN categories c ON m.category_id = c.id
+      LEFT JOIN users u ON m.corresponding_author_id = u.uuid
+      WHERE m.status = 'payment_pending' OR m.status = 'published'
+      ORDER BY m.created_at DESC
+    `);
+
+    res.json(result.rows);
+
+  } catch (err) {
+    console.error("GET ALL PUBLIC MANUSCRIPTS ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get details by ID (with files) for public view
+export const getPublicManuscriptById = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -123,6 +159,49 @@ export const getManuscriptById = async (req, res) => {
     res.json(result.rows[0]);
 
   } catch (err) {
+    console.error("GET PUBLIC BY ID ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/* ===============================
+   GET BY ID
+================================= */
+export const getManuscriptById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(`
+      SELECT 
+        m.*,
+        ws.name AS stage_name,
+        CONCAT(u.full_name) AS author_name,
+        (
+          SELECT COALESCE(json_agg(json_build_object(
+            'id', f.id,
+            'file_path', f.file_path,
+            'file_type', f.file_type,
+            'file_size', f.file_size,
+            'uploaded_at', f.uploaded_at
+          )), '[]'::json)
+          FROM files f
+          WHERE f.manuscript_id = m.id
+        ) AS files
+      FROM manuscripts m
+      LEFT JOIN workflow_stages ws 
+        ON m.current_stage_id = ws.id
+      LEFT JOIN users u
+        ON m.corresponding_author_id = u.uuid
+      WHERE m.id = $1
+    `, [id]);
+
+    if (!result.rows.length) {
+      return res.status(404).json({ error: "Manuscript not found" });
+    }
+
+    res.json(result.rows[0]);
+
+  } catch (err) {
     console.error("GET BY ID ERROR:", err);
     res.status(500).json({ error: err.message });
   }
@@ -145,6 +224,9 @@ export const createManuscript = async (req, res) => {
     const abstract = req.body.abstract;
     const keywords = req.body.keywords;
     const authors = req.body.authors;
+    const coverletter = req.body.coverLetter;
+    const affiliations = req.body.affiliations;
+    const ethics_statement = req.body.ethicsStatement;
     const status = req.body.status || 'draft';
 
     // Get logged in user UUID from auth middleware
@@ -183,15 +265,18 @@ export const createManuscript = async (req, res) => {
       `INSERT INTO manuscripts (
         title, 
         abstract, 
-        keywords, 
-        authors, 
+        keywords,
+        authors,
+        affiliations, 
+        cover_letter,
+        ethics_statement,
         status, 
         created_by, 
         created_at, 
         updated_at
-      ) VALUES ($1, $2, $3::text[], $4::text[], $5, $6, NOW(), NOW())
+      ) VALUES ($1, $2, $3::text[], $4::text[], $5, $6, $7, $8, $9, NOW(), NOW())
       RETURNING *`,
-      [title, abstract, keywordsArray, authorsArray, status, createdBy]
+      [title, abstract, keywordsArray, authorsArray, affiliations, coverletter, ethics_statement, status, createdBy]
     );
 
     const manuscript = manuscriptResult.rows[0];
@@ -291,6 +376,9 @@ export const createManuscript = async (req, res) => {
 /* ===============================
    UPDATE Manuscript
 ================================= */
+/* ===============================
+   UPDATE Manuscript
+================================= */
 export const updateManuscript = async (req, res) => {
   const client = await pool.connect();
   try {
@@ -307,8 +395,6 @@ export const updateManuscript = async (req, res) => {
     const {
       title,
       abstract,
-      category_id,
-      corresponding_author_id,
       status,
       current_stage_id,
       keywords,
@@ -316,65 +402,125 @@ export const updateManuscript = async (req, res) => {
       manuscript_type,
       language,
       comments,
-      references,
+      affiliations,
       acknowledgements,
       cover_letter,
       funding_statement,
       conflict_of_interest,
-      ethics_statement
+      ethics_statement,
+      corresponding_author_id
     } = manuscriptData;
 
     await client.query('BEGIN');
 
-    // Update manuscripts table
-    const manuscriptResult = await client.query(
-      `UPDATE manuscripts
-       SET title = COALESCE($1, title),
-           abstract = COALESCE($2, abstract),
-           category_id = COALESCE($3, category_id),
-           corresponding_author_id = COALESCE($4, corresponding_author_id),
-           status = COALESCE($5, status),
-           current_stage_id = COALESCE($6, current_stage_id),
-           keywords = COALESCE($7, keywords),
-           authors = COALESCE($8, authors),
-           manuscript_type = COALESCE($9, manuscript_type),
-           language = COALESCE($10, language),
-           comments = COALESCE($11, comments),
-           references = COALESCE($12, references),
-           acknowledgements = COALESCE($13, acknowledgements),
-           cover_letter = COALESCE($14, cover_letter),
-           funding_statement = COALESCE($15, funding_statement),
-           conflict_of_interest = COALESCE($16, conflict_of_interest),
-           ethics_statement = COALESCE($17, ethics_statement),
-           updated_at = NOW()
-       WHERE id = $18
-       RETURNING *`,
-      [
-        title,
-        abstract,
-        category_id ? parseInt(category_id) : null,
-        corresponding_author_id,
-        status,
-        current_stage_id ? parseInt(current_stage_id) : null,
-        keywords,
-        authors,
-        manuscript_type,
-        language,
-        comments,
-        references,
-        acknowledgements,
-        cover_letter,
-        funding_statement,
-        conflict_of_interest,
-        ethics_statement,
-        id
-      ]
+    // Helper function to convert to PostgreSQL array format
+    const toPostgresArray = (value) => {
+      if (!value) return null;
+      
+      // If it's already an array
+      if (Array.isArray(value)) {
+        if (value.length === 0) return null;
+        // For text arrays, we can use the array directly
+        return value;
+      }
+      
+      // If it's a string, split by commas and create array
+      if (typeof value === 'string') {
+        const items = value.split(',').map(item => item.trim()).filter(item => item);
+        if (items.length === 0) return null;
+        return items;
+      }
+      
+      return null;
+    };
+
+    // Convert array fields - now returning arrays, not strings
+    const keywordsArray = toPostgresArray(keywords);
+    const authorsArray = toPostgresArray(authors);
+    const affiliationsArray = toPostgresArray(affiliations);
+
+    console.log('Original keywords:', keywords);
+    console.log('Formatted keywords for DB:', keywordsArray);
+    console.log('Type:', Array.isArray(keywordsArray) ? 'array' : typeof keywordsArray);
+
+    // First, get current manuscript to check existing values
+    const currentManuscript = await client.query(
+      `SELECT * FROM manuscripts WHERE id = $1`,
+      [id]
     );
 
-    if (!manuscriptResult.rows.length) {
+    if (!currentManuscript.rows.length) {
       await client.query('ROLLBACK');
       return res.status(404).json({ error: "Manuscript not found" });
     }
+
+    const current = currentManuscript.rows[0];
+
+    // Build update query dynamically to handle array fields correctly
+    const updates = [];
+    const values = [];
+    let paramIndex = 1;
+
+    // Helper to add update
+    const addUpdate = (field, value, useArray = false) => {
+      if (value !== undefined && value !== null) {
+        updates.push(`${field} = $${paramIndex}`);
+        values.push(value);
+        paramIndex++;
+      }
+    };
+
+    // Add regular fields
+    addUpdate('title', title || null);
+    addUpdate('abstract', abstract || null);
+    addUpdate('status', status || null);
+    addUpdate('current_stage_id', current_stage_id ? parseInt(current_stage_id) : null);
+    addUpdate('manuscript_type', manuscript_type || null);
+    addUpdate('language', language || null);
+    addUpdate('comments', comments || null);
+    addUpdate('acknowledgements', acknowledgements || null);
+    addUpdate('cover_letter', cover_letter || null);
+    addUpdate('funding_statement', funding_statement || null);
+    addUpdate('conflict_of_interest', conflict_of_interest || null);
+    addUpdate('ethics_statement', ethics_statement || null);
+
+    // Handle array fields separately - they need to be cast to text[]
+    if (keywordsArray !== null && keywordsArray !== undefined) {
+      updates.push(`keywords = $${paramIndex}::text[]`);
+      values.push(keywordsArray);
+      paramIndex++;
+    }
+
+    if (authorsArray !== null && authorsArray !== undefined) {
+      updates.push(`authors = $${paramIndex}::text[]`);
+      values.push(authorsArray);
+      paramIndex++;
+    }
+
+    if (affiliationsArray !== null && affiliationsArray !== undefined) {
+      updates.push(`affiliations = $${paramIndex}::text[]`);
+      values.push(affiliationsArray);
+      paramIndex++;
+    }
+
+    // Always update updated_at
+    updates.push(`updated_at = NOW()`);
+
+    // Add the ID as the last parameter
+    values.push(id);
+
+    // Construct and execute the query
+    const query = `
+      UPDATE manuscripts
+      SET ${updates.join(', ')}
+      WHERE id = $${paramIndex}
+      RETURNING *
+    `;
+
+    console.log('Update query:', query);
+    console.log('Update values:', values);
+
+    const manuscriptResult = await client.query(query, values);
 
     const manuscript = manuscriptResult.rows[0];
 
@@ -387,13 +533,25 @@ export const updateManuscript = async (req, res) => {
            VALUES ($1, $2, $3, $4, $5, NOW())`,
           [
             manuscript.id,
-            file.originalname,
-            file.path,
+            file.path || file.originalname,
             file.mimetype,
             file.size,
             req.user.uuid
           ]
         );
+      }
+    }
+
+    // Handle file deletions if any
+    if (req.body.filesToDelete) {
+      const filesToDelete = JSON.parse(req.body.filesToDelete);
+      if (Array.isArray(filesToDelete) && filesToDelete.length > 0) {
+        for (const fileId of filesToDelete) {
+          await client.query(
+            `DELETE FROM files WHERE id = $1 AND manuscript_id = $2`,
+            [fileId, id]
+          );
+        }
       }
     }
 
@@ -432,12 +590,13 @@ export const updateManuscript = async (req, res) => {
   } catch (err) {
     await client.query('ROLLBACK');
     console.error("UPDATE ERROR:", err);
+    console.error("Error detail:", err.detail);
+    console.error("Error position:", err.position);
     res.status(500).json({ error: err.message });
   } finally {
     client.release();
   }
 };
-
 /* ===============================
    GET SUBMITTED MANUSCRIPTS
 ================================= */
@@ -447,7 +606,6 @@ export const getSubmittedManuscripts = async (req, res) => {
       SELECT 
         m.*,
         ws.name AS stage_name,
-        c.name AS category_name,
         u.full_name AS author_name,
         COALESCE(
           json_agg(
@@ -464,11 +622,10 @@ export const getSubmittedManuscripts = async (req, res) => {
         ) AS files
       FROM manuscripts m
       LEFT JOIN workflow_stages ws ON m.current_stage_id = ws.id
-      LEFT JOIN categories c ON m.category_id = c.id
       LEFT JOIN users u ON m.corresponding_author_id = u.uuid
       LEFT JOIN files f ON m.id = f.manuscript_id
       WHERE m.status = 'submitted'
-      GROUP BY m.id, ws.name, c.name, u.full_name
+      GROUP BY m.id, ws.name, u.full_name
       ORDER BY m.created_at ASC
     `);
 
@@ -902,5 +1059,123 @@ export const downloadFile = async (req, res) => {
   } catch (err) {
     console.error("DOWNLOAD ERROR:", err);
     res.status(500).json({ error: err.message });
+  }
+};
+//* =============================== UNDER REVIEW MANUSCRIPTS ================================= */
+
+// // fetchUnderReviewManuscripts ,
+//   fetchAERecommendations,
+//   fetchEICDecisions
+export const fetchUnderReviewManuscripts = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        m.id,
+        m.title,
+        m.status,
+        ws.name AS stage_name,
+        u.full_name AS author_name,
+        c.name AS category_name,
+        m.created_at,
+        COALESCE(
+          json_agg(
+            jsonb_build_object(
+              'id', f.id,
+              'file_path', f.file_path
+            )
+          ) FILTER (WHERE f.id IS NOT NULL),
+          '[]'::json
+        ) AS files
+      FROM manuscripts m
+      LEFT JOIN workflow_stages ws ON m.current_stage_id = ws.id
+      LEFT JOIN users u ON m.corresponding_author_id = u.uuid
+      LEFT JOIN categories c ON m.category_id = c.id
+      LEFT JOIN files f ON m.id = f.manuscript_id
+      WHERE m.status = 'under_review'
+      GROUP BY m.id, ws.name, u.full_name, c.name
+      ORDER BY m.created_at DESC
+    `);
+
+    res.json(result.rows);
+
+  } catch (err) {
+    console.error("FETCH UNDER REVIEW ERROR:", err);
+    res.status(500).json({ error: 'Failed to load under review manuscripts' });
+  }
+};
+
+export const fetchAERecommendations = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        m.id,
+        m.title,
+        m.status,
+        ws.name AS stage_name,
+        u.full_name AS author_name,
+        c.name AS category_name,
+        m.created_at,
+        COALESCE(
+          json_agg(
+            jsonb_build_object(
+              'id', f.id,
+              'file_path', f.file_path
+            )
+          ) FILTER (WHERE f.id IS NOT NULL),
+          '[]'::json
+        ) AS files
+      FROM manuscripts m
+      LEFT JOIN workflow_stages ws ON m.current_stage_id = ws.id
+      LEFT JOIN users u ON m.corresponding_author_id = u.uuid
+      LEFT JOIN categories c ON m.category_id = c.id
+      LEFT JOIN files f ON m.id = f.manuscript_id
+      WHERE m.status = 'ae_recommendation'
+      GROUP BY m.id, ws.name, u.full_name, c.name
+      ORDER BY m.created_at DESC
+    `);
+
+    res.json(result.rows);
+
+  } catch (err) {
+    console.error("FETCH AE RECOMMENDATIONS ERROR:", err);
+    res.status(500).json({ error: 'Failed to load AE recommendations' });
+  }
+};
+
+export const fetchEICDecisions = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        m.id,
+        m.title,
+        m.status,
+        ws.name AS stage_name,
+        u.full_name AS author_name,
+        c.name AS category_name,
+        m.created_at,
+        COALESCE(
+          json_agg(
+            jsonb_build_object(
+              'id', f.id,
+              'file_path', f.file_path
+            )
+          ) FILTER (WHERE f.id IS NOT NULL),
+          '[]'::json
+        ) AS files
+      FROM manuscripts m
+      LEFT JOIN workflow_stages ws ON m.current_stage_id = ws.id
+      LEFT JOIN users u ON m.corresponding_author_id = u.uuid
+      LEFT JOIN categories c ON m.category_id = c.id
+      LEFT JOIN files f ON m.id = f.manuscript_id
+      WHERE m.status = 'eic_decision'
+      GROUP BY m.id, ws.name, u.full_name, c.name
+      ORDER BY m.created_at DESC
+    `);
+
+    res.json(result.rows);
+
+  } catch (err) {
+    console.error("FETCH EIC DECISIONS ERROR:", err);
+    res.status(500).json({ error: 'Failed to load EIC decisions' });
   }
 };

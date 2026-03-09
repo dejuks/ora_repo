@@ -1,96 +1,85 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { publicationAPI } from "../../api/publication.api";
+import {
+  fetchPublicManuscripts,
+  downloadFile
+} from "../../api/manuscript.api";
 
 const API_BASE =
   process.env.REACT_APP_API_URL?.replace("/api", "") ||
   "http://localhost:5000";
 
-export default function JournalPage() {
+export default function PublicManuscriptsPage() {
+  const navigate = useNavigate();
   const [manuscripts, setManuscripts] = useState([]);
-  const [recentManuscripts, setRecentManuscripts] = useState([]);
-  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 6,
-    total: 0,
-    pages: 1,
-  });
-
-  /* ================= LOAD DATA ================= */
-
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const [manuscriptsData, recentData, statsData] = await Promise.all([
-        publicationAPI.getPublishedManuscripts(
-          pagination.page,
-          pagination.limit,
-          searchQuery
-        ),
-        publicationAPI.getRecentManuscripts(5),
-        publicationAPI.getJournalStats(),
-      ]);
-
-      if (manuscriptsData?.success) {
-        setManuscripts(manuscriptsData.manuscripts || []);
-        setPagination((prev) => ({
-          ...prev,
-          total: manuscriptsData.pagination?.total || 0,
-          pages: manuscriptsData.pagination?.pages || 1,
-        }));
-      }
-
-      if (recentData?.success) {
-        setRecentManuscripts(recentData.manuscripts || []);
-      }
-
-      if (statsData?.success) {
-        setStats(statsData.stats || null);
-      }
-    } catch (err) {
-      console.error(err);
-      setError(err.message || "Failed to load journal data");
-    } finally {
-      setLoading(false);
-    }
-  }, [pagination.page, pagination.limit, searchQuery]);
 
   useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchPublicManuscripts();
+        setManuscripts(data || []);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load manuscripts");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadData();
-  }, [loadData]);
-
-  /* ================= SEARCH ================= */
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setPagination((prev) => ({ ...prev, page: 1 }));
-    loadData();
-  };
-
-  /* ================= HELPERS ================= */
+  }, []);
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
   };
+
+  // Get unique stages for filtering
+  const stages = ["all", ...new Set(manuscripts.map(m => m.stage_name).filter(Boolean))];
+
+  // Filter manuscripts based on category and search
+  const filteredManuscripts = manuscripts.filter(m => {
+    const matchesCategory = selectedCategory === "all" || m.stage_name === selectedCategory;
+    const matchesSearch = m.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          m.author_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          m.abstract?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   const buildFileUrl = (path) => {
     if (!path) return null;
     return `${API_BASE}/${path}`;
   };
 
-  /* ================= RENDER ================= */
+  // Get status color
+  const getStatusColor = (status) => {
+    const colors = {
+      published: "#10b981",
+      accepted: "#3b82f6",
+      review: "#f59e0b",
+      submitted: "#8b5cf6",
+      draft: "#6b7280"
+    };
+    return colors[status?.toLowerCase()] || "#6b7280";
+  };
+
+  // Handle contribute click - redirect to login/register
+  const handleContributeClick = () => {
+    // You can pass a redirect URL to come back to this page after login
+    navigate("/journal/author-login?redirect=/manuscripts/contribute");
+    // Or if you want to go directly to registration:
+    // navigate("/register?redirect=/manuscripts/contribute");
+  };
 
   return (
     <>
@@ -105,56 +94,69 @@ export default function JournalPage() {
             <div style={styles.heroBadgeWrapper}>
               <span style={styles.heroBadge}>
                 <span style={styles.badgeDot} />
-                International Peer-Reviewed Journal
+                Academic Research Journal
               </span>
             </div>
 
             <h1 style={styles.heroTitle}>
-              Oromo Research 
-              <span style={styles.heroTitleAccent}>Journal</span>
+              Discover Academic 
+              <span style={styles.heroTitleAccent}>Manuscripts</span>
             </h1>
 
             <p style={styles.heroSubtitle}>
-              Advancing knowledge and understanding of Oromo history,
-              culture, language, and development through rigorous
-              academic scholarship.
+              Explore a collection of scholarly works from researchers around the world,
+              advancing knowledge across multiple disciplines.
             </p>
+
+            {/* CONTRIBUTE BUTTON - NEW */}
+            <div style={styles.contributeWrapper}>
+              <button 
+                onClick={handleContributeClick}
+                style={styles.contributeButton}
+                className="contribute-button"
+              >
+                <span style={styles.contributeIcon}>✍️</span>
+                Start Contributing
+                <span style={styles.contributeArrow}>→</span>
+              </button>
+              <p style={styles.contributeText}>
+                Join our community of researchers and share your work
+              </p>
+            </div>
 
             <div style={styles.statsGrid}>
               <div style={styles.statCard}>
-                <div style={styles.statIcon}>📊</div>
-                <div>
-                  <span style={styles.statNumber}>4.2</span>
-                  <span style={styles.statLabel}>Impact Factor</span>
-                </div>
-              </div>
-
-              <div style={styles.statCard}>
                 <div style={styles.statIcon}>📚</div>
                 <div>
-                  <span style={styles.statNumber}>
-                    {stats?.total_manuscripts || 0}
-                  </span>
-                  <span style={styles.statLabel}>Articles Published</span>
+                  <span style={styles.statNumber}>{manuscripts.length}</span>
+                  <span style={styles.statLabel}>Total Manuscripts</span>
                 </div>
               </div>
 
               <div style={styles.statCard}>
-                <div style={styles.statIcon}>👥</div>
+                <div style={styles.statIcon}>✍️</div>
                 <div>
                   <span style={styles.statNumber}>
-                    {stats?.total_authors || 0}
+                    {new Set(manuscripts.map(m => m.author_name)).size}
                   </span>
                   <span style={styles.statLabel}>Contributors</span>
+                </div>
+              </div>
+
+              <div style={styles.statCard}>
+                <div style={styles.statIcon}>🏷️</div>
+                <div>
+                  <span style={styles.statNumber}>{stages.length - 1}</span>
+                  <span style={styles.statLabel}>Categories</span>
                 </div>
               </div>
             </div>
 
             {/* SEARCH BAR */}
-            <form onSubmit={handleSearch} style={styles.searchContainer}>
+            <div style={styles.searchContainer}>
               <input
                 type="text"
-                placeholder="Search articles by title, author, or keywords..."
+                placeholder="Search by title, author, or abstract..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={styles.searchInput}
@@ -163,7 +165,7 @@ export default function JournalPage() {
                 <span style={styles.searchIcon}>🔍</span>
                 Search
               </button>
-            </form>
+            </div>
           </div>
         </section>
 
@@ -179,156 +181,178 @@ export default function JournalPage() {
         <section style={styles.articlesSection}>
           <div style={styles.sectionHeader}>
             <h2 style={styles.sectionTitle}>
-              Latest <span style={styles.sectionTitleAccent}>Articles</span>
+              Browse by <span style={styles.sectionTitleAccent}>Category</span>
             </h2>
             <p style={styles.sectionSubtitle}>
-              Discover the latest research and scholarly work
+              Filter manuscripts by research area and field of study
             </p>
+          </div>
+
+          {/* Category Filter */}
+          <div style={styles.filterSection}>
+            <div style={styles.categoryTabs}>
+              {stages.map((stage) => (
+                <button
+                  key={stage}
+                  onClick={() => setSelectedCategory(stage)}
+                  style={{
+                    ...styles.categoryTab,
+                    ...(selectedCategory === stage ? styles.categoryTabActive : {})
+                  }}
+                >
+                  {stage === "all" ? "All Manuscripts" : stage}
+                </button>
+              ))}
+            </div>
           </div>
 
           {loading ? (
             <div style={styles.loadingContainer}>
               <div style={styles.loadingSpinner}></div>
-              <p>Loading articles...</p>
+              <p>Discovering manuscripts...</p>
             </div>
           ) : (
             <>
-              <div style={styles.articlesGrid}>
-                {manuscripts.length === 0 ? (
-                  <div style={styles.noResults}>
-                    <span style={styles.noResultsIcon}>📭</span>
-                    <h3>No manuscripts found</h3>
-                    <p>Try adjusting your search criteria</p>
-                  </div>
-                ) : (
-                  manuscripts.map((m, index) => (
-                    <div key={m.id} style={styles.articleCard}>
-                      <div style={styles.cardHeader}>
-                        <span style={styles.cardNumber}>
-                          {(pagination.page - 1) * pagination.limit + index + 1}
-                        </span>
-                      </div>
-                      
-                      <h3 style={styles.cardTitle}>
-                        <Link to={`/journal/manuscript/${m.id}`} style={styles.cardLink}>
-                          {m.title}
-                        </Link>
-                      </h3>
-
-                      <div style={styles.authorInfo}>
-                        <div style={styles.authorAvatar}>
-                          {m.author_name?.charAt(0) || 'A'}
-                        </div>
-                        <div>
-                          <p style={styles.authorName}>{m.author_name}</p>
-                          <p style={styles.authorAffiliation}>{m.author_affiliation}</p>
-                        </div>
-                      </div>
-
-                      <p style={styles.cardAbstract}>
-                        {m.abstract?.substring(0, 180)}...
-                      </p>
-
-                      <div style={styles.cardFooter}>
-                        <div style={styles.dateBadge}>
-                          <span style={styles.calendarIcon}>📅</span>
-                          {formatDate(m.published_at)}
-                        </div>
-
-                        {m.file_path && (
-                          <a
-                            href={buildFileUrl(m.file_path)}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={styles.downloadButton}
-                          >
-                            <span style={styles.downloadIcon}>📥</span>
-                            PDF
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* PAGINATION */}
-              {pagination.pages > 1 && (
-                <div style={styles.pagination}>
-                  <button
-                    disabled={pagination.page === 1}
-                    onClick={() =>
-                      setPagination((prev) => ({
-                        ...prev,
-                        page: prev.page - 1,
-                      }))
-                    }
-                    style={{
-                      ...styles.paginationButton,
-                      ...(pagination.page === 1 && styles.paginationButtonDisabled)
-                    }}
+              {filteredManuscripts.length === 0 ? (
+                <div style={styles.noResults}>
+                  <span style={styles.noResultsIcon}>📭</span>
+                  <h3>No manuscripts found</h3>
+                  <p>Try adjusting your search or filter to find what you're looking for</p>
+                  
+                  {/* CONTRIBUTE CTA IN EMPTY STATE */}
+                  <button 
+                    onClick={handleContributeClick}
+                    style={styles.emptyStateContributeButton}
                   >
-                    ← Previous
+                    Be the first to contribute →
                   </button>
+                </div>
+              ) : (
+                <>
+                  <div style={styles.resultsInfo}>
+                    <p style={styles.resultsCount}>
+                      Showing <strong>{filteredManuscripts.length}</strong> {filteredManuscripts.length === 1 ? 'manuscript' : 'manuscripts'}
+                    </p>
+                  </div>
 
-                  <div style={styles.pageNumbers}>
-                    {[...Array(pagination.pages)].map((_, i) => (
-                      <button
-                        key={i + 1}
-                        onClick={() => setPagination(prev => ({ ...prev, page: i + 1 }))}
-                        style={{
-                          ...styles.pageNumber,
-                          ...(pagination.page === i + 1 && styles.pageNumberActive)
-                        }}
+                  <div style={styles.articlesGrid}>
+                    {filteredManuscripts.map((manuscript, index) => (
+                      <Link 
+                        to={`/manuscript/${manuscript.id}`} 
+                        key={manuscript.id}
+                        style={styles.articleCard}
+                        className="article-card"
                       >
-                        {i + 1}
-                      </button>
+                        <div style={styles.cardHeader}>
+                          <span style={styles.cardNumber}>
+                            {index + 1}
+                          </span>
+                          <span style={{
+                            ...styles.cardStatus,
+                            backgroundColor: getStatusColor(manuscript.status)
+                          }}>
+                            {manuscript.status || 'Published'}
+                          </span>
+                        </div>
+                        
+                        <h3 style={styles.cardTitle}>
+                          {manuscript.title}
+                        </h3>
+
+                        <div style={styles.authorInfo}>
+                          <div style={styles.authorAvatar}>
+                            {manuscript.author_name?.charAt(0) || 'A'}
+                          </div>
+                          <div>
+                            <p style={styles.authorName}>{manuscript.author_name || 'Anonymous'}</p>
+                            <p style={styles.authorAffiliation}>{manuscript.stage_name || 'Researcher'}</p>
+                          </div>
+                        </div>
+
+                        {manuscript.abstract && (
+                          <p style={styles.cardAbstract}>
+                            {manuscript.abstract.length > 180
+                              ? `${manuscript.abstract.substring(0, 180)}...`
+                              : manuscript.abstract}
+                          </p>
+                        )}
+
+                        <div style={styles.metadata}>
+                          <div style={styles.metadataItem}>
+                            <span style={styles.metadataIcon}>📅</span>
+                            <span>{formatDate(manuscript.created_at)}</span>
+                          </div>
+                          
+                          {manuscript.files && manuscript.files.length > 0 && (
+                            <div style={styles.metadataItem}>
+                              <span style={styles.metadataIcon}>📎</span>
+                              <span>{manuscript.files.length} {manuscript.files.length === 1 ? 'file' : 'files'}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {manuscript.files && manuscript.files.length > 0 && (
+                          <div style={styles.fileTags}>
+                            {manuscript.files.slice(0, 2).map((file, idx) => (
+                              <span key={file.id} style={styles.fileTag}>
+                                📄 File {idx + 1}
+                              </span>
+                            ))}
+                            {manuscript.files.length > 2 && (
+                              <span style={styles.fileTagMore}>
+                                +{manuscript.files.length - 2} more
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        <div style={styles.cardFooter}>
+                          <span style={styles.readMore}>
+                            Read Full Manuscript
+                            <span style={styles.arrow}>→</span>
+                          </span>
+                        </div>
+                      </Link>
                     ))}
                   </div>
 
-                  <button
-                    disabled={pagination.page === pagination.pages}
-                    onClick={() =>
-                      setPagination((prev) => ({
-                        ...prev,
-                        page: prev.page + 1,
-                      }))
-                    }
-                    style={{
-                      ...styles.paginationButton,
-                      ...(pagination.page === pagination.pages && styles.paginationButtonDisabled)
-                    }}
-                  >
-                    Next →
-                  </button>
-                </div>
+                  {/* CONTRIBUTE CTA AFTER ARTICLES */}
+                  <div style={styles.bottomCTA}>
+                    <div style={styles.bottomCTAContent}>
+                      <h3 style={styles.bottomCTATitle}>Ready to share your research?</h3>
+                      <p style={styles.bottomCTAText}>
+                        Join our community of scholars and contribute your manuscripts to the academic world.
+                      </p>
+                      <button 
+                        onClick={handleContributeClick}
+                        style={styles.bottomCTAButton}
+                      >
+                        Start Contributing Now
+                        <span style={styles.bottomCTAArrow}>→</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
               )}
             </>
           )}
-
-          {/* RECENT PUBLICATIONS SIDEBAR - Optional, you can add this as a separate section */}
-          {recentManuscripts.length > 0 && !loading && (
-            <div style={styles.recentSection}>
-              <h3 style={styles.recentTitle}>
-                <span style={styles.recentIcon}>🆕</span>
-                Recent Publications
-              </h3>
-              <div style={styles.recentList}>
-                {recentManuscripts.map((m) => (
-                  <Link 
-                    key={m.id} 
-                    to={`/journal/manuscript/${m.id}`}
-                    style={styles.recentItem}
-                  >
-                    <span style={styles.recentItemTitle}>{m.title}</span>
-                    <span style={styles.recentItemAuthor}>by {m.author_name}</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
         </section>
       </div>
+
+      {/* Footer */}
+      <footer style={styles.footer}>
+        <div style={styles.footerContent}>
+          <p style={styles.footerText}>
+            © 2024 Academic Journal. All rights reserved.
+          </p>
+          <div style={styles.footerLinks}>
+            <span style={styles.footerLink}>About</span>
+            <span style={styles.footerLink}>Privacy</span>
+            <span style={styles.footerLink}>Terms</span>
+            <span style={styles.footerLink}>Contact</span>
+          </div>
+        </div>
+      </footer>
     </>
   );
 }
@@ -344,7 +368,7 @@ const styles = {
   // Hero Section
   hero: {
     position: "relative",
-    minHeight: "70vh",
+    minHeight: "80vh",
     background: "linear-gradient(135deg, #0A2F1F 0%, #1B4A2C 50%, #8B6B3C 100%)",
     display: "flex",
     alignItems: "center",
@@ -374,7 +398,7 @@ const styles = {
     zIndex: 3,
     textAlign: "center",
     color: "white",
-    maxWidth: "1000px",
+    maxWidth: "1200px",
     padding: "0 20px",
   },
   heroBadgeWrapper: {
@@ -423,12 +447,46 @@ const styles = {
   heroSubtitle: {
     fontSize: "clamp(1rem, 2vw, 1.2rem)",
     lineHeight: 1.8,
-    marginBottom: "40px",
+    marginBottom: "30px",
     maxWidth: "700px",
     marginLeft: "auto",
     marginRight: "auto",
     opacity: 0.9,
     animation: "fadeInUp 0.8s ease 0.3s both",
+  },
+
+  // Contribute Button
+  contributeWrapper: {
+    marginBottom: "40px",
+    animation: "fadeInUp 0.8s ease 0.35s both",
+  },
+  contributeButton: {
+    background: "linear-gradient(135deg, #C9A227, #B88F1F)",
+    color: "white",
+    border: "none",
+    padding: "16px 40px",
+    borderRadius: "50px",
+    fontSize: "1.2rem",
+    fontWeight: "600",
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "12px",
+    boxShadow: "0 10px 25px rgba(201, 162, 39, 0.3)",
+    transition: "all 0.3s ease",
+    marginBottom: "12px",
+  },
+  contributeIcon: {
+    fontSize: "1.4rem",
+  },
+  contributeArrow: {
+    fontSize: "1.2rem",
+    transition: "transform 0.3s ease",
+  },
+  contributeText: {
+    fontSize: "0.95rem",
+    color: "rgba(255,255,255,0.8)",
+    margin: 0,
   },
 
   // Stats Grid
@@ -452,10 +510,6 @@ const styles = {
     minWidth: "200px",
     transition: "transform 0.3s ease, background 0.3s ease",
     cursor: "default",
-    ":hover": {
-      transform: "translateY(-5px)",
-      background: "rgba(255,255,255,0.15)",
-    },
   },
   statIcon: {
     fontSize: "2.5rem",
@@ -491,9 +545,6 @@ const styles = {
     outline: "none",
     fontSize: "1rem",
     background: "white",
-    "::placeholder": {
-      color: "#999",
-    },
   },
   searchButton: {
     padding: "18px 35px",
@@ -507,9 +558,6 @@ const styles = {
     alignItems: "center",
     gap: "8px",
     transition: "background 0.3s ease",
-    ":hover": {
-      background: "#B88F1F",
-    },
   },
   searchIcon: {
     fontSize: "1.1rem",
@@ -520,11 +568,10 @@ const styles = {
     padding: "80px 20px",
     maxWidth: "1400px",
     margin: "0 auto",
-    position: "relative",
   },
   sectionHeader: {
     textAlign: "center",
-    marginBottom: "60px",
+    marginBottom: "40px",
   },
   sectionTitle: {
     fontSize: "2.5rem",
@@ -536,21 +583,46 @@ const styles = {
     color: "#C9A227",
     position: "relative",
     display: "inline-block",
-    "::after": {
-      content: '""',
-      position: "absolute",
-      bottom: "-5px",
-      left: "50%",
-      transform: "translateX(-50%)",
-      width: "50px",
-      height: "3px",
-      background: "#C9A227",
-      borderRadius: "2px",
-    },
   },
   sectionSubtitle: {
     fontSize: "1.1rem",
     color: "#666",
+  },
+
+  // Filter Section
+  filterSection: {
+    marginBottom: "3rem",
+  },
+  categoryTabs: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "0.75rem",
+    justifyContent: "center",
+  },
+  categoryTab: {
+    padding: "0.75rem 1.5rem",
+    borderRadius: "30px",
+    fontSize: "0.95rem",
+    fontWeight: "500",
+    backgroundColor: "white",
+    border: "1px solid #e2e8f0",
+    color: "#475569",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+  },
+  categoryTabActive: {
+    backgroundColor: "#0A2F1F",
+    color: "white",
+    borderColor: "#0A2F1F",
+  },
+
+  // Results Info
+  resultsInfo: {
+    marginBottom: "2rem",
+  },
+  resultsCount: {
+    fontSize: "1rem",
+    color: "#64748b",
   },
 
   // Article Cards
@@ -568,14 +640,16 @@ const styles = {
     transition: "all 0.3s ease",
     position: "relative",
     border: "1px solid rgba(201, 162, 39, 0.1)",
-    ":hover": {
-      transform: "translateY(-8px)",
-      boxShadow: "0 20px 40px rgba(10, 47, 31, 0.1)",
-      borderColor: "rgba(201, 162, 39, 0.3)",
-    },
+    textDecoration: "none",
+    color: "inherit",
+    display: "flex",
+    flexDirection: "column",
   },
   cardHeader: {
     marginBottom: "20px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   cardNumber: {
     display: "inline-block",
@@ -586,18 +660,19 @@ const styles = {
     fontSize: "0.85rem",
     fontWeight: "600",
   },
+  cardStatus: {
+    padding: "0.35rem 1rem",
+    borderRadius: "20px",
+    fontSize: "0.75rem",
+    fontWeight: "600",
+    color: "white",
+    textTransform: "capitalize",
+  },
   cardTitle: {
     fontSize: "1.4rem",
     margin: "0 0 20px",
     lineHeight: "1.4",
-  },
-  cardLink: {
     color: "#0A2F1F",
-    textDecoration: "none",
-    transition: "color 0.3s ease",
-    ":hover": {
-      color: "#C9A227",
-    },
   },
   authorInfo: {
     display: "flex",
@@ -632,148 +707,116 @@ const styles = {
   cardAbstract: {
     color: "#444",
     lineHeight: "1.7",
-    marginBottom: "25px",
+    marginBottom: "20px",
     fontSize: "0.95rem",
+    flex: 1,
+  },
+  metadata: {
+    display: "flex",
+    gap: "1.5rem",
+    marginBottom: "1rem",
+  },
+  metadataItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+    fontSize: "0.875rem",
+    color: "#64748b",
+  },
+  metadataIcon: {
+    fontSize: "1rem",
+  },
+  fileTags: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "0.5rem",
+    marginBottom: "20px",
+  },
+  fileTag: {
+    padding: "0.25rem 0.75rem",
+    backgroundColor: "#f1f5f9",
+    borderRadius: "16px",
+    fontSize: "0.75rem",
+    color: "#475569",
+  },
+  fileTagMore: {
+    padding: "0.25rem 0.75rem",
+    backgroundColor: "transparent",
+    borderRadius: "16px",
+    fontSize: "0.75rem",
+    color: "#94a3b8",
   },
   cardFooter: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
     paddingTop: "20px",
     borderTop: "1px solid #eef2f6",
   },
-  dateBadge: {
+  readMore: {
     display: "flex",
     alignItems: "center",
-    gap: "6px",
-    color: "#666",
-    fontSize: "0.9rem",
-  },
-  calendarIcon: {
-    fontSize: "1rem",
-  },
-  downloadButton: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    padding: "8px 16px",
-    background: "rgba(201, 162, 39, 0.1)",
-    color: "#C9A227",
-    textDecoration: "none",
-    borderRadius: "30px",
-    fontSize: "0.9rem",
-    fontWeight: "500",
-    transition: "all 0.3s ease",
-    ":hover": {
-      background: "#C9A227",
-      color: "white",
-      transform: "scale(1.05)",
-    },
-  },
-  downloadIcon: {
-    fontSize: "1rem",
-  },
-
-  // Pagination
-  pagination: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: "20px",
-    marginTop: "60px",
-    flexWrap: "wrap",
-  },
-  paginationButton: {
-    padding: "12px 24px",
-    background: "white",
-    border: "1px solid #eef2f6",
-    borderRadius: "40px",
+    justifyContent: "space-between",
     color: "#0A2F1F",
     fontWeight: "500",
-    cursor: "pointer",
-    transition: "all 0.3s ease",
-    ":hover": {
-      background: "#0A2F1F",
-      color: "white",
-      borderColor: "#0A2F1F",
-    },
+    fontSize: "0.95rem",
   },
-  paginationButtonDisabled: {
-    opacity: 0.5,
-    cursor: "not-allowed",
-    pointerEvents: "none",
-  },
-  pageNumbers: {
-    display: "flex",
-    gap: "8px",
-  },
-  pageNumber: {
-    width: "45px",
-    height: "45px",
-    border: "1px solid #eef2f6",
-    background: "white",
-    borderRadius: "12px",
-    color: "#666",
-    cursor: "pointer",
-    transition: "all 0.3s ease",
-    ":hover": {
-      background: "#f8fafc",
-      borderColor: "#C9A227",
-    },
-  },
-  pageNumberActive: {
-    background: "#0A2F1F",
-    borderColor: "#0A2F1F",
-    color: "white",
+  arrow: {
+    fontSize: "1.25rem",
+    transition: "transform 0.2s ease",
   },
 
-  // Recent Section
-  recentSection: {
-    marginTop: "80px",
-    padding: "40px",
-    background: "white",
+  // Empty State Contribute Button
+  emptyStateContributeButton: {
+    marginTop: "20px",
+    padding: "12px 30px",
+    background: "#C9A227",
+    border: "none",
     borderRadius: "30px",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.03)",
-    border: "1px solid #eef2f6",
+    color: "white",
+    fontSize: "1rem",
+    fontWeight: "500",
+    cursor: "pointer",
+    transition: "all 0.3s ease",
   },
-  recentTitle: {
-    display: "flex",
+
+  // Bottom CTA
+  bottomCTA: {
+    marginTop: "60px",
+    padding: "40px",
+    background: "linear-gradient(135deg, #0A2F1F, #1B4A2C)",
+    borderRadius: "30px",
+    textAlign: "center",
+  },
+  bottomCTAContent: {
+    maxWidth: "600px",
+    margin: "0 auto",
+  },
+  bottomCTATitle: {
+    fontSize: "2rem",
+    color: "white",
+    margin: "0 0 15px",
+  },
+  bottomCTAText: {
+    fontSize: "1.1rem",
+    color: "rgba(255,255,255,0.9)",
+    marginBottom: "30px",
+    lineHeight: "1.6",
+  },
+  bottomCTAButton: {
+    background: "#C9A227",
+    color: "white",
+    border: "none",
+    padding: "15px 40px",
+    borderRadius: "50px",
+    fontSize: "1.1rem",
+    fontWeight: "600",
+    cursor: "pointer",
+    display: "inline-flex",
     alignItems: "center",
     gap: "10px",
-    fontSize: "1.8rem",
-    color: "#0A2F1F",
-    margin: "0 0 30px",
-  },
-  recentIcon: {
-    fontSize: "2rem",
-  },
-  recentList: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-    gap: "20px",
-  },
-  recentItem: {
-    padding: "20px",
-    background: "#f8fafc",
-    borderRadius: "16px",
-    textDecoration: "none",
     transition: "all 0.3s ease",
-    ":hover": {
-      background: "rgba(201, 162, 39, 0.05)",
-      transform: "translateX(5px)",
-    },
   },
-  recentItemTitle: {
-    display: "block",
-    color: "#0A2F1F",
-    fontWeight: "600",
-    marginBottom: "8px",
-    fontSize: "1.1rem",
-  },
-  recentItemAuthor: {
-    display: "block",
-    color: "#666",
-    fontSize: "0.9rem",
+  bottomCTAArrow: {
+    fontSize: "1.2rem",
+    transition: "transform 0.3s ease",
   },
 
   // Loading & Error States
@@ -808,7 +851,6 @@ const styles = {
   noResults: {
     textAlign: "center",
     padding: "80px 20px",
-    gridColumn: "1 / -1",
     background: "white",
     borderRadius: "30px",
     border: "2px dashed #eef2f6",
@@ -819,37 +861,135 @@ const styles = {
     marginBottom: "20px",
   },
 
-  // Keyframes (add to your global CSS or style tag)
-  "@keyframes fadeInDown": {
-    from: {
-      opacity: 0,
-      transform: "translateY(-20px)",
-    },
-    to: {
-      opacity: 1,
-      transform: "translateY(0)",
-    },
+  // Footer
+  footer: {
+    background: "#0A2F1F",
+    color: "white",
+    padding: "3rem 2rem",
   },
-  "@keyframes fadeInUp": {
-    from: {
-      opacity: 0,
-      transform: "translateY(20px)",
-    },
-    to: {
-      opacity: 1,
-      transform: "translateY(0)",
-    },
+  footerContent: {
+    maxWidth: "1400px",
+    margin: "0 auto",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: "2rem",
   },
-  "@keyframes pulse": {
-    "0%, 100%": {
-      opacity: 1,
-    },
-    "50%": {
-      opacity: 0.5,
-    },
+  footerText: {
+    fontSize: "0.95rem",
+    opacity: 0.8,
+    margin: 0,
   },
-  "@keyframes spin": {
-    "0%": { transform: "rotate(0deg)" },
-    "100%": { transform: "rotate(360deg)" },
+  footerLinks: {
+    display: "flex",
+    gap: "2rem",
+  },
+  footerLink: {
+    fontSize: "0.95rem",
+    opacity: 0.8,
+    cursor: "pointer",
+    transition: "opacity 0.2s ease",
   },
 };
+
+// Add global styles
+const globalStyles = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  @keyframes fadeInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .article-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(10, 47, 31, 0.1);
+    border-color: rgba(201, 162, 39, 0.3);
+  }
+
+  .article-card:hover .arrow {
+    transform: translateX(4px);
+  }
+
+  .category-tab:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+  }
+
+  .category-tab.active:hover {
+    background-color: #0A2F1F;
+  }
+
+  .search-button:hover {
+    background: #B88F1F;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .footer-link:hover {
+    opacity: 1;
+  }
+
+  .contribute-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 30px rgba(201, 162, 39, 0.4);
+  }
+
+  .contribute-button:hover .contribute-arrow {
+    transform: translateX(5px);
+  }
+
+  .empty-state-contribute-button:hover {
+    background: #B88F1F;
+    transform: translateY(-2px);
+  }
+
+  .bottom-cta-button:hover {
+    background: #B88F1F;
+    transform: translateY(-2px);
+  }
+
+  .bottom-cta-button:hover .bottom-cta-arrow {
+    transform: translateX(5px);
+  }
+`;
+
+// Add styles to document
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = globalStyles;
+  document.head.appendChild(style);
+}

@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '../../components/layout/MainLayout';
+
+import { MdTitle, MdDescription, MdAttachFile } from "react-icons/md";
+import { FaBuilding, FaBalanceScale } from "react-icons/fa";
 import { getCategories } from '../../api/manuscript.categories.api';
 import axios from 'axios';
 import { 
@@ -22,7 +25,7 @@ import {
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+  baseURL: process.env.REACT_APP_API_URL,
 });
 
 // Add token interceptor
@@ -42,12 +45,15 @@ export default function ManuscriptCreate() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [validationProgress, setValidationProgress] = useState(0);
 
-  // Simplified form data
+  // Updated form data with all fields
   const [formData, setFormData] = useState({
     title: '',
     abstract: '',
     keywords: '',
-    authors: ''
+    authors: '',
+    affiliations: '',
+    coverLetter: '',
+    ethicalStatement: ''
   });
 
   const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -107,6 +113,10 @@ export default function ManuscriptCreate() {
     });
 
     setUploadedFiles(prev => [...prev, ...validFiles]);
+    // Clear file error if files are added
+    if (validFiles.length > 0 && errors.files) {
+      setErrors(prev => ({ ...prev, files: null }));
+    }
   };
 
   const removeFile = (index) => {
@@ -163,11 +173,14 @@ export default function ManuscriptCreate() {
         formDataToSend.append("files", file);
       });
 
-      // Append form fields directly (not as JSON)
+      // Append all form fields
       formDataToSend.append("title", formData.title.trim());
       formDataToSend.append("abstract", formData.abstract.trim());
       formDataToSend.append("keywords", formData.keywords);
       formDataToSend.append("authors", formData.authors.trim());
+      formDataToSend.append("affiliations", formData.affiliations.trim());
+      formDataToSend.append("coverLetter", formData.coverLetter.trim());
+      formDataToSend.append("ethicalStatement", formData.ethicalStatement.trim());
       formDataToSend.append("status", type);
 
       // Log what we're sending
@@ -176,6 +189,9 @@ export default function ManuscriptCreate() {
         abstract: formData.abstract.trim(),
         keywords: formData.keywords,
         authors: formData.authors.trim(),
+        affiliations: formData.affiliations.trim(),
+        coverLetter: formData.coverLetter.trim(),
+        ethicalStatement: formData.ethicalStatement.trim(),
         status: type,
         files: uploadedFiles.length
       });
@@ -221,6 +237,34 @@ export default function ManuscriptCreate() {
     }
   };
 
+  // Display uploaded files
+  const renderUploadedFiles = () => {
+    if (uploadedFiles.length === 0) return null;
+    
+    return (
+      <div className="mt-3">
+        <h6>Uploaded Files:</h6>
+        <ul className="list-unstyled">
+          {uploadedFiles.map((file, index) => (
+            <li key={index} className="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+              <span>
+                <FaFileAlt className="mr-2 text-primary" />
+                {file.name} ({(file.size / 1024).toFixed(2)} KB)
+              </span>
+              <button 
+                type="button" 
+                className="btn btn-sm btn-danger"
+                onClick={() => removeFile(index)}
+              >
+                <FaTimesCircle />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
   return (
     <MainLayout>
       <div className="manuscript-create bg-white" style={{ minHeight: '100vh', padding: '30px 0' }}>
@@ -243,6 +287,28 @@ export default function ManuscriptCreate() {
               </div>
             </div>
           </div>
+
+          {/* Upload Progress */}
+          {uploadProgress > 0 && uploadProgress < 100 && (
+            <div className="row mb-4">
+              <div className="col-12">
+                <div className="card border-0 bg-light" style={{ borderRadius: '10px' }}>
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <span style={{ color: '#2c3e50', fontWeight: 500 }}>Uploading...</span>
+                      <span style={{ color: '#3498db', fontWeight: 600 }}>{uploadProgress}%</span>
+                    </div>
+                    <div className="progress" style={{ height: '8px', background: '#ecf0f1' }}>
+                      <div 
+                        className="progress-bar bg-info"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Progress Overview */}
           <div className="row mb-4">
@@ -291,153 +357,129 @@ export default function ManuscriptCreate() {
                     </div>
                   )}
 
-                  {/* Title */}
-                  <div className="form-group mb-4">
-                    <label className="fw-bold mb-2" style={{ color: '#2c3e50' }}>
-                      <FaTag className="mr-2 text-primary" />
-                      Title <span className="text-danger">*</span>
+                  {/* Form Fields */}
+                  <div className="form-group mb-3">
+                    <label className="form-label">
+                      <MdTitle className="mr-2" /> Title <span className="text-danger">*</span>
                     </label>
-                    <input
+                    <input 
                       type="text"
                       name="title"
-                      className={`form-control form-control-lg ${errors.title ? 'is-invalid' : ''}`}
+                      className={`form-control ${errors.title ? 'is-invalid' : ''}`}
                       value={formData.title}
                       onChange={handleChange}
-                      placeholder="Enter the manuscript title"
-                      style={{ borderRadius: '8px' }}
+                      placeholder="Enter manuscript title"
                     />
                     {errors.title && <div className="invalid-feedback">{errors.title}</div>}
-                    <small className="text-muted">{formData.title.length}/500 characters</small>
+                    <small className="text-muted">Minimum 10 characters required</small>
                   </div>
 
-                  {/* Abstract */}
-                  <div className="form-group mb-4">
-                    <label className="fw-bold mb-2" style={{ color: '#2c3e50' }}>
-                      <FaAlignLeft className="mr-2 text-primary" />
-                      Abstract <span className="text-danger">*</span>
+                  <div className="form-group mb-3">
+                    <label className="form-label">
+                      <MdDescription className="mr-2" /> Abstract <span className="text-danger">*</span>
                     </label>
-                    <textarea
+                    <textarea 
                       name="abstract"
                       className={`form-control ${errors.abstract ? 'is-invalid' : ''}`}
                       value={formData.abstract}
                       onChange={handleChange}
-                      placeholder="Enter the manuscript abstract"
-                      rows="6"
-                      style={{ borderRadius: '8px' }}
+                      rows={5}
+                      placeholder="Enter manuscript abstract"
                     />
                     {errors.abstract && <div className="invalid-feedback">{errors.abstract}</div>}
-                    <small className="text-muted">{formData.abstract.length}/2000 characters</small>
+                    <small className="text-muted">Minimum 50 characters required</small>
                   </div>
 
-                  {/* Authors */}
-                  <div className="form-group mb-4">
-                    <label className="fw-bold mb-2" style={{ color: '#2c3e50' }}>
-                      <FaUsers className="mr-2 text-primary" />
-                      Authors <span className="text-danger">*</span>
+                  <div className="form-group mb-3">
+                    <label className="form-label">
+                      <FaTag className="mr-2" /> Keywords <span className="text-danger">*</span>
                     </label>
-                    <input
-                      type="text"
-                      name="authors"
-                      className={`form-control form-control-lg ${errors.authors ? 'is-invalid' : ''}`}
-                      value={formData.authors}
-                      onChange={handleChange}
-                      placeholder="e.g., John Doe, Jane Smith, Mike Johnson"
-                      style={{ borderRadius: '8px' }}
-                    />
-                    {errors.authors && <div className="invalid-feedback">{errors.authors}</div>}
-                    <small className="text-muted">Enter author names separated by commas</small>
-                  </div>
-
-                  {/* Keywords */}
-                  <div className="form-group mb-4">
-                    <label className="fw-bold mb-2" style={{ color: '#2c3e50' }}>
-                      <FaTag className="mr-2 text-primary" />
-                      Keywords <span className="text-danger">*</span>
-                    </label>
-                    <input
+                    <input 
                       type="text"
                       name="keywords"
                       className={`form-control ${errors.keywords ? 'is-invalid' : ''}`}
                       value={formData.keywords}
                       onChange={handleChange}
-                      placeholder="e.g., AI, Healthcare, Ethiopia"
-                      style={{ borderRadius: '8px' }}
+                      placeholder="Enter keywords (comma-separated)"
                     />
                     {errors.keywords && <div className="invalid-feedback">{errors.keywords}</div>}
-                    <small className="text-muted">Separate keywords with commas (max 10)</small>
                   </div>
 
-                  {/* File Upload */}
-                  <div className="form-group mb-4">
-                    <label className="fw-bold mb-2" style={{ color: '#2c3e50' }}>
-                      <FaCloudUploadAlt className="mr-2 text-primary" />
-                      Upload Manuscript Files <span className="text-danger">*</span>
+                  <div className="form-group mb-3">
+                    <label className="form-label">
+                      <FaUsers className="mr-2" /> Authors <span className="text-danger">*</span>
                     </label>
-                    
-                    {errors.files && (
-                      <div className="alert alert-warning py-2" style={{ borderRadius: '6px' }}>
-                        <FaExclamationTriangle className="mr-2" />
-                        {errors.files}
-                      </div>
-                    )}
+                    <input 
+                      type="text"
+                      name="authors"
+                      className={`form-control ${errors.authors ? 'is-invalid' : ''}`}
+                      value={formData.authors}
+                      onChange={handleChange}
+                      placeholder="Enter authors (comma-separated)"
+                    />
+                    {errors.authors && <div className="invalid-feedback">{errors.authors}</div>}
+                  </div>
 
-                    <div 
-                      className="upload-area text-center p-5"
-                      style={{
-                        border: '2px dashed #3498db',
-                        borderRadius: '8px',
-                        background: '#f8f9fa',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => document.getElementById('fileInput').click()}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        handleFileUpload(e);
-                      }}
-                    >
-                      <FaCloudUploadAlt size={50} className="text-primary mb-3" />
-                      <h5 className="fw-bold" style={{ color: '#2c3e50' }}>Drag and drop files here</h5>
-                      <p className="text-muted mb-3">or click to browse</p>
-                      <p className="small text-muted">Supported formats: PDF, DOC, DOCX (Max 10MB per file)</p>
-                      <input
-                        id="fileInput"
-                        type="file"
-                        multiple
-                        accept=".pdf,.doc,.docx"
-                        onChange={handleFileUpload}
-                        style={{ display: 'none' }}
-                      />
-                    </div>
+                  <div className="form-group mb-3">
+                    <label className="form-label">
+                      <FaBuilding className="mr-2" /> Affiliations
+                    </label>
+                    <input 
+                      type="text"
+                      name="affiliations"
+                      className={`form-control ${errors.affiliations ? 'is-invalid' : ''}`}
+                      value={formData.affiliations}
+                      onChange={handleChange}
+                      placeholder="Enter affiliations (comma-separated)"
+                    />
+                    {errors.affiliations && <div className="invalid-feedback">{errors.affiliations}</div>}
+                  </div>
 
-                    {uploadProgress > 0 && (
-                      <div className="mt-3">
-                        <div className="progress" style={{ height: '5px' }}>
-                          <div className="progress-bar progress-bar-striped progress-bar-animated bg-success" style={{ width: `${uploadProgress}%` }} />
-                        </div>
-                        <p className="text-center mt-2 small">Uploading... {uploadProgress}%</p>
-                      </div>
-                    )}
+                  <div className="form-group mb-3">
+                    <label className="form-label">
+                      <FaFileAlt className="mr-2" /> Cover Letter
+                    </label>
+                    <textarea 
+                      name="coverLetter"
+                      className={`form-control ${errors.coverLetter ? 'is-invalid' : ''}`}
+                      value={formData.coverLetter}
+                      onChange={handleChange}
+                      rows={4}
+                      placeholder="Enter cover letter (optional)"
+                    />
+                    {errors.coverLetter && <div className="invalid-feedback">{errors.coverLetter}</div>}
+                  </div>
 
-                    {uploadedFiles.length > 0 && (
-                      <div className="mt-3">
-                        <h6 className="fw-bold mb-3" style={{ color: '#2c3e50' }}>Uploaded Files</h6>
-                        {uploadedFiles.map((file, index) => (
-                          <div key={index} className="d-flex justify-content-between align-items-center p-3 mb-2" style={{ background: '#f8f9fa', borderRadius: '6px', border: '1px solid #dee2e6' }}>
-                            <div className="d-flex align-items-center">
-                              <FaFileAlt className="text-primary mr-3" size={20} />
-                              <div>
-                                <div className="fw-bold" style={{ color: '#2c3e50' }}>{file.name}</div>
-                                <small className="text-muted">{(file.size / 1024 / 1024).toFixed(2)} MB</small>
-                              </div>
-                            </div>
-                            <button type="button" className="btn btn-link text-danger" onClick={() => removeFile(index)}>
-                              <FaTimesCircle size={20} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                  <div className="form-group mb-3">
+                    <label className="form-label">
+                      <FaBalanceScale className="mr-2" /> Ethical Statement
+                    </label>
+                    <textarea 
+                      name="ethicalStatement"
+                      className={`form-control ${errors.ethicalStatement ? 'is-invalid' : ''}`}
+                      value={formData.ethicalStatement}
+                      onChange={handleChange}
+                      rows={4}
+                      placeholder="Enter ethical statement (optional)"
+                    />
+                    {errors.ethicalStatement && <div className="invalid-feedback">{errors.ethicalStatement}</div>}
+                  </div>
+                  
+                  {/* File Upload */}
+                  <div className="form-group mb-3">
+                    <label className="form-label">
+                      <MdAttachFile className="mr-2" /> Manuscript Files <span className="text-danger">*</span>
+                    </label>
+                    <input 
+                      type="file"
+                      multiple
+                      accept=".pdf,.doc,.docx"
+                      className={`form-control ${errors.files ? 'is-invalid' : ''}`}
+                      onChange={handleFileUpload}
+                    />
+                    {errors.files && <div className="invalid-feedback">{errors.files}</div>}
+                    {renderUploadedFiles()}
+                    <small className="text-muted">Accepted formats: PDF, DOC, DOCX (Max 10MB per file)</small>
                   </div>
                 </div>
               </div>
@@ -468,6 +510,10 @@ export default function ManuscriptCreate() {
                       <FaCheckCircle className="text-success mr-2 mt-1 flex-shrink-0" />
                       <span>Keywords: comma-separated</span>
                     </li>
+                    <li className="mb-2 d-flex">
+                      <FaCheckCircle className="text-success mr-2 mt-1 flex-shrink-0" />
+                      <span>Files: at least one manuscript file</span>
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -475,77 +521,85 @@ export default function ManuscriptCreate() {
               {/* Required Fields Card */}
               <div className="card border-0 shadow-sm" style={{ borderRadius: '10px' }}>
                 <div className="card-header bg-info text-white py-3">
-                  <h5 className="mb-0 fw-bold"><FaCheckCircle className="mr-2" /> Progress</h5>
+                  <h5 className="mb-0 fw-bold"><FaCheckCircle className="mr-2" /> Required Fields</h5>
                 </div>
                 <div className="card-body p-3">
                   <div className="mb-2 d-flex justify-content-between">
                     <span>Title</span>
-                    {formData.title ? <FaCheckCircle className="text-success" /> : <FaTimesCircle className="text-warning" />}
+                    {formData.title.length >= 10 ? 
+                      <FaCheckCircle className="text-success" /> : 
+                      <FaTimesCircle className="text-warning" />}
                   </div>
                   <div className="mb-2 d-flex justify-content-between">
                     <span>Abstract</span>
-                    {formData.abstract ? <FaCheckCircle className="text-success" /> : <FaTimesCircle className="text-warning" />}
+                    {formData.abstract.length >= 50 ? 
+                      <FaCheckCircle className="text-success" /> : 
+                      <FaTimesCircle className="text-warning" />}
                   </div>
                   <div className="mb-2 d-flex justify-content-between">
                     <span>Authors</span>
-                    {formData.authors ? <FaCheckCircle className="text-success" /> : <FaTimesCircle className="text-warning" />}
+                    {formData.authors ? 
+                      <FaCheckCircle className="text-success" /> : 
+                      <FaTimesCircle className="text-warning" />}
                   </div>
                   <div className="mb-2 d-flex justify-content-between">
                     <span>Keywords</span>
-                    {formData.keywords ? <FaCheckCircle className="text-success" /> : <FaTimesCircle className="text-warning" />}
+                    {formData.keywords ? 
+                      <FaCheckCircle className="text-success" /> : 
+                      <FaTimesCircle className="text-warning" />}
                   </div>
-                  <div className="d-flex justify-content-between">
+                  <div className="mb-2 d-flex justify-content-between">
                     <span>Files</span>
-                    {uploadedFiles.length > 0 ? <FaCheckCircle className="text-success" /> : <FaTimesCircle className="text-warning" />}
+                    {uploadedFiles.length > 0 ? 
+                      <FaCheckCircle className="text-success" /> : 
+                      <FaTimesCircle className="text-warning" />}
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* Submit Buttons */}
           <div className="row mt-4">
-            <div className="col-12">
-              <div className="card border-0 shadow-sm" style={{ borderRadius: '10px' }}>
-                <div className="card-body p-4">
-                  <div className="d-flex justify-content-between align-items-center">
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-lg"
-                      onClick={() => navigate('/journal/manuscripts')}
-                      style={{ borderRadius: '8px', padding: '12px 30px' }}
-                    >
-                      <FaTimesCircle className="mr-2" /> Cancel
-                    </button>
-                    
-                    <div>
-                      <button
-                        type="button"
-                        className="btn btn-info btn-lg mr-3"
-                        onClick={() => handleSubmit('draft')}
-                        disabled={submitting}
-                        style={{ borderRadius: '8px', padding: '12px 30px' }}
-                      >
-                        {submitting ? <><FaSpinner className="fa-spin mr-2" /> Saving...</> : <><FaSave className="mr-2" /> Save Draft</>}
-                      </button>
-
-                      <button
-                        type="button"
-                        className="btn btn-success btn-lg"
-                        onClick={() => handleSubmit('submitted')}
-                        disabled={submitting}
-                        style={{ borderRadius: '8px', padding: '12px 30px' }}
-                      >
-                        {submitting ? <><FaSpinner className="fa-spin mr-2" /> Submitting...</> : <><FaPaperPlane className="mr-2" /> Submit</>}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="col-12 d-flex justify-content-end">
+              <button 
+                className="btn btn-outline-secondary mr-2"
+                onClick={() => handleSubmit('draft')}
+                disabled={submitting}
+                style={{ borderRadius: '50px', padding: '10px 25px' }}
+              >
+                <FaSave className="mr-2" /> Save Draft
+              </button>
+              <button 
+                className="btn btn-primary"
+                onClick={() => handleSubmit('submitted')}
+                disabled={submitting}
+                style={{ borderRadius: '50px', padding: '10px 25px' }}
+              >
+                {submitting ? (
+                  <>
+                    <FaSpinner className="mr-2 spin" /> Submitting...
+                  </>
+                ) : (
+                  <>
+                    <FaPaperPlane className="mr-2" /> Submit
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .spin {
+          animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </MainLayout>
   );
 }

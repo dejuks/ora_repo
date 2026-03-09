@@ -247,103 +247,7 @@ export const getPaymentStats = async (req, res) => {
     });
   }
 };
-/* =====================================================
-   UPDATE PAYMENT STATUS (mark as paid)
-===================================================== */
-export const updatePaymentStatus = async (req, res) => {
-  const client = await pool.connect();
-  
-  try {
-    await client.query("BEGIN");
 
-    const { paymentId } = req.params;
-    const { status } = req.body;
-    const userId = req.user.uuid;
-
-    // Validate status
-    const validStatuses = ['paid', 'overdue', 'cancelled'];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ error: "Invalid status" });
-    }
-
-    // Check if payment exists
-    const paymentCheck = await client.query(
-      `
-      SELECT p.*, m.corresponding_author_id
-      FROM payments p
-      JOIN manuscripts m ON m.id = p.manuscript_id
-      WHERE p.id = $1
-      `,
-      [paymentId]
-    );
-
-    if (paymentCheck.rows.length === 0) {
-      return res.status(404).json({ error: "Payment not found" });
-    }
-
-    const payment = paymentCheck.rows[0];
-
-    // Update payment
-    await client.query(
-      `
-      UPDATE payments 
-      SET status = $2,
-          paid_at = CASE WHEN $2 = 'paid' THEN NOW() ELSE NULL END,
-          updated_at = NOW()
-      WHERE id = $1
-      `,
-      [paymentId, status]
-    );
-
-    // If payment is marked as paid, update manuscript status to 'published'
-    if (status === 'paid') {
-      await client.query(
-        `
-        UPDATE manuscripts 
-        SET status = 'published',
-            published_at = NOW(),
-            updated_at = NOW()
-        WHERE id = $1
-        `,
-        [payment.manuscript_id]
-      );
-
-      // Record in manuscript history
-      try {
-        await client.query(
-          `
-          INSERT INTO manuscript_stage_history (
-            manuscript_id,
-            stage,
-            changed_by,
-            changed_at,
-            comments
-          ) VALUES ($1, $2, $3, NOW(), $4)
-          `,
-          [payment.manuscript_id, 'published', userId, 'Payment received, manuscript published']
-        );
-      } catch (historyErr) {
-        console.log("Stage history error:", historyErr.message);
-      }
-    }
-
-    await client.query("COMMIT");
-
-    res.json({
-      success: true,
-      message: `Payment marked as ${status}`,
-      payment_id: paymentId,
-      status: status
-    });
-
-  } catch (err) {
-    await client.query("ROLLBACK");
-    console.error("Update payment error:", err);
-    res.status(500).json({ error: err.message });
-  } finally {
-    client.release();
-  }
-};
 /* =====================================================
    CREATE PAYMENT ORDER
 ===================================================== */
@@ -580,7 +484,7 @@ export const getAllPayments = async (req, res) => {
         u.full_name as author_name
       FROM payments p
       JOIN manuscripts m ON m.id = p.manuscript_id
-      JOIN users u ON u.uuid = m.corresponding_author_id
+      JOIN users u ON u.uuid = m.created_by
       ORDER BY p.created_at DESC
       `
     );
@@ -599,3 +503,115 @@ export const getAllPayments = async (req, res) => {
   }
 };
 
+// updatePaymentStatus
+export const updatePaymentStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    // Validate status
+    const validStatuses = ['pending', 'paid', 'overdue', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ 
+        success: false,
+        error: "Invalid status" 
+      });
+    }
+
+    const result = await pool.query(
+      `
+      UPDATE manuscripts 
+      SET status = $2,
+          updated_at = NOW()
+      WHERE id = $1
+      RETURNING id, status
+      `,
+      [id, status]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false,
+        error: "Payment not found" 
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Payment status updated to ${status}`,
+      payment: result.rows[0] 
+    });
+  } catch (err) {
+    console.error("Update payment status error:", err);
+    res.status(500).json({  
+      success: false,
+      error: err.message 
+    });
+  }
+};
+
+// generateManuscriptInvoice path: /manuscript/:manuscriptId/generate-invoice
+export const generateManuscriptInvoice = async (req, res) => {
+  try {
+    const { manuscriptId } = req.params;
+console.log("Generating invoice for manuscript ID:", manuscriptId);
+    // Fetch payment details for the manuscript
+    const paymentResult = await pool.query(
+`
+SELECT 
+  p.id,
+  p.amount,
+  p.currency,
+  p.payment_method,
+  p.payment_reference,
+  p.due_date,
+  p.status,
+  p.author_name,
+  p.author_email,
+  m.title as manuscript_title
+FROM payments p
+LEFT JOIN manuscripts m ON m.id = p.manuscript_id
+WHERE p.manuscript_id = $1
+ORDER BY p.created_at DESC
+LIMIT 1
+`,
+[manuscriptId]
+);
+
+    if (paymentResult.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false,
+        error: "No payment found for this manuscript" 
+      });
+    }
+
+    const payment = paymentResult.rows[0];
+
+    // Here you would integrate with an actual invoice generation service/library
+    // For demonstration, we'll just return the payment details as a "generated invoice"
+    
+    res.json({
+      success: true,
+      invoice: {
+        invoice_number: `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        amount: payment.amount,
+        currency: payment.currency,
+        payment_method: payment.payment_method,
+        payment_reference: payment.payment_reference,
+        due_date: payment.due_date,
+        status: payment.status,
+        author_name: payment.author_name,
+        author_email: payment.author_email,
+        manuscript_title: payment.manuscript_title,
+        generated_at: new Date()
+      }
+    });
+
+  } catch (err) {
+    console.error("Generate invoice error:", err);
+    res.status(500).json({ 
+      success: false,
+      error: err.message 
+    });
+  }
+};

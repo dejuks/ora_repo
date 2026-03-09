@@ -101,10 +101,10 @@ import Repository from "./landing/pages/Repository";
 import Ebooks from "./landing/pages/Ebooks";
 import Network from "./landing/pages/Network";
 import JournalPage from "./landing/pages/JournalPage";
+import JournalDetailPage from "./landing/pages/PublicManuscriptDetailPage";
 import LibraryPage from "./landing/pages/LibraryPage";
 import OromoWikipedia from "./landing/pages/OromoWikipedia";
 import JoinForm from "./landing/components/JoinForm";
-import JournalAuthorRegistrationForm from "./pages/journals/authors/JournalAuthorRegistrationForm";
 import WorkflowStages from "./pages/manuscription/workflowstages/WorkflowStages";
 import ManuscriptList from "./pages/manuscription/ManuscriptList";
 import ManuscriptCreate from "./pages/manuscription/ManuscriptCreate";
@@ -122,615 +122,189 @@ import WikiArticlePage from "./pages/wiki/WikiArticlePage";
 import WikiMediaUploadPage from "./pages/wiki/media/WikiMediaUploadPage";
 import WikiMediaGalleryPage from "./pages/wiki/media/WikiMediaGalleryPage";
 import EbookAuthorRegistrationForm from "./pages/ebooks/users/EbookAuthorRegistrationForm";
-import EbookDashboard from "./landing/pages/Ebooks";
 import CreateEbook from "./pages/ebooks/CreateEbook";
 import UpdateEbook from "./pages/ebooks/UpdateEbook";
 import EbooksList from "./pages/ebooks/EbooksList";
-
 import EbookManagementPage from "./pages/ebooks/EbookManagementPage";
 import WikiProfileEdit from "./pages/wiki/users/WikiProfileEdit";
 import ArticleDetails from "./pages/wiki/ArticleDetails";
 import VandalismCheck from "./pages/wiki/VandalismCheck";
 import JournalArticleDetail from "./landing/pages/JournalArticleDetail";
+import JournalAuthPage from "./pages/journals/authors/JournalAuthPage";
+import JournalAuthorLoginPage from "./pages/journals/authors/JournalAuthorLoginPage"; // New import
+import ManuscriptContributePage from "./pages/journals/manuscriptions/pages/ManuscriptContributePage";
+import AuthorManuscriptView from "./pages/manuscription/AuthorManuscriptView";
+import UnderReviewAE from "./pages/manuscription/ae/UnderReviewAE";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public/Landing Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/join" element={<JoinForm />} />
         <Route path="/journal" element={<JournalPage />} />
-        <Route
-          path="/journal/author"
-          element={<JournalAuthorRegistrationForm />}
-        />
-        <Route path="/journal/workflow-stages" element={<WorkflowStages />} />
+        <Route path="/manuscript/:id" element={<JournalDetailPage />} />
+        <Route path="/journal/article/:id" element={<JournalArticleDetail />} />
+        <Route path="/journal/author" element={<JournalAuthPage />} />
+        {/* New route for author login with redirect */}
+        <Route path="/journal/author-login" element={<JournalAuthorLoginPage />} />
+        {/* // manuscripts/contribute */}
+        <Route path="/manuscripts/contribute" element={<ManuscriptContributePage />} />
         <Route path="/repository" element={<Repository />} />
         <Route path="/ebooks" element={<Ebooks />} />
         <Route path="/library" element={<LibraryPage />} />
         <Route path="/network" element={<Network />} />
         <Route path="/wikipedia" element={<OromoWikipedia />} />
-        <Route path="/auth" element={<Login />} />
-        <Route
-          path="/users"
-          element={
-            <ProtectedRoute>
-              <Users />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/roles"
-          element={
-            <ProtectedRoute>
-              <Roles />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/permissions"
-          element={
-            <ProtectedRoute>
-              <Permissions />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/role-permissions"
-          element={
-            <ProtectedRoute>
-              <RolePermissions />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/user-roles/:uuid"
-          element={
-            <ProtectedRoute>
-              <UserRoles />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/modules"
-          element={
-            <ProtectedRoute>
-              <Modules />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin-dashboard"
-          element={
-            <ProtectedRoute>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-         <Route path="/wiki/profile/edit" element={
-              <ProtectedRoute>
-                <WikiProfileEdit />
-              </ProtectedRoute>
-            } />
-        <Route
-          path="/finance-dashboard"
-          element={
-            <ProtectedRoute>
-              <FinanceDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/book-dashboard" element={<BookDashboard />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/library-dashboard" element={<LibraryDashboard />} />
-        <Route path="/wikipedia-dashboard" element={<WikipediaDashboard />} />
-        <Route
-          path="/researcher-dashboard"
-          element={<ResearchersDashboard />}
-        />
-        {/* Journal Dashboard */}
-        <Route
-          path="/journal-dashboard"
-          element={
-            <ProtectedRoute>
-              <JournalDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/journal/author-dashboard"
-          element={
-            <ProtectedRoute>
-              <JournalAuthorDashboard />
-            </ProtectedRoute>
-          }
-        />
-        {/* /repository/users */}
-        {/* Journal Users */}
-        <Route
-          path="/journal/users"
-          element={
-            <ProtectedRoute>
-              <JournalUserList />
-            </ProtectedRoute>
-          }
-        />
-        {/* //Repository Authors */}
-        <Route
-          path="/repository/admin/dashboard"
-          element={<RepositoryDashboard />}
-        />
         <Route path="/ora" element={<Landing />} />
-        {/* /repository/author/dashboard */}
-        <Route
-          path="/repository/author/dashboard"
-          element={
-            <ProtectedRoute>
-              <RepositoryAuthorDashboard />
-            </ProtectedRoute>
-          }
-        />
-        {/* repository/curator/dashboard */}
-        <Route
-          path="/repository/curator/dashboard"
-          element={
-            <ProtectedRoute>
-              <CuratorDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/repository/curator/queue/new"
-          element={
-            <ProtectedRoute>
-              <CuratorRepositoryList />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="repository/author/deposits/drafts"
-          element={
-            <ProtectedRoute>
-              <DraftRepository />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/repository/collections/author"
-          element={
-            <ProtectedRoute>
-              <CollectionsByAuthor />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/repository/reports/curator-performance"
-          element={
-            <ProtectedRoute>
-              <CuratorPerformanceReport />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/repository/reviewer/dashboard"
-          element={
-            <ProtectedRoute>
-              <ReviewerDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/repository/reviewer/queue/new"
-          element={
-            <ProtectedRoute>
-              <ReviewerQueueNew />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/repository/reviewer/review/:uuid"
-          element={
-            <ProtectedRoute>
-              <ReviewerItemDetail />
-            </ProtectedRoute>
-          }
-        />
+
+        {/* Public Repository Routes */}
         <Route path="/repository/public" element={<PublicRepository />} />
         <Route path="/repository/:uuid" element={<PublicRepositoryDetail />} />
-        <Route path="/register" element={<PublicRegister />} />
         <Route path="/public/login" element={<PublicLogin />} />
+        <Route path="/register" element={<PublicRegister />} />
         <Route path="/public/dashboard" element={<PublicDashboard />} />
-        {/* Journal Users */}
-        <Route
-          path="/wiki/users"
-          element={
-            <ProtectedRoute>
-              <JournalUserList />
-            </ProtectedRoute>
-          }
-        />
-        {/* EIC ROute */}
-        <Route
-          path="/journal/eic/submissions"
-          element={
-            <ProtectedRoute>
-              <EICCompletedReviews />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="eic/decision/:id"
-          element={
-            <ProtectedRoute>
-              <EICMakeDecision />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/journal/eic/assign-editors" element={<AssignEditors />} />
-        <Route path="/journal/eic/ethics" element={<EthicsScreen />} />
-        <Route path="/journal/eic/ethics" element={<EthicsScreen />} />
-        <Route path="/journal/eic/ethics" element={<EthicsScreen />} />
-        <Route
-          path="/manuscript/ae/assigned-manuscripts"
-          element={<ManuscriptListAE />}
-        />
-        <Route
-          path="/manuscription/ae/screening"
-          element={<InitialScreeningListAE />}
-        />
-        <Route
-          path="/journal/ae/recommendations"
-          element={<Recommendations />}
-        />
-        <Route
-          path="/journal/reviewer/submit-review"
-          element={<SubmitReview />}
-        />
-        <Route
-          path="/journal/reviewer/workspace"
-          element={<ReviewerWorkspace />}
-        />
-        <Route path="/journal/ae/ethics" element={<Ethics />} />
-        <Route path="/journal/ae/production" element={<Production />} />
-        <Route
-          path="/journal/reviewer/assigned"
-          element={<AssignedReviews />}
-        />
-        {/* //reviewer/assigned */}
-        <Route
-          path="/reviewer/assigned/:id"
-          element={<AssignedReviewDetails />}
-        />
-        <Route
-          path="/journal/ae/review-evaluation"
-          element={<ReviewEvaluation />}
-        />
-        <Route path="/journal/eic/production" element={<ProductionScreen />} />
-        <Route path="/eic/manuscripts/:id" element={<EICManuscriptDetails />} />
+        
+        {/* Public Layout with Nested Routes */}
         <Route path="/repository/public" element={<PublicLayout />}>
           <Route path="search" element={<PublicSearch />} />
         </Route>
-        <Route
-          path="/repository/collections/type"
-          element={
-            <ProtectedRoute>
-              <CollectionsByType />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/repository/reports/trends"
-          element={
-            <ProtectedRoute>
-              <RepositoryTrends />
-            </ProtectedRoute>
-          }
-        />
 
-
-        <Route
-          path="repository/curator/review/:uuid"
-          element={
-            <ProtectedRoute>
-              <CuratorRepositoryReview />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/repository/author/deposits/review"
-          element={
-            <ProtectedRoute>
-              <DepositsUnderReview />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/repository/author/deposits/returned"
-          element={
-            <ProtectedRoute>
-              <DepositsReturned />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="repository/curator/queue/in-progress"
-          element={<InProgress />}
-        />
-        <Route
-          path="repository/curator/queue/ready"
-          element={<ReadyToApprove />}
-        />
-        <Route
-          path="/repository/curator/queue/returned"
-          element={<ReturnToRevision />}
-        />
-        <Route
-          path="/repository/users"
-          element={
-            <ProtectedRoute>
-              <JournalUserList />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/repository/author/submit/list"
-          element={
-            <ProtectedRoute>
-              <RepositoryList />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/repository/create"
-          element={
-            <ProtectedRoute>
-              <RepositoryCreate />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/repository/show/:uuid"
-          element={
-            <ProtectedRoute>
-              <RepositoryShow />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/repository/curator/tools"
-          element={
-            <ProtectedRoute>
-              <CuratorTool />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/repository/author/show/:uuid"
-          element={
-            <ProtectedRoute>
-              <RepositoryShowAuthor />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/repository/edit/:uuid"
-          element={
-            <ProtectedRoute>
-              <RepositoryEdit />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/repository/author/deposits/approved"
-          element={
-            <ProtectedRoute>
-              <ApprovedDeposits />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/repository/search"
-          element={
-            <ProtectedRoute>
-              <RepositorySearch />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/module/users/add"
-          element={
-            <ProtectedRoute>
-              <JournalAddUser />
-            </ProtectedRoute>
-          }
-        />
-        {/* Journal Management */}
-        <Route
-          path="/journal/list"
-          element={
-            <ProtectedRoute>
-              <JournalList />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/journal/add"
-          element={
-            <ProtectedRoute>
-              <JournalForm />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/journal/edit/:id"
-          element={
-            <ProtectedRoute>
-              <JournalEdit />
-            </ProtectedRoute>
-          }
-        />
-        {/* Manuscription Routes */}
-        <Route
-          path="/journal/manuscraipts/create"
-          element={
-            <ProtectedRoute>
-              <CreateManuscript />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/journal/manuscripts"
-          element={
-            <ProtectedRoute>
-              <ManuscriptList />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/eic/payment-orders"
-          element={
-            <ProtectedRoute>
-              <EICPaymentOrders />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/manuscripts/create"
-          element={
-            <ProtectedRoute>
-              <ManuscriptCreate />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/manuscripts/edit/:id"
-          element={
-            <ProtectedRoute>
-              <ManuscriptEdit />
-            </ProtectedRoute>
-          }
-        />
-        manuscripts/edit/
-        <Route
-          path="/journal/manuscripts-status"
-          element={
-            <ProtectedRoute>
-              <ManuscriptStatuses />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/manuscript/draft-manuscript"
-          element={
-            <ProtectedRoute>
-              <DraftManuscripts />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/journal/profile"
-          element={
-            <ProtectedRoute>
-              <JournalProfile />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/journal/manuscripts/revisions"
-          element={
-            <ProtectedRoute>
-              <RevisionRequiredManuscription />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/journal/manuscripts/edit/:id"
-          element={<ManuscriptEdit />}
-        />
-
-        {/* Journal list */}
-        <Route path="journal/manuscript/:id" element={<JournalArticleDetail/>} />
-        <Route
-          path="/journal/manuscripts/show/:id"
-          element={<ManuscriptShow />}
-        />
-        <Route
-          path="/library/users"
-          element={
-            <ProtectedRoute>
-              <JournalUserList />
-            </ProtectedRoute>
-          }
-        />
-        {/* // wikipedia articles routes can be added here */}
-        <Route path="/wiki/articles" element={<ArticleList />} />
-        {/* <Route path="/wiki/articles/new" element={<ArticleCreate />} /> */}
-        <Route path="/wiki/articles/edit/:id" element={<ArticleEdit />} />
-        <Route path="/wiki/articles/drafts" element={<ArticleDraftList />} />
-
-        
-
+        {/* Wiki Public Routes */}
         <Route path="/wiki/articles" element={<ArticleList />} />
         <Route path="/wiki/articles/:slug" element={<ArticleDetails />} />
-        
-    
-        
-        {/* Admin Routes */}
-          <Route path="/wiki/vandalism/check" element={<VandalismCheck />} />
-       
-
-
-
-
-        {/* ================= Wiki Categories ================= */}
-        <Route path="/wiki/categories" element={<WikiCategoryList />} />
-        <Route path="/wiki/categories/create" element={<WikiCategoryForm />} />
-        <Route
-          path="/wiki/categories/edit/:id"
-          element={<WikiCategoryForm />}
-        />
-        <Route path="/researcher/register" element={<ResearcherRegister />} />
-        <Route path="/researcher/" element={<PublicHome />} />
-        <Route path="/researcher/login" element={<ResearcherLogin />} />
-        <Route path="/researcher/dashboard" element={<ResearcherDashboard />} />
-        <Route path="/researcher/onboarding" element={<ProfileOnboarding />} />
-        <Route
-          path="/researcher/profile/:userId"
-          element={<ResearcherProfile />}
-        />
-        <Route path="/researcher/groups" element={<Groups />} />
-        <Route path="/researcher/groups/create" element={<GroupForm />} />
-        <Route path="/researcher/groups/edit/:uuid" element={<GroupForm />} />
-        {/* /moderator */}
-        {/* research-network/groups  */}
-        <Route path="research-network/groups" element={<AdminGroups />} />
-        <Route path="/admin/groups/:uuid" element={<AdminGroupDetails />} />
+        <Route path="/wiki/article/:slug" element={<WikiArticlePage />} />
         <Route path="/wiki/register" element={<RegisterPage />} />
         <Route path="/wiki/login" element={<WikiLoginPage />} />
-        <Route path="/wiki/dashboard" element={<WikiDashboard />} />
-        <Route path="/wiki/articles/new" element={<CreateArticlePage />} />
-        <Route path="/wiki/article/:slug" element={<WikiArticlePage />} />
-        <Route path="/wiki/media/upload" element={<WikiMediaUploadPage />} />
-        <Route path="/wiki/media" element={<WikiMediaGalleryPage />} />
 
+        {/* Researcher Public Routes */}
+        <Route path="/researcher/register" element={<ResearcherRegister />} />
+        <Route path="/researcher" element={<PublicHome />} />
+        <Route path="/researcher/login" element={<ResearcherLogin />} />
+        <Route path="/researcher/profile/:userId" element={<ResearcherProfile />} />
+
+        {/* Ebook Public Routes */}
         <Route path="/ebooks/author-registration" element={<EbookAuthorRegistrationForm />} />
-        <Route path="/ebook/dashboard" element={<EbookDashboard />} />
-
         <Route path="/ebooks" element={<EbooksList />} />
-      <Route path="/ebooks/create" element={<CreateEbook />} />
-      <Route path="/ebooks/edit/:id" element={<UpdateEbook />} />
 
+        {/* Auth Route */}
+        <Route path="/auth" element={<Login />} />
 
+        {/* Protected Routes */}
+        <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+        <Route path="/roles" element={<ProtectedRoute><Roles /></ProtectedRoute>} />
+        <Route path="/permissions" element={<ProtectedRoute><Permissions /></ProtectedRoute>} />
+        <Route path="/role-permissions" element={<ProtectedRoute><RolePermissions /></ProtectedRoute>} />
+        <Route path="/user-roles/:uuid" element={<ProtectedRoute><UserRoles /></ProtectedRoute>} />
+        <Route path="/modules" element={<ProtectedRoute><Modules /></ProtectedRoute>} />
+        <Route path="/admin-dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        
+        {/* Wiki Protected Routes */}
+        <Route path="/wiki/dashboard" element={<ProtectedRoute><WikiDashboard /></ProtectedRoute>} />
+        <Route path="/wiki/profile/edit" element={<ProtectedRoute><WikiProfileEdit /></ProtectedRoute>} />
+        <Route path="/wiki/articles/new" element={<ProtectedRoute><CreateArticlePage /></ProtectedRoute>} />
+        <Route path="/wiki/articles/edit/:id" element={<ProtectedRoute><ArticleEdit /></ProtectedRoute>} />
+        <Route path="/wiki/articles/drafts" element={<ProtectedRoute><ArticleDraftList /></ProtectedRoute>} />
+        <Route path="/wiki/categories" element={<ProtectedRoute><WikiCategoryList /></ProtectedRoute>} />
+        <Route path="/wiki/categories/create" element={<ProtectedRoute><WikiCategoryForm /></ProtectedRoute>} />
+        <Route path="/wiki/categories/edit/:id" element={<ProtectedRoute><WikiCategoryForm /></ProtectedRoute>} />
+        <Route path="/wiki/media/upload" element={<ProtectedRoute><WikiMediaUploadPage /></ProtectedRoute>} />
+        <Route path="/wiki/media" element={<ProtectedRoute><WikiMediaGalleryPage /></ProtectedRoute>} />
+        <Route path="/wiki/vandalism/check" element={<ProtectedRoute><VandalismCheck /></ProtectedRoute>} />
 
+        {/* Journal Protected Routes */}
+        <Route path="/journal-dashboard" element={<ProtectedRoute><JournalDashboard /></ProtectedRoute>} />
+        <Route path="/journal/author-dashboard" element={<ProtectedRoute><JournalAuthorDashboard /></ProtectedRoute>} />
+        <Route path="/journal/users" element={<ProtectedRoute><JournalUserList /></ProtectedRoute>} />
+        <Route path="/journal/list" element={<ProtectedRoute><JournalList /></ProtectedRoute>} />
+        <Route path="/journal/add" element={<ProtectedRoute><JournalForm /></ProtectedRoute>} />
+        <Route path="/journal/edit/:id" element={<ProtectedRoute><JournalEdit /></ProtectedRoute>} />
+        <Route path="/journal/profile" element={<ProtectedRoute><JournalProfile /></ProtectedRoute>} />
+        <Route path="/journal/workflow-stages" element={<ProtectedRoute><WorkflowStages /></ProtectedRoute>} />
 
+        {/* Manuscript Protected Routes */}
+        <Route path="/journal/manuscripts" element={<ProtectedRoute><ManuscriptList /></ProtectedRoute>} />
+        <Route path="/manuscripts/:id" element={<ProtectedRoute><AuthorManuscriptView /></ProtectedRoute>} />
+        <Route path="/manuscripts/create" element={<ProtectedRoute><ManuscriptCreate /></ProtectedRoute>} />
+        <Route path="/manuscripts/edit/:id" element={<ProtectedRoute><ManuscriptEdit /></ProtectedRoute>} />
+        <Route path="/journal/manuscripts/show/:id" element={<ProtectedRoute><ManuscriptShow /></ProtectedRoute>} />
+        <Route path="/manuscript/draft-manuscript" element={<ProtectedRoute><DraftManuscripts /></ProtectedRoute>} />
+        <Route path="/journal/manuscripts/revisions" element={<ProtectedRoute><RevisionRequiredManuscription /></ProtectedRoute>} />
+        <Route path="/journal/manuscripts-status" element={<ProtectedRoute><ManuscriptStatuses /></ProtectedRoute>} />
 
+        {/* EIC Protected Routes */}
+        <Route path="/journal/eic/submissions" element={<ProtectedRoute><EICCompletedReviews /></ProtectedRoute>} />
+        <Route path="/eic/decision/:id" element={<ProtectedRoute><EICMakeDecision /></ProtectedRoute>} />
+        <Route path="/eic/manuscripts/:id" element={<ProtectedRoute><EICManuscriptDetails /></ProtectedRoute>} />
+        <Route path="/eic/payment-orders" element={<ProtectedRoute><EICPaymentOrders /></ProtectedRoute>} />
+
+        {/* AE Protected Routes */}
+        <Route path="/manuscript/ae/assigned-manuscripts" element={<ProtectedRoute><ManuscriptListAE /></ProtectedRoute>} />
+        <Route path="/manuscription/ae/screening" element={<ProtectedRoute><InitialScreeningListAE /></ProtectedRoute>} />
+{/* //Under and show assigned refree and reassigned manuscripts  */}
+        <Route path="/manuscript/ae/under-review" element={<ProtectedRoute><UnderReviewAE /></ProtectedRoute>} />
+        {/* Reviewer Protected Routes */}
+        <Route path="/journal/reviewer/assigned" element={<ProtectedRoute><AssignedReviews /></ProtectedRoute>} />
+        <Route path="/reviewer/assigned/:id" element={<ProtectedRoute><AssignedReviewDetails /></ProtectedRoute>} />
+
+        {/* Repository Protected Routes */}
+        <Route path="/repository/admin/dashboard" element={<ProtectedRoute><RepositoryDashboard /></ProtectedRoute>} />
+        <Route path="/repository/author/dashboard" element={<ProtectedRoute><RepositoryAuthorDashboard /></ProtectedRoute>} />
+        <Route path="/repository/author/submit/list" element={<ProtectedRoute><RepositoryList /></ProtectedRoute>} />
+        <Route path="/repository/create" element={<ProtectedRoute><RepositoryCreate /></ProtectedRoute>} />
+        <Route path="/repository/show/:uuid" element={<ProtectedRoute><RepositoryShow /></ProtectedRoute>} />
+        <Route path="/repository/author/show/:uuid" element={<ProtectedRoute><RepositoryShowAuthor /></ProtectedRoute>} />
+        <Route path="/repository/edit/:uuid" element={<ProtectedRoute><RepositoryEdit /></ProtectedRoute>} />
+        <Route path="/repository/search" element={<ProtectedRoute><RepositorySearch /></ProtectedRoute>} />
+        <Route path="/repository/author/deposits/drafts" element={<ProtectedRoute><DraftRepository /></ProtectedRoute>} />
+        <Route path="/repository/author/deposits/review" element={<ProtectedRoute><DepositsUnderReview /></ProtectedRoute>} />
+        <Route path="/repository/author/deposits/returned" element={<ProtectedRoute><DepositsReturned /></ProtectedRoute>} />
+        <Route path="/repository/author/deposits/approved" element={<ProtectedRoute><ApprovedDeposits /></ProtectedRoute>} />
+
+        {/* Repository Curator Protected Routes */}
+        <Route path="/repository/curator/dashboard" element={<ProtectedRoute><CuratorDashboard /></ProtectedRoute>} />
+        <Route path="/repository/curator/queue/new" element={<ProtectedRoute><CuratorRepositoryList /></ProtectedRoute>} />
+        <Route path="/repository/curator/review/:uuid" element={<ProtectedRoute><CuratorRepositoryReview /></ProtectedRoute>} />
+        <Route path="/repository/curator/queue/in-progress" element={<ProtectedRoute><InProgress /></ProtectedRoute>} />
+        <Route path="/repository/curator/queue/ready" element={<ProtectedRoute><ReadyToApprove /></ProtectedRoute>} />
+        <Route path="/repository/curator/queue/returned" element={<ProtectedRoute><ReturnToRevision /></ProtectedRoute>} />
+        <Route path="/repository/curator/tools" element={<ProtectedRoute><CuratorTool /></ProtectedRoute>} />
+        <Route path="/repository/collections/author" element={<ProtectedRoute><CollectionsByAuthor /></ProtectedRoute>} />
+        <Route path="/repository/collections/type" element={<ProtectedRoute><CollectionsByType /></ProtectedRoute>} />
+        <Route path="/repository/reports/trends" element={<ProtectedRoute><RepositoryTrends /></ProtectedRoute>} />
+        <Route path="/repository/reports/curator-performance" element={<ProtectedRoute><CuratorPerformanceReport /></ProtectedRoute>} />
+
+        {/* Repository Reviewer Protected Routes */}
+        <Route path="/repository/reviewer/dashboard" element={<ProtectedRoute><ReviewerDashboard /></ProtectedRoute>} />
+        <Route path="/repository/reviewer/queue/new" element={<ProtectedRoute><ReviewerQueueNew /></ProtectedRoute>} />
+        <Route path="/repository/reviewer/review/:uuid" element={<ProtectedRoute><ReviewerItemDetail /></ProtectedRoute>} />
+
+        {/* Researcher Protected Routes */}
+        <Route path="/researcher/dashboard" element={<ProtectedRoute><ResearcherDashboard /></ProtectedRoute>} />
+        <Route path="/researcher/onboarding" element={<ProtectedRoute><ProfileOnboarding /></ProtectedRoute>} />
+        <Route path="/researcher/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
+        <Route path="/researcher/groups/create" element={<ProtectedRoute><GroupForm /></ProtectedRoute>} />
+        <Route path="/researcher/groups/edit/:uuid" element={<ProtectedRoute><GroupForm /></ProtectedRoute>} />
+        <Route path="/research-network/groups" element={<ProtectedRoute><AdminGroups /></ProtectedRoute>} />
+        <Route path="/admin/groups/:uuid" element={<ProtectedRoute><AdminGroupDetails /></ProtectedRoute>} />
+
+        {/* Ebook Protected Routes */}
+        <Route path="/ebook/dashboard" element={<ProtectedRoute><EbookManagementPage /></ProtectedRoute>} />
+        <Route path="/ebooks/create" element={<ProtectedRoute><CreateEbook /></ProtectedRoute>} />
+        <Route path="/ebooks/edit/:id" element={<ProtectedRoute><UpdateEbook /></ProtectedRoute>} />
+
+        {/* Finance Dashboard */}
+        <Route path="/finance-dashboard" element={<ProtectedRoute><FinanceDashboard /></ProtectedRoute>} />
+
+        {/* Other Dashboards */}
+        <Route path="/book-dashboard" element={<ProtectedRoute><BookDashboard /></ProtectedRoute>} />
+        <Route path="/library-dashboard" element={<ProtectedRoute><LibraryDashboard /></ProtectedRoute>} />
+        <Route path="/wikipedia-dashboard" element={<ProtectedRoute><WikipediaDashboard /></ProtectedRoute>} />
+        <Route path="/researcher-dashboard" element={<ProtectedRoute><ResearchersDashboard /></ProtectedRoute>} />
+     
+        {/* 404 Not Found - This should be the LAST route */}
+        <Route path="*" element={<h1>404 Not Found</h1>} />
       </Routes>
     </BrowserRouter>
   );

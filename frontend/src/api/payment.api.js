@@ -1,7 +1,9 @@
-import axios from "axios";
+import axios from "./axios";
+
+const API_BASE_URL = process.env.REACT_APP_API_URL;
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api/payments",
+  baseURL: `${API_BASE_URL}/payments/manuscript`,
 });
 
 API.interceptors.request.use((config) => {
@@ -72,16 +74,7 @@ export const paymentAPI = {
     }
   },
 
-  // Update payment status
-  updatePaymentStatus: async (id, status) => {
-    try {
-      const response = await API.patch(`/${id}/status`, { status });
-      return response.data;
-    } catch (error) {
-      console.error("Error updating payment status:", error);
-      throw error;
-    }
-  },
+
 
   // Get payment statistics
   getPaymentStats: async () => {
@@ -115,4 +108,28 @@ export const paymentAPI = {
       throw error;
     }
   },
+  generateInvoice: async (id) => {
+    try {
+      // API endpoint: GET /api/payments/manuscript/:manuscriptId/generate-invoice
+      // console.log(`Generating invoice for manuscript ID: ${id}`);
+      console.log(`API URL: ${API_BASE_URL}/payments/manuscript/${id}/generate-invoice`);
+      const response = await API.get(`/${API_BASE_URL}/payments/${id}/generate-invoice`);
+      return response.data;
+    } catch (error) {
+      console.error("Error generating invoice:", error);
+      throw error;
+    }
+  },
+updatePaymentStatus: async (id, status) => {
+    try {
+      const response = await API.put(`/update/${id}/status`, { status });
+      return response.data;
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+      throw error;
+    }
+  },
+
 };
+
+

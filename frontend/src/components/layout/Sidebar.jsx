@@ -320,6 +320,11 @@ export default function Sidebar() {
             icon: "fas fa-check-circle",
           },
           {
+            name: "Under Review",
+            path: "/manuscript/ae/under-review",
+            icon: "fas fa-hourglass-half",
+          },
+          {
             name: "Recommendations to EIC",
             path: "/journal/ae/recommendations",
             icon: "fas fa-gavel",

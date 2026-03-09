@@ -118,6 +118,7 @@ export default function ManuscriptList() {
         `${API_BASE_URL}/files/manuscript/${manuscript.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      console.log('Files loaded:', res.data);
       setModalFiles(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Error loading files:', err);
@@ -166,6 +167,89 @@ export default function ManuscriptList() {
       Swal.fire('Error', 'Failed to upload files', 'error');
     } finally {
       setUploading(false);
+    }
+  };
+
+  /* ============================
+     FILE OPEN HANDLER - Check available endpoints
+  ============================ */
+  const handleFileOpen = async (file) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Show loading indicator
+      Swal.fire({
+        title: 'Opening file...',
+        text: 'Please wait',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      // Try different possible endpoints
+      const possibleEndpoints = [
+        `${API_BASE_URL}/files/download/${file.file_path?.split('/').pop()}`,
+        `${API_BASE_URL}/files/${file.id}`,
+        `${API_BASE_URL}/files/view/${file.id}`,
+        `${API_BASE_URL}/files/file/${file.id}`,
+        `${API_BASE_URL}/download/${file.id}`,
+        `${API_BASE_URL}/file/${file.id}`
+      ];
+
+      let response = null;
+      let successEndpoint = null;
+
+      for (const endpoint of possibleEndpoints) {
+        try {
+          console.log('Trying endpoint:', endpoint);
+          response = await axios.get(endpoint, {
+            headers: { Authorization: `Bearer ${token}` },
+            responseType: 'blob'
+          });
+          successEndpoint = endpoint;
+          break;
+        } catch (err) {
+          console.log(`Endpoint ${endpoint} failed:`, err.response?.status);
+        }
+      }
+
+      if (!response) {
+        throw new Error('No working endpoint found for file download');
+      }
+
+      console.log('Success with endpoint:', successEndpoint);
+
+      // Close loading indicator
+      Swal.close();
+
+      // Create blob from response data
+      const blob = new Blob([response.data], { 
+        type: response.headers['content-type'] || 'application/octet-stream' 
+      });
+      
+      // Create object URL
+      const url = window.URL.createObjectURL(blob);
+      
+      // Open in new tab
+      window.open(url, '_blank');
+      
+      // Clean up after a delay
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 1000);
+
+    } catch (err) {
+      console.error('Error opening file:', err);
+      Swal.close();
+      
+      // Show more detailed error
+      Swal.fire({
+        icon: 'error',
+        title: 'Failed to open file',
+        text: err.message || 'Please check if the file endpoint is correct',
+        footer: 'Check console for more details'
+      });
     }
   };
 
@@ -454,9 +538,7 @@ export default function ManuscriptList() {
                     <tr key={m.id}>
                       <td>{m.title || 'Untitled'}</td>
                       <td>
-                        <span className={`badge ${getStatusBadgeClass(m.status)}`}>
-                          {m.status?.replace('_', ' ') || m.stage_name || 'Unknown'}
-                        </span>
+                          <span className='btn btn-sm btn-secondary'> {m.status}</span>
                       </td>
                       <td>{m.stage_name || '—'}</td>
                       <td>
@@ -495,7 +577,7 @@ export default function ManuscriptList() {
                             to={`/manuscripts/edit/${m.id}`}
                             className="btn btn-warning btn-sm"
                           >
-                            <i className="fas fa-edit me-1"></i>Edit
+                            <i className="fas fa-edit me-1"></i>
                           </Link>
                         )}
                         {m.status === 'rejected' && (
@@ -503,7 +585,7 @@ export default function ManuscriptList() {
                             className="btn btn-primary btn-sm"
                             onClick={() => handleResubmit(m)}
                           >
-                            <i className="fas fa-redo me-1"></i>Resubmit
+                            <i className="fas fa-redo me-1"></i>
                           </button>
                         )}
                         {m.status === 'draft' && (
@@ -511,14 +593,14 @@ export default function ManuscriptList() {
                             className="btn btn-danger btn-sm"
                             onClick={() => handleDelete(m.id)}
                           >
-                            <i className="fas fa-trash me-1"></i>Delete
+                            <i className="fas fa-trash me-1"></i>
                           </button>
                         )}
                         <Link
                           to={`/manuscripts/${m.id}`}
                           className="btn btn-secondary btn-sm"
                         >
-                          <i className="fas fa-eye me-1"></i>View
+                          <i className="fas fa-eye me-1"></i>
                         </Link>
                       </td>
                     </tr>
@@ -574,15 +656,16 @@ export default function ManuscriptList() {
                     <div className="list-group">
                       {modalFiles.map((f) => (
                         <div key={f.id} className="list-group-item d-flex justify-content-between align-items-center">
-                          <a 
-                            href={`${API_BASE_URL}/files/download/${f.id}`} 
-                            target="_blank" 
-                            rel="noreferrer"
-                            className="text-decoration-none"
-                          >
+                          <div className="d-flex align-items-center">
                             <i className="fas fa-file me-2"></i>
-                            {f.filename || f.original_filename || f.file_path?.split('/').pop() || 'File'}
-                          </a>
+                            <button
+                              onClick={() => handleFileOpen(f)}
+                              className="btn btn-link text-decoration-none p-0"
+                              style={{ cursor: 'pointer', color: '#0d6efd' }}
+                            >
+                              {f.filename || f.original_filename || f.file_path?.split('/').pop() || 'File'}
+                            </button>
+                          </div>
                           <span className="badge bg-info">{f.file_type || 'Unknown'}</span>
                         </div>
                       ))}
@@ -612,14 +695,107 @@ export default function ManuscriptList() {
                   <button className="btn-close" onClick={closePaymentModal}></button>
                 </div>
                 <div className="modal-body">
-                  {/* Rest of your payment modal JSX remains the same */}
                   <div className="payment-header mb-3 p-3 bg-light rounded">
                     <div className="d-flex justify-content-between align-items-center">
                       <h6 className="mb-0">Payment Reference</h6>
                       <span className="badge bg-dark">{paymentDetails.payment_reference}</span>
                     </div>
                   </div>
-                  {/* ... rest of payment modal content ... */}
+                  
+                  <div className="payment-details">
+                    <div className="row mb-2">
+                      <div className="col-5">
+                        <strong>Amount:</strong>
+                      </div>
+                      <div className="col-7">
+                        {formatCurrency(paymentDetails.amount, paymentDetails.currency)}
+                      </div>
+                    </div>
+                    
+                    <div className="row mb-2">
+                      <div className="col-5">
+                        <strong>Payment Method:</strong>
+                      </div>
+                      <div className="col-7">
+                        {getPaymentMethodIcon(paymentDetails.payment_method)} {getPaymentMethodName(paymentDetails.payment_method)}
+                      </div>
+                    </div>
+                    
+                    <div className="row mb-2">
+                      <div className="col-5">
+                        <strong>Status:</strong>
+                      </div>
+                      <div className="col-7">
+                        <span className={`badge bg-${paymentDetails.status === 'completed' ? 'success' : 'warning'}`}>
+                          {paymentDetails.status}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="row mb-2">
+                      <div className="col-5">
+                        <strong>Date:</strong>
+                      </div>
+                      <div className="col-7">
+                        {formatDate(paymentDetails.created_at)}
+                      </div>
+                    </div>
+                    
+                    {paymentDetails.transaction_id && (
+                      <div className="row mb-2">
+                        <div className="col-5">
+                          <strong>Transaction ID:</strong>
+                        </div>
+                        <div className="col-7">
+                          {paymentDetails.transaction_id}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {paymentDetails.status !== 'completed' && (
+                    <div className="mt-4">
+                      <h6>Upload Payment Receipt</h6>
+                      <input
+                        type="file"
+                        className="form-control mb-2"
+                        accept=".jpg,.jpeg,.png,.pdf"
+                        onChange={handleReceiptUpload}
+                        disabled={uploadingReceipt}
+                      />
+                      {paymentReceipt && (
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={submitPaymentReceipt}
+                          disabled={uploadingReceipt}
+                        >
+                          {uploadingReceipt ? (
+                            <>
+                              <span className="spinner-border spinner-border-sm me-1"></span>
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <i className="fas fa-upload me-1"></i>Submit Receipt
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {paymentDetails.receipt_url && (
+                    <div className="mt-3">
+                      <a 
+                        href={paymentDetails.receipt_url} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="btn btn-info btn-sm"
+                      >
+                        <i className="fas fa-receipt me-1"></i>View Receipt
+                      </a>
+                    </div>
+                  )}
                 </div>
                 <div className="modal-footer">
                   <button className="btn btn-secondary" onClick={closePaymentModal}>

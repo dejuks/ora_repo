@@ -60,6 +60,23 @@ router.post('/upload', upload.array('files', 10), uploadFile);
 // Get all files for a manuscript
 router.get('/manuscript/:manuscript_id', getFilesByManuscript);
 
+// Download a file
+router.get('/download/:fileId', (req, res) => {
+  const fileId = req.params.fileId;
+  const filePath = path.join(uploadDir, fileId);
+
+  if (fs.existsSync(filePath)) {
+    res.download(filePath, err => {
+      if (err) {
+        console.error('Error downloading file:', err);
+        res.status(500).json({ message: 'Error downloading file' });
+      }
+    });
+  } else {
+    res.status(404).json({ message: 'File not found' });
+  }
+}); 
+
 // Delete a file
 router.delete('/:fileId', deleteFile);
 

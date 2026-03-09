@@ -10,7 +10,7 @@ import {
   createManuscript,
   updateManuscript,
   deleteManuscript,
-  getDraftManuscripts,
+  getDraftManuscripts,getAllPublicManuscripts,getPublicManuscriptById,
   submitDraftManuscript,
   getSubmittedManuscripts,
   moveToScreening,
@@ -18,7 +18,10 @@ import {
   resubmitManuscript,
   getInitialScreenedManuscripts,
   getScreeningManuscripts,
-  downloadFile
+  downloadFile,
+  fetchUnderReviewManuscripts,
+  fetchAERecommendations,
+  fetchEICDecisions
 } from "../controllers/manuscript.controller.js";
 
 import { authenticate } from "../../middleware/auth.middleware.js";
@@ -71,8 +74,14 @@ router.get("/files/:fileId/download", downloadFile);
 /* ======================================================
    ALL ROUTES REQUIRE AUTHENTICATION
 ====================================================== */
+router.get("/public", getAllPublicManuscripts);
+router.get("/public/:id", getPublicManuscriptById);
 router.use(authenticate);
 
+// Additional AE/EIC routes for under review, recommendations, decisions
+router.get("/under-review", fetchUnderReviewManuscripts);
+router.get("/ae-recommendations", fetchAERecommendations);
+router.get("/eic-decisions", fetchEICDecisions);
 /* ======================================================
    AE / EIC ROUTES
 ====================================================== */
@@ -102,5 +111,6 @@ router.post("/", upload.array('files', 5), createManuscript);
 router.put("/:id", upload.array('files', 5), updateManuscript);
 
 router.delete("/:id", deleteManuscript);
+
 
 export default router;

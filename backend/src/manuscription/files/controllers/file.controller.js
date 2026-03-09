@@ -20,7 +20,6 @@ export const uploadFile = async (req, res) => {
     
     for (const file of req.files) {
       console.log("Processing file:", {
-        file_name: file.file_name,
         originalname: file.originalname,
         path: file.path,
         size: file.size
@@ -31,27 +30,25 @@ export const uploadFile = async (req, res) => {
       const fileId = fileIdResult.rows[0].id;
 
       const result = await client.query(
-        `INSERT INTO files (
-          id,
-          manuscript_id,
-          file_name,
-          file_type,
-          file_path,
-          file_size,
-          uploaded_by,
-          uploaded_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-        RETURNING *`,
-        [
-          fileId,
-          manuscript_id,
-          file.originalname,
-          file.mimetype,
-          file.path,
-          file.size.toString(),
-          req.user.uuid
-        ]
-      );
+  `INSERT INTO public.files (
+    id,
+    manuscript_id,
+    file_type,
+    file_path,
+    file_size,
+    uploaded_by,
+    uploaded_at
+  ) VALUES ($1, $2, $3, $4, $5, $6, NOW())
+  RETURNING *`,
+  [
+    fileId,
+    manuscript_id,
+    file.mimetype,
+    file.path,
+    file.size.toString(),
+    req.user.uuid
+  ]
+);
       fileRecords.push(result.rows[0]);
     }
 

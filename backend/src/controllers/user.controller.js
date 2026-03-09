@@ -9,6 +9,24 @@ export const getUserById = async (req, res) => {
   if (!user) return res.status(404).json({ error: "Not found" });
   res.json(user);
 };
+
+// users/reviewers
+export const getReviewers = async (_, res) => {
+  const reviewers = await User.findReviewers();
+  res.json(reviewers);
+};
+
+export const getEditors = async (_, res) => {
+  const editors = await User.findEditors();
+  res.json(editors);
+};
+
+export const getEICs = async (_, res) => {
+  const eics = await User.findEICs();
+  res.json(eics);
+};  
+
+
 export const createUser = async (req, res) => {
   try {
 

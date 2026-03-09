@@ -2,6 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../../../components/layout/MainLayout";
 import axios from "axios";
+import { paymentAPI } from "../../../api/payment.api";
+import Swal from "sweetalert2";
+
+const API_BASE_URL = process.env.REACT_APP_API_URL;
 
 export default function EICPaymentOrders() {
   const navigate = useNavigate();
@@ -17,6 +21,18 @@ export default function EICPaymentOrders() {
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
   const [receiptFile, setReceiptFile] = useState(null);
 
+  // Payment status update modal
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [newStatus, setNewStatus] = useState("");
+  const [statusNotes, setStatusNotes] = useState("");
+  const [transactionReference, setTransactionReference] = useState("");
+
+  // Payment history modal
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
   useEffect(() => {
     loadPaymentOrders();
   }, []);
@@ -24,17 +40,26 @@ export default function EICPaymentOrders() {
   const loadPaymentOrders = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const res = await axios.get(
-        'http://localhost:5000/api/payments/all',
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
       
-      if (res.data && res.data.success) {
-        setPayments(res.data.payments || []);
+      const response = await paymentAPI.getAllPayments();
+      console.log("API Response:", response);
+      
+      if (response && response.success) {
+        setPayments(response.payments || []);
+      } else {
+        console.error("Unexpected response structure:", response);
+        setPayments([]);
       }
     } catch (err) {
       console.error("Error loading payment orders:", err);
+      if (err.response) {
+        console.error("Error response:", err.response.data);
+      }
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to load payment orders'
+      });
     } finally {
       setLoading(false);
     }
@@ -50,6 +75,7 @@ export default function EICPaymentOrders() {
     if (filter === "pending") return matchesSearch && p.status === "pending";
     if (filter === "paid") return matchesSearch && p.status === "paid";
     if (filter === "overdue") return matchesSearch && p.status === "overdue";
+    if (filter === "unpaid") return matchesSearch && p.status === "unpaid";
     
     return matchesSearch;
   });
@@ -57,20 +83,23 @@ export default function EICPaymentOrders() {
   const viewPaymentDetail = async (payment) => {
     try {
       setDetailLoading(true);
-      const token = localStorage.getItem('token');
-      const res = await axios.get(
-        `http://localhost:5000/api/payments/${payment.id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
       
-      if (res.data && res.data.success) {
-        setSelectedPayment(res.data.payment);
+      const response = await paymentAPI.getPaymentById(payment.id);
+      
+      if (response && response.success) {
+        setSelectedPayment(response.payment || payment);
+        setShowDetailModal(true);
+        setReceiptFile(null);
+      } else {
+        setSelectedPayment(payment);
         setShowDetailModal(true);
         setReceiptFile(null);
       }
     } catch (err) {
       console.error("Error loading payment detail:", err);
-      alert("Failed to load payment details");
+      setSelectedPayment(payment);
+      setShowDetailModal(true);
+      setReceiptFile(null);
     } finally {
       setDetailLoading(false);
     }
@@ -86,16 +115,14 @@ export default function EICPaymentOrders() {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Check file type
     const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
     if (!validTypes.includes(file.type)) {
-      alert('Please upload only JPG, PNG, or PDF files');
+      Swal.fire('Warning', 'Please upload only JPG, PNG, or PDF files', 'warning');
       return;
     }
 
-    // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
+      Swal.fire('Warning', 'File size must be less than 5MB', 'warning');
       return;
     }
 
@@ -104,7 +131,7 @@ export default function EICPaymentOrders() {
 
   const submitReceipt = async () => {
     if (!receiptFile) {
-      alert('Please select a receipt file');
+      Swal.fire('Warning', 'Please select a receipt file', 'warning');
       return;
     }
 
@@ -116,31 +143,224 @@ export default function EICPaymentOrders() {
       formData.append('payment_id', selectedPayment.id);
       formData.append('manuscript_id', selectedPayment.manuscript_id);
 
-      const token = localStorage.getItem('token');
-      await axios.post(
-        'http://localhost:5000/api/payments/upload-receipt',
-        formData,
-        {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      );
+      const response = await paymentAPI.uploadReceipt(formData);
 
-      alert('Receipt uploaded successfully');
-      loadPaymentOrders(); // Refresh list
-      closeDetailModal();
+      if (response && response.success) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: 'Receipt uploaded successfully'
+        });
+        loadPaymentOrders();
+        closeDetailModal();
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to upload receipt'
+        });
+      }
       
     } catch (err) {
       console.error('Error uploading receipt:', err);
-      alert(err.response?.data?.error || 'Failed to upload receipt');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.response?.data?.error || 'Failed to upload receipt'
+      });
     } finally {
       setUploadingReceipt(false);
     }
   };
 
+  // Open payment status update modal
+  const openStatusModal = (payment) => {
+    setSelectedPayment(payment);
+    setNewStatus(payment.status || 'pending');
+    setStatusNotes('');
+    setTransactionReference(payment.transaction_reference || '');
+    setShowStatusModal(true);
+  };
+
+  // Update payment status
+  const updatePaymentStatus = async () => {
+    if (!newStatus) {
+      Swal.fire('Warning', 'Please select a status', 'warning');
+      return;
+    }
+
+    try {
+      setStatusUpdating(true);
+      
+      const updateData = {
+        status: newStatus,
+        notes: statusNotes,
+        transaction_reference: transactionReference
+      };
+
+      const response = await paymentAPI.updatePaymentStatus(selectedPayment.id, updateData);
+
+      if (response && response.success) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: `Payment status updated to ${newStatus}`
+        });
+        setShowStatusModal(false);
+        loadPaymentOrders();
+        
+        if (newStatus === 'paid') {
+          sendPaymentConfirmation(selectedPayment);
+        }
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to update payment status'
+        });
+      }
+    } catch (err) {
+      console.error('Error updating payment status:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.response?.data?.error || 'Failed to update payment status'
+      });
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
+
+  // Send payment confirmation email
+  const sendPaymentConfirmation = async (payment) => {
+    const result = await Swal.fire({
+      title: 'Send Confirmation?',
+      text: 'Do you want to send a payment confirmation email to the author?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, send email',
+      cancelButtonText: 'No, thanks'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await paymentAPI.sendPaymentConfirmation(payment.id);
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Email Sent',
+          text: 'Payment confirmation email sent to author'
+        });
+      } catch (err) {
+        console.error('Error sending confirmation:', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to send confirmation email'
+        });
+      }
+    }
+  };
+
+  // View payment history
+  const viewPaymentHistory = async (payment) => {
+    try {
+      setLoadingHistory(true);
+      setSelectedPayment(payment);
+      
+      const response = await paymentAPI.getPaymentHistory(payment.id);
+      
+      if (response && response.success) {
+        setPaymentHistory(response.history || []);
+        setShowHistoryModal(true);
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to load payment history'
+        });
+      }
+    } catch (err) {
+      console.error('Error loading payment history:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to load payment history'
+      });
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  // Mark as unpaid (for disputes/refunds)
+  const markAsUnpaid = async (payment) => {
+    const result = await Swal.fire({
+      title: 'Mark as Unpaid?',
+      text: 'This will mark the payment as unpaid. Are you sure?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      confirmButtonText: 'Yes, mark as unpaid'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const response = await paymentAPI.updatePaymentStatus(payment.manuscript_id, {
+          status: 'unpaid',
+          notes: 'Payment marked as unpaid by administrator'
+        });
+
+        if (response && response.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Payment marked as unpaid'
+          });
+          loadPaymentOrders();
+        }
+      } catch (err) {
+        console.error('Error updating payment:', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to update payment status'
+        });
+      }
+    }
+  };
+
+  // Generate invoice
+  const generateInvoice = async (payment) => {
+    try {
+      const response = await paymentAPI.generateInvoice(payment.manuscript_id);
+      
+      if (response && response.success && response.invoice_url) {
+        window.open(response.invoice_url, '_blank');
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Invoice Generated',
+          text: 'Invoice has been generated successfully'
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to generate invoice'
+        });
+      }
+    } catch (err) {
+      console.error('Error generating invoice:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to generate invoice'
+      });
+    }
+  };
+
   const formatCurrency = (amount, currency = 'ETB') => {
+    if (!amount) return 'N/A';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency
@@ -152,7 +372,9 @@ export default function EICPaymentOrders() {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
@@ -161,7 +383,9 @@ export default function EICPaymentOrders() {
       pending: "badge bg-warning",
       paid: "badge bg-success",
       overdue: "badge bg-danger",
-      cancelled: "badge bg-secondary"
+      unpaid: "badge bg-secondary",
+      cancelled: "badge bg-dark",
+      refunded: "badge bg-info"
     };
     return badges[status] || "badge bg-secondary";
   };
@@ -179,11 +403,19 @@ export default function EICPaymentOrders() {
   };
 
   const getDaysRemaining = (dueDate) => {
+    if (!dueDate) return null;
     const today = new Date();
     const due = new Date(dueDate);
     const diffTime = due - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  const getFileUrl = (path) => {
+    if (!path) return '#';
+    if (path.startsWith('http')) return path;
+    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    return `${API_BASE_URL || 'http://localhost:5000'}/${cleanPath}`;
   };
 
   return (
@@ -206,6 +438,7 @@ export default function EICPaymentOrders() {
                 <option value="all">All Payments</option>
                 <option value="pending">Pending</option>
                 <option value="paid">Paid</option>
+                <option value="unpaid">Unpaid</option>
                 <option value="overdue">Overdue</option>
               </select>
               
@@ -248,7 +481,7 @@ export default function EICPaymentOrders() {
                     <th width="100">Method</th>
                     <th width="100">Due Date</th>
                     <th width="100">Status</th>
-                    <th width="150">Actions</th>
+                    <th width="200">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -269,7 +502,7 @@ export default function EICPaymentOrders() {
                           <td>
                             <strong>{p.payment_reference}</strong>
                             <small className="d-block text-muted">
-                              ID: {p.id.substring(0, 8)}...
+                              ID: {p.id?.substring(0, 8)}...
                             </small>
                           </td>
                           <td>
@@ -282,7 +515,9 @@ export default function EICPaymentOrders() {
                           </td>
                           <td>
                             {p.author_name}
-                            <small className="d-block text-muted">{p.author_email}</small>
+                            {p.author_email && (
+                              <small className="d-block text-muted">{p.author_email}</small>
+                            )}
                           </td>
                           <td>
                             <strong className="text-success">
@@ -309,7 +544,7 @@ export default function EICPaymentOrders() {
                           </td>
                           <td>
                             <span className={getStatusBadge(p.status)}>
-                              {p.status.toUpperCase()}
+                              {p.status?.toUpperCase()}
                             </span>
                             {p.status === 'paid' && p.receipt_path && (
                               <i className="fas fa-file-invoice text-success ms-2" title="Receipt uploaded"></i>
@@ -325,6 +560,42 @@ export default function EICPaymentOrders() {
                                 <i className="fas fa-eye"></i>
                               </button>
                               
+                              <button
+                                className="btn btn-warning"
+                                onClick={() => openStatusModal(p)}
+                                title="Update Status"
+                              >
+                                <i className="fas fa-edit"></i>
+                              </button>
+                              
+                              {/* <button
+                                className="btn btn-secondary"
+                                onClick={() => viewPaymentHistory(p)}
+                                title="View History"
+                              >
+                                <i className="fas fa-history"></i>
+                              </button>
+                               */}
+                              {/* {p.status === 'paid' && (
+                                <button
+                                  className="btn btn-primary"
+                                  onClick={() => generateInvoice(p)}
+                                  title="Generate Invoice"
+                                >
+                                  <i className="fas fa-file-invoice"></i>
+                                </button>
+                              )} */}
+                              
+                              {p.status === 'paid' && (
+                                <button
+                                  className="btn btn-danger"
+                                  onClick={() => markAsUnpaid(p)}
+                                  title="Mark as Unpaid"
+                                >
+                                  <i className="fas fa-times-circle"></i>
+                                </button>
+                              )}
+                              
                               {p.status === 'pending' && (
                                 <button
                                   className="btn btn-success"
@@ -337,7 +608,7 @@ export default function EICPaymentOrders() {
                               
                               {p.status === 'paid' && p.receipt_path && (
                                 <a
-                                  href={`http://localhost:5000/${p.receipt_path}`}
+                                  href={getFileUrl(p.receipt_path)}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="btn btn-primary"
@@ -369,6 +640,9 @@ export default function EICPaymentOrders() {
               <span className="badge bg-success me-2">
                 Paid: {payments.filter(p => p.status === 'paid').length}
               </span>
+              <span className="badge bg-secondary me-2">
+                Unpaid: {payments.filter(p => p.status === 'unpaid').length}
+              </span>
               <span className="badge bg-danger">
                 Overdue: {payments.filter(p => p.status === 'overdue').length}
               </span>
@@ -377,229 +651,248 @@ export default function EICPaymentOrders() {
         </div>
       </div>
 
-      {/* Payment Detail Modal */}
+      PAYMENT DETAIL MODAL - Redesigned to match screenshot
       {showDetailModal && selectedPayment && (
-        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header bg-primary text-white">
-                <h5 className="modal-title">
-                  <i className="fas fa-credit-card me-2"></i>
-                  Payment Order Details
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close btn-close-white"
-                  onClick={closeDetailModal}
-                ></button>
-              </div>
-              <div className="modal-body">
-                {/* Payment Header */}
-                <div className="row mb-3">
-                  <div className="col-md-6">
-                    <div className="p-3 bg-light rounded">
-                      <small className="text-muted d-block">Reference</small>
-                      <strong className="h5">{selectedPayment.payment_reference}</strong>
-                    </div>
+        <>
+          <div className="modal-backdrop fade show" style={{ zIndex: 1040 }}></div>
+          <div className="modal fade show d-block" style={{ zIndex: 1050 }} tabIndex="-1">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header bg-light border-bottom-0 pb-0">
+                  <h5 className="modal-title fw-bold">Update Payment Status</h5>
+                  <button type="button" className="btn-close" onClick={closeDetailModal}></button>
+                </div>
+                <div className="modal-body">
+                  {/* Reference and ID */}
+                  <div className="mb-3">
+                    <div className="fw-bold">{selectedPayment.payment_reference}</div>
+                    <small className="text-muted">ID: {selectedPayment.id?.substring(0, 13)}</small>
                   </div>
-                  <div className="col-md-6">
-                    <div className="p-3 bg-light rounded">
-                      <small className="text-muted d-block">Status</small>
-                      <span className={`badge fs-6 ${getStatusBadge(selectedPayment.status)}`}>
-                        {selectedPayment.status.toUpperCase()}
+
+                  {/* Author and Manuscript Info */}
+                  <div className="mb-3">
+                    <div className="fw-bold">{selectedPayment.author_name}</div>
+                    <div>{selectedPayment.manuscript_title}</div>
+                  </div>
+
+                  {/* Status Badge */}
+                  <div className="mb-4">
+                    <span className={`badge ${getStatusBadge(selectedPayment.status)} fs-6 p-2`}>
+                      {selectedPayment.status?.toUpperCase()}
+                    </span>
+                  </div>
+
+                  {/* Amount and Method Row */}
+                  <div className="row mb-4">
+                    <div className="col-6">
+                      <small className="text-muted d-block">Amount</small>
+                      <span className="fw-bold">{formatCurrency(selectedPayment.amount, selectedPayment.currency)}</span>
+                    </div>
+                    <div className="col-6">
+                      <small className="text-muted d-block">Method</small>
+                      <span className="fw-bold">
+                        {getPaymentMethodIcon(selectedPayment.payment_method)} {selectedPayment.payment_method?.replace('_', ' ')}
                       </span>
                     </div>
                   </div>
-                </div>
 
-                {/* Payment Details */}
-                <div className="row mb-3">
-                  <div className="col-md-4">
-                    <div className="card">
-                      <div className="card-body text-center">
-                        <i className="fas fa-money-bill-wave fa-2x text-success mb-2"></i>
-                        <h6>Amount</h6>
-                        <strong className="text-success">
-                          {formatCurrency(selectedPayment.amount, selectedPayment.currency)}
-                        </strong>
-                      </div>
+                  {/* Due Date and Status Row */}
+                  <div className="row mb-4">
+                    <div className="col-6">
+                      <small className="text-muted d-block">Due Date</small>
+                      <span className="fw-bold">{formatDate(selectedPayment.due_date)}</span>
                     </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="card">
-                      <div className="card-body text-center">
-                        <i className="fas fa-credit-card fa-2x text-info mb-2"></i>
-                        <h6>Method</h6>
-                        <strong>
-                          {getPaymentMethodIcon(selectedPayment.payment_method)} {selectedPayment.payment_method?.replace('_', ' ')}
-                        </strong>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="card">
-                      <div className="card-body text-center">
-                        <i className="fas fa-calendar fa-2x text-warning mb-2"></i>
-                        <h6>Due Date</h6>
-                        <strong>{formatDate(selectedPayment.due_date)}</strong>
-                        {selectedPayment.status === 'pending' && (
-                          <div className={`text-${getDaysRemaining(selectedPayment.due_date) < 3 ? 'danger' : 'muted'} small`}>
-                            {getDaysRemaining(selectedPayment.due_date)} days remaining
-                          </div>
+                    <div className="col-6">
+                      <small className="text-muted d-block">Status</small>
+                      <div className="d-flex align-items-center">
+                        <span className={`badge ${getStatusBadge(selectedPayment.status)} me-2`}>
+                          {selectedPayment.status?.toUpperCase()}
+                        </span>
+                        {selectedPayment.status === 'paid' && selectedPayment.paid_at && (
+                          <small className="text-success">
+                            Paid: {formatDate(selectedPayment.paid_at)}
+                          </small>
                         )}
                       </div>
                     </div>
+                  </div>
+
+                  {/* Action Icons */}
+                  <div className="d-flex justify-content-end gap-3 mt-4">
+                    <button className="btn btn-sm btn-outline-secondary" title="View">
+                      <i className="fas fa-eye"></i>
+                    </button>
+                    <button className="btn btn-sm btn-outline-warning" title="Edit">
+                      <i className="fas fa-edit"></i>
+                    </button>
+                    <button className="btn btn-sm btn-outline-info" title="History">
+                      <i className="fas fa-history"></i>
+                    </button>
+                    <button className="btn btn-sm btn-outline-primary" title="Invoice">
+                      <i className="fas fa-file-invoice"></i>
+                    </button>
                   </div>
                 </div>
-
-                {/* Manuscript Information */}
-                <div className="card mb-3">
-                  <div className="card-header bg-light">
-                    <h6 className="mb-0">Manuscript Information</h6>
-                  </div>
-                  <div className="card-body">
-                    <div className="row">
-                      <div className="col-md-8">
-                        <p className="mb-1"><strong>Title:</strong> {selectedPayment.manuscript_title}</p>
-                        <p className="mb-1"><strong>Author:</strong> {selectedPayment.author_name}</p>
-                        <p className="mb-1"><strong>Email:</strong> {selectedPayment.author_email}</p>
-                      </div>
-                      <div className="col-md-4">
-                        <p className="mb-1"><strong>Manuscript ID:</strong> {selectedPayment.manuscript_id?.substring(0, 8)}</p>
-                        <p className="mb-1"><strong>Payment ID:</strong> {selectedPayment.id?.substring(0, 8)}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Additional Details */}
-                {(selectedPayment.phone_number || selectedPayment.bank_name) && (
-                  <div className="card mb-3">
-                    <div className="card-header bg-light">
-                      <h6 className="mb-0">Payment Details</h6>
-                    </div>
-                    <div className="card-body">
-                      <div className="row">
-                        {selectedPayment.phone_number && (
-                          <div className="col-md-4">
-                            <small className="text-muted d-block">Phone Number</small>
-                            <strong>{selectedPayment.phone_number}</strong>
-                          </div>
-                        )}
-                        {selectedPayment.bank_name && (
-                          <div className="col-md-4">
-                            <small className="text-muted d-block">Bank Name</small>
-                            <strong>{selectedPayment.bank_name}</strong>
-                          </div>
-                        )}
-                        {selectedPayment.account_number && (
-                          <div className="col-md-4">
-                            <small className="text-muted d-block">Account Number</small>
-                            <strong>{selectedPayment.account_number}</strong>
-                          </div>
-                        )}
-                      </div>
-                      {selectedPayment.transaction_reference && (
-                        <div className="mt-2">
-                          <small className="text-muted d-block">Transaction Reference</small>
-                          <strong>{selectedPayment.transaction_reference}</strong>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Receipt Upload Section */}
-                {selectedPayment.status === 'pending' && (
-                  <div className="card border-warning mb-3">
-                    <div className="card-header bg-warning text-white">
-                      <h6 className="mb-0">Upload Payment Receipt</h6>
-                    </div>
-                    <div className="card-body">
-                      <div className="mb-3">
-                        <input
-                          type="file"
-                          className="form-control"
-                          accept=".jpg,.jpeg,.png,.pdf"
-                          onChange={handleReceiptUpload}
-                        />
-                        <small className="text-muted">
-                          Accepted: JPG, PNG, PDF (Max 5MB)
-                        </small>
-                      </div>
-                      
-                      {receiptFile && (
-                        <div className="selected-file p-2 bg-light rounded mb-2">
-                          <i className="fas fa-file me-2"></i>
-                          {receiptFile.name}
-                          <span className="text-muted ms-2">
-                            ({(receiptFile.size / 1024).toFixed(2)} KB)
-                          </span>
-                        </div>
-                      )}
-                      
-                      <button
-                        className="btn btn-success w-100"
-                        onClick={submitReceipt}
-                        disabled={!receiptFile || uploadingReceipt}
-                      >
-                        {uploadingReceipt ? (
-                          <>
-                            <span className="spinner-border spinner-border-sm me-2"></span>
-                            Uploading...
-                          </>
-                        ) : (
-                          <>
-                            <i className="fas fa-cloud-upload-alt me-2"></i>
-                            Submit Receipt
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Receipt View Section */}
-                {selectedPayment.status === 'paid' && selectedPayment.receipt_path && (
-                  <div className="card border-success mb-3">
-                    <div className="card-header bg-success text-white">
-                      <h6 className="mb-0">Payment Receipt</h6>
-                    </div>
-                    <div className="card-body text-center">
-                      <i className="fas fa-check-circle fa-3x text-success mb-3"></i>
-                      <p>Payment completed on {formatDate(selectedPayment.paid_at)}</p>
-                      <a
-                        href={`http://localhost:5000/${selectedPayment.receipt_path}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn btn-primary"
-                      >
-                        <i className="fas fa-file-pdf me-2"></i>
-                        View Receipt
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                {/* Metadata */}
-                <div className="small text-muted">
-                  <div>Created: {formatDate(selectedPayment.created_at)}</div>
-                  {selectedPayment.paid_at && (
-                    <div>Paid: {formatDate(selectedPayment.paid_at)}</div>
-                  )}
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  className="btn btn-secondary"
-                  onClick={closeDetailModal}
-                >
-                  Close
-                </button>
               </div>
             </div>
           </div>
-        </div>
+        </>
+      )}
+
+      {/* STATUS UPDATE MODAL */}
+      {showStatusModal && selectedPayment && (
+        <>
+          <div className="modal-backdrop fade show" style={{ zIndex: 1040 }}></div>
+          <div className="modal fade show d-block" style={{ zIndex: 1050 }} tabIndex="-1">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header bg-light border-bottom-0 pb-0">
+                  <h5 className="modal-title fw-bold">Update Payment Status</h5>
+                  <button type="button" className="btn-close" onClick={() => setShowStatusModal(false)}></button>
+                </div>
+                <div className="modal-body">
+                  {/* Reference */}
+                  <div className="mb-3">
+                    <div className="fw-bold">{selectedPayment.payment_reference}</div>
+                  </div>
+
+                  {/* Current Status */}
+                  <div className="mb-3">
+                    <small className="text-muted d-block mb-1">Current Status</small>
+                    <span className={`badge ${getStatusBadge(selectedPayment.status)} p-2`}>
+                      {selectedPayment.status?.toUpperCase()}
+                    </span>
+                  </div>
+
+                  {/* New Status Dropdown */}
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">New Status</label>
+                    <select
+                      className="form-select"
+                      value={newStatus}
+                      onChange={(e) => setNewStatus(e.target.value)}
+                    >
+                      <option value="">Select Status</option>
+                      <option value="pending">Pending</option>
+                      <option value="paid">Paid</option>
+                      <option value="unpaid">Unpaid</option>
+                      <option value="overdue">Overdue</option>
+                      <option value="cancelled">Cancelled</option>
+                      <option value="refunded">Refunded</option>
+                    </select>
+                  </div>
+
+                  {/* Transaction Reference */}
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Transaction Reference</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={transactionReference}
+                      onChange={(e) => setTransactionReference(e.target.value)}
+                      placeholder="Enter transaction reference"
+                    />
+                  </div>
+
+                  {/* Notes */}
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Notes</label>
+                    <textarea
+                      className="form-control"
+                      rows="3"
+                      value={statusNotes}
+                      onChange={(e) => setStatusNotes(e.target.value)}
+                      placeholder="Add any notes about this status update"
+                    />
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="d-flex justify-content-end gap-2 mt-4">
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => setShowStatusModal(false)}
+                      disabled={statusUpdating}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="btn btn-primary"
+                      onClick={updatePaymentStatus}
+                      disabled={!newStatus || statusUpdating}
+                    >
+                      {statusUpdating ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2"></span>
+                          Updating...
+                        </>
+                      ) : (
+                        'Update Status'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* PAYMENT HISTORY MODAL */}
+      {showHistoryModal && selectedPayment && (
+        <>
+          <div className="modal-backdrop fade show" style={{ zIndex: 1040 }}></div>
+          <div className="modal fade show d-block" style={{ zIndex: 1050 }} tabIndex="-1">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header bg-light border-bottom-0 pb-0">
+                  <h5 className="modal-title fw-bold">Payment History</h5>
+                  <button type="button" className="btn-close" onClick={() => setShowHistoryModal(false)}></button>
+                </div>
+                <div className="modal-body" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                  {loadingHistory ? (
+                    <div className="text-center py-4">
+                      <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
+                    </div>
+                  ) : paymentHistory.length === 0 ? (
+                    <p className="text-muted text-center py-4">No payment history found</p>
+                  ) : (
+                    paymentHistory.map((item, index) => (
+                      <div key={index} className="mb-3 pb-3 border-bottom">
+                        <div className="d-flex justify-content-between align-items-start">
+                          <div>
+                            <span className={`badge ${getStatusBadge(item.old_status)} me-2`}>
+                              {item.old_status}
+                            </span>
+                            <i className="fas fa-arrow-right mx-2"></i>
+                            <span className={`badge ${getStatusBadge(item.new_status)}`}>
+                              {item.new_status}
+                            </span>
+                          </div>
+                          <small className="text-muted">{formatDate(item.created_at)}</small>
+                        </div>
+                        {item.notes && (
+                          <div className="mt-2 text-muted">
+                            <small>{item.notes}</small>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="modal-footer border-top-0 pt-0">
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => setShowHistoryModal(false)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </MainLayout>
   );
