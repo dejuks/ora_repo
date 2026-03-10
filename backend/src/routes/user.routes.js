@@ -6,45 +6,62 @@ import {
   updateUser,
   deleteUser,
 } from "../controllers/user.controller.js";
-
-import { authenticate } from "../middleware/auth.middleware.js";
-import { authorize } from "../middleware/rbac.middleware.js";
+import { uploadUserPhoto } from "../middleware/upload.middleware.js";
+import { authenticate } from '../middleware/auth.middleware.js';
+import pool from '../config/db.js'; // Make sure to import your database pool
 
 const router = express.Router();
 
-router.get(
-  "/",
-  authenticate,
-  authorize("user.read"),
-  getUsers
-);
+// User CRUD routes
+router.get("/", authenticate, getUsers);
+router.get("/:uuid", authenticate, getUserById);
+router.post("/", uploadUserPhoto.single("photo"), createUser);
+router.put("/:uuid", authenticate, uploadUserPhoto.single("photo"), updateUser);
+router.delete("/:uuid", authenticate, deleteUser);
 
-router.get(
-  "/:uuid",
-  authenticate,
-  authorize("user.read"),
-  getUserById
-);
+// Get user roles by user ID
+router.get('/:userId/roles', authenticate, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const query = `
+      SELECT r.uuid, r.name
+      FROM roles r
+      INNER JOIN user_roles ur ON r.uuid = ur.role_id
+      WHERE ur.user_id = $1
+    `;
+    
+    const result = await pool.query(query, [userId]);
+    
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error("Error fetching user roles:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch user roles"
+    });
+  }
+});
 
-router.post(
-  "/",
-  authenticate,
-  authorize("user.create"),
-  createUser
-);
+// Get all roles
+router.get('/roles/all', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM roles ORDER BY name');
+    
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error("Error fetching roles:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch roles"
+    });
+  }
+});
 
-router.put(
-  "/:uuid",
-  authenticate,
-  authorize("user.update"),
-  updateUser
-);
-
-router.delete(
-  "/:uuid",
-  authenticate,
-  authorize("user.delete"),
-  deleteUser
-);
-
-export default router; // 🔥 THIS WAS MISSING
+export default router;

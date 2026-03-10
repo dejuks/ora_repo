@@ -1,137 +1,276 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "../../components/layout/MainLayout";
+import axios from "axios";
+import { formatDistanceToNow, format } from "date-fns";
+
+/* ============================
+   AXIOS INSTANCE (IMPORTANT)
+============================ */
+
+const api = axios.create({
+  baseURL: "/api",
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+/* ============================
+   COMPONENT
+============================ */
 
 export default function OromoWikipedia() {
-  /* ===============================
-     MOCK DATA (OROMO WIKIPEDIA)
-  ================================ */
-  const stats = [
-    {
-      id: 1,
-      title: "Total Articles",
-      count: 1450,
-      icon: "fas fa-book",
-      color: "bg-info",
-    },
-    {
-      id: 2,
-      title: "Active Editors",
-      count: 96,
-      icon: "fas fa-users",
-      color: "bg-success",
-    },
-    {
-      id: 3,
-      title: "New Articles This Month",
-      count: 58,
-      icon: "fas fa-plus",
-      color: "bg-warning",
-    },
-    {
-      id: 4,
-      title: "Edits Today",
-      count: 412,
-      icon: "fas fa-edit",
-      color: "bg-danger",
-    },
-    {
-      id: 5,
-      title: "Featured Articles",
-      count: 18,
-      icon: "fas fa-star",
-      color: "bg-primary",
-    },
-    {
-      id: 6,
-      title: "Pending Reviews",
-      count: 11,
-      icon: "fas fa-clock",
-      color: "bg-purple",
-    },
-  ];
+  const [activeTab, setActiveTab] = useState("submissions");
+
+  const [loading, setLoading] = useState({
+    stats: true,
+    articles: true,
+    activity: true,
+    media: true,
+  });
+
+  const [wikiStats, setWikiStats] = useState(null);
+  const [recentArticles, setRecentArticles] = useState([]);
+  const [popularArticles, setPopularArticles] = useState([]);
+  const [mediaStats, setMediaStats] = useState(null);
+  const [languageStats, setLanguageStats] = useState([]);
+  const [userMedia, setUserMedia] = useState([]);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  /* ============================
+     FETCH DASHBOARD DATA
+  ============================ */
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading((prev) => ({ ...prev, stats: true }));
+
+      const statsRes = await api.get("/wiki/articles/stats");
+      if (statsRes.data.success) {
+        setWikiStats(statsRes.data.data);
+      }
+
+      const recentRes = await api.get(
+        "/wiki/articles/recent?limit=6"
+      );
+      if (recentRes.data.success) {
+        setRecentArticles(recentRes.data.data);
+      }
+
+      const popularRes = await api.get(
+        "/wiki/articles/popular?limit=6"
+      );
+      if (popularRes.data.success) {
+        setPopularArticles(popularRes.data.data);
+      }
+
+      const langRes = await api.get(
+        "/wiki/articles/languages/stats"
+      );
+      if (langRes.data.success) {
+        setLanguageStats(langRes.data.data);
+      }
+
+      const mediaStatsRes = await api.get("/wiki/media/stats");
+      if (mediaStatsRes.data.success) {
+        setMediaStats(mediaStatsRes.data.data);
+      }
+
+      const mediaRes = await api.get("/wiki/media/user/me");
+      if (mediaRes.data.success) {
+        setUserMedia(mediaRes.data.data);
+      }
+
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load dashboard data.");
+    } finally {
+      setLoading({
+        stats: false,
+        articles: false,
+        activity: false,
+        media: false,
+      });
+    }
+  };
+
+  /* ============================
+     HELPERS
+  ============================ */
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    try {
+      return format(new Date(dateString), "MMM dd, yyyy");
+    } catch {
+      return dateString;
+    }
+  };
+
+  const formatRelativeTime = (dateString) => {
+    if (!dateString) return "";
+    try {
+      return formatDistanceToNow(new Date(dateString), {
+        addSuffix: true,
+      });
+    } catch {
+      return "";
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    const map = {
+      published: "badge bg-success",
+      draft: "badge bg-secondary",
+      under_review: "badge bg-warning",
+      archived: "badge bg-danger",
+    };
+    return (
+      <span className={map[status] || "badge bg-info"}>
+        {status}
+      </span>
+    );
+  };
+
+  /* ============================
+     UI
+  ============================ */
 
   return (
     <MainLayout>
-      {/* ===============================
-          PAGE HEADER
-      ================================ */}
-      <section className="content-header">
-        <div className="container-fluid">
-          <div className="row mb-2">
-            <div className="col-sm-6">
-              <h1>Oromo Wikipedia Dashboard</h1>
-            </div>
-            <div className="col-sm-6">
-              <ol className="breadcrumb float-sm-right">
-                <li className="breadcrumb-item">
-                  <a href="/wiki/dashboard">Home</a>
-                </li>
-                <li className="breadcrumb-item active">Dashboard</li>
-              </ol>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ===============================
-          DASHBOARD CONTENT
-      ================================ */}
       <section className="content">
         <div className="container-fluid">
-          <div className="row">
-            {stats.map((item) => (
-              <div key={item.id} className="col-lg-4 col-md-6 col-12">
-                <div className={`small-box ${item.color}`}>
-                  <div className="inner">
-                    <h3>{item.count}</h3>
-                    <p>{item.title}</p>
-                  </div>
-                  <div className="icon">
-                    <i className={item.icon}></i>
-                  </div>
-                  <a
-                    href="#"
-                    className="small-box-footer"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      alert(`${item.title}`);
-                    }}
-                  >
-                    More info <i className="fas fa-arrow-circle-right"></i>
-                  </a>
-                </div>
-              </div>
-            ))}
-          </div>
 
-          {/* ===============================
-              INTRODUCTION CARD
-          ================================ */}
-          <div className="row mt-4">
-            <div className="col-12">
-              <div className="card card-outline card-secondary">
-                <div className="card-header">
-                  <h3 className="card-title">
-                    <i className="fas fa-language mr-2"></i>
-                    About Oromo Wikipedia
-                  </h3>
-                </div>
-                <div className="card-body">
-                  <p>
-                    Oromo Wikipedia is a collaborative knowledge platform
-                    dedicated to preserving, expanding, and sharing content
-                    in the Afaan Oromo language.
-                  </p>
-                  <ul>
-                    <li>Create and manage encyclopedic articles</li>
-                    <li>Review and approve community edits</li>
-                    <li>Support contributors and editors</li>
-                    <li>Promote high-quality featured articles</li>
-                  </ul>
-                </div>
+          {error && (
+            <div className="alert alert-danger">
+              {error}
+            </div>
+          )}
+
+          {/* Stats */}
+          <div className="row mb-4">
+            <div className="col-md-3">
+              <div className="card p-3 text-center">
+                <h5>Total Articles</h5>
+                <h3>
+                  {loading.stats
+                    ? "Loading..."
+                    : wikiStats?.total_articles || 0}
+                </h3>
+              </div>
+            </div>
+
+            <div className="col-md-3">
+              <div className="card p-3 text-center">
+                <h5>Total Edits</h5>
+                <h3>
+                  {loading.stats
+                    ? "Loading..."
+                    : wikiStats?.total_edits || 0}
+                </h3>
+              </div>
+            </div>
+
+            <div className="col-md-3">
+              <div className="card p-3 text-center">
+                <h5>Media Files</h5>
+                <h3>
+                  {loading.media
+                    ? "Loading..."
+                    : mediaStats?.total_media || 0}
+                </h3>
               </div>
             </div>
           </div>
+
+          {/* Recent Articles */}
+          <div className="card mb-4">
+            <div className="card-header">
+              <h5>Recent Articles</h5>
+            </div>
+            <div className="card-body">
+              {loading.articles ? (
+                <p>Loading...</p>
+              ) : recentArticles.length === 0 ? (
+                <p>No articles found.</p>
+              ) : (
+                <table className="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Title</th>
+                      <th>Status</th>
+                      <th>Views</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentArticles.map((article) => (
+                      <tr key={article.id}>
+                        <td>
+                          <a
+                            href={`/wiki/article/${article.slug}`}
+                          >
+                            {article.title}
+                          </a>
+                        </td>
+                        <td>
+                          {getStatusBadge(article.status)}
+                        </td>
+                        <td>
+                          {article.view_count || 0}
+                        </td>
+                        <td>
+                          {formatDate(article.created_at)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+
+          {/* Popular Articles */}
+          <div className="card mb-4">
+            <div className="card-header">
+              <h5>Popular Articles</h5>
+            </div>
+            <div className="card-body">
+              {popularArticles.length === 0 ? (
+                <p>No popular articles.</p>
+              ) : (
+                <div className="row">
+                  {popularArticles.map((article) => (
+                    <div
+                      className="col-md-4 mb-3"
+                      key={article.id}
+                    >
+                      <div className="card p-3">
+                        <h6>{article.title}</h6>
+                        <small>
+                          {formatRelativeTime(
+                            article.created_at
+                          )}
+                        </small>
+                        <div>
+                          👁 {article.view_count || 0}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
         </div>
       </section>
     </MainLayout>
