@@ -1,0 +1,199 @@
+
+
+  Frontend Routes for eBook System 
+Author
+
+GET /ebooks/author-registration → EbookAuthorRegistrationForm
+
+GET /author/login → AuthorLogin
+
+GET /ebook/dashboard → EbookDashboard
+
+GET /ebook-dashboard → EBookDashboards
+
+GET /ebook/submit → AuthorSubmitManuscript
+
+GET /ebook/my-submissions → AuthorMySubmissions
+
+GET /ebook/:id → ManuscriptDetail
+
+GET /ebook/:id/edit → EditManuscript
+
+GET /ebook/author/draft → AuthorDrafts
+
+GET /ebooks/edit/:id → UpdateEbook (another edit page)
+
+Editor (ProtectedRoute requiredRole="EDITOR")
+
+GET /ebook/editor/screening → EditorScreeningQueue
+
+GET /editor/screening → ScreeningQueue (duplicate listing page)
+
+GET /editor/screening/:id → EditorScreeningDetail
+
+GET /editor/screening-assessment/:id → EditorScreeningAssessment
+
+GET /editor/assigned → AssignedEbooks
+
+GET /editor/rejected → RejectedEbooks
+
+GET /editor/review-summary/:id → ReviewSummary
+
+GET /editor/:id/review-summary → EditorReviewSummary
+
+GET /editor/:id/make-decision → EditorMakeDecision
+
+Reviewer (ProtectedRoute requiredRole="REVIEWER")
+
+GET /reviewer/my-reviews → ReviewerMyReviews
+
+GET /reviewer/:assignmentId → ReviewerReviewDetail
+
+GET /reviewer/review/:id → ReviewDetail (duplicate detail)
+
+GET /reviewer/:assignmentId/submit → ReviewerSubmitReview
+
+GET /reviewer/completed → CompletedReviews
+
+Finance + Production (ProtectedRoute, no requiredRole in your code)
+
+GET /ebook/finance/pending → FinancePending
+
+GET /ebook/production/queue → ProductionQueue
+
+Public Library
+
+GET /ebook/library → PublicLibrary
+
+GET /ebook/library/:id → PublicEbookDetail
+
+✅ These are the only frontend eBook routes currently in your router.
+
+2) Backend API Endpoints for eBook Publishing System (Full ORA Workflow)
+
+
+A) Auth (eBook module)
+
+POST /api/ebook/register
+
+POST /api/ebook/login
+
+GET /api/ebook/me
+
+B) Author API
+
+Create / Save / Submit
+
+POST /api/ebooks (multipart)
+
+creates ebook + version v1 + optional original file
+
+PUT /api/ebooks/:id
+
+update metadata OR move DRAFT → SUBMITTED
+
+GET /api/ebooks/my
+
+list my submissions (draft+submitted+etc)
+
+GET /api/ebooks/:id
+
+detail (own ebook)
+
+Upload manuscript file
+
+POST /api/ebooks/:id/upload (multipart)
+
+file field: file
+
+optional file_type
+
+Submit revision
+
+POST /api/ebooks/:id/revision (multipart)
+
+file field: file
+
+History
+
+GET /api/ebooks/:id/history
+
+C) Editor API
+
+Screening
+
+GET /api/ebooks/editor/screening
+
+POST /api/ebooks/:id/editor/start-screening
+
+Screening form + assign reviewers
+
+GET /api/ebooks/:id/screening-form
+
+POST /api/ebooks/:id/screening-assessment
+
+can include recommendedAction=SEND_TO_REVIEW + reviewerIds[]
+
+(Optional direct) send-to-review
+
+POST /api/ebooks/:id/editor/send-to-review
+
+Review summary
+
+GET /api/ebooks/:id/review-summary
+
+Decisions
+
+POST /api/ebooks/:id/editor/accept
+
+POST /api/ebooks/:id/editor/request-revision
+
+POST /api/ebooks/:id/editor/reject
+
+POST /api/ebooks/:id/editor/desk-reject
+
+D) Reviewer API
+
+GET /api/ebooks/reviewer/my-reviews
+
+POST /api/ebooks/reviewer/:assignmentId/respond
+
+{ "action": "accept" } OR { "action": "decline" }
+
+POST /api/ebooks/reviewer/:assignmentId/submit
+
+{ recommendation, comments, confidential_comments }
+
+GET /api/ebooks/reviewer/completed (optional if you use it in UI)
+
+E) Finance API (BPC clearance)
+
+GET /api/ebooks/finance/pending
+
+POST /api/ebooks/:id/finance/decision
+
+{ action: "clear"|"waive"|"decline", amount?, currency?, reference?, note? }
+
+GET /api/ebooks/:id/finance (optional)
+
+F) Digital Production + Publish API
+
+GET /api/ebooks/production/queue
+
+POST /api/ebooks/:id/production/upload-final (multipart)
+
+fields: pdf (required), epub (optional), cover (optional)
+
+POST /api/ebooks/:id/production/publish
+
+{ isbn, doi, access_type, embargo_until? }
+
+GET /api/ebooks/:id/publication (optional)
+
+G) Public Library API
+
+GET /api/ebooks/public?q=&page=&limit=
+
+GET /api/ebooks/public/:id
+
+GET /api/ebooks/public/:id/download?type=pdf|epub

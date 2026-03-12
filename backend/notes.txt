@@ -1,0 +1,164 @@
+// Manuscriotion details
+1. Manuscript Lifecycle (High-Level)
+
+According to the SRS Journal Management System, a manuscript goes through these controlled stages:
+
+Draft
+ → Submitted
+ → Initial Screening
+ → Under Review
+ → Review Completed
+ → Decision (Revise / Accept / Reject)
+ → Revision Cycle (if needed)
+ → Camera-Ready
+ → Published
+
+
+This lifecycle is mandatory for auditability, peer-review integrity, and DOI assignment 
+
+SRS 1.1
+
+2. Step-by-Step Manuscript Submission Process (Author Role)
+STEP 1: Author Registration & Role Assignment
+
+Author registers via User Management module
+
+Role = AUTHOR
+
+ORCID is optional but recommended
+
+Email verification required
+
+Tables involved
+
+users
+
+user_roles
+
+STEP 2: Start New Manuscript (Draft Mode)
+
+Author clicks “Submit Manuscript”
+
+Author fills:
+
+Article title
+
+Abstract
+
+Keywords
+
+Journal & Section
+
+Language
+
+Co-authors
+
+Article type (Research, Review, Case Study)
+
+📌 Status: DRAFT
+
+Author can save without submitting.
+
+STEP 3: Upload Manuscript Files
+
+Author uploads:
+
+Main manuscript (PDF/DOCX)
+
+Cover letter
+
+Supplementary files (optional)
+
+📌 Files stored in secure object storage
+📌 Virus scan + file validation
+
+STEP 4: Final Submission
+
+Author confirms:
+
+Originality statement
+
+Ethical compliance
+
+Copyright agreement
+
+📌 Status changes: SUBMITTED
+📌 System locks metadata editing
+
+Automatic actions
+
+Notify Journal Manager
+
+Create audit log
+
+Generate submission ID
+
+STEP 5: Initial Editorial Screening
+
+Handled by:
+
+Associate Editor / Editor-in-Chief
+
+Possible outcomes:
+
+Desk Reject
+
+Send to Review
+
+📌 Author is notified automatically
+
+STEP 6: Peer Review (Double-Blind)
+
+Reviewers assigned
+
+Author identity hidden
+
+Review comments submitted
+
+📌 Status: UNDER_REVIEW
+
+STEP 7: Editorial Decision
+
+Decision types:
+
+ACCEPT
+
+MINOR_REVISION
+
+MAJOR_REVISION
+
+REJECT
+
+📌 Decision recorded permanently
+
+STEP 8: Revision Cycle (If Required)
+
+Author:
+
+Uploads revised version
+
+Responds to reviewer comments
+
+📌 Each revision stored separately
+📌 Versioning enabled
+
+STEP 9: Camera-Ready Submission
+
+After acceptance:
+
+Author uploads final formatted file
+
+Metadata locked permanently
+
+📌 DOI preparation begins
+
+STEP 10: Publication
+
+Assigned to Volume & Issue
+
+DOI minted
+
+Article becomes public
+
+📌 Status: PUBLISHED
+

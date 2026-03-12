@@ -1,0 +1,29 @@
+import React from "react";
+import ResourcePage from "../../../components/library/ResourcePage";
+
+export default function AuditsPage() {
+  return (
+    <ResourcePage
+      title="Inventory Audits"
+      subtitle="Plan shelf-reading exercises and complete stock verification sessions."
+      resource="inventory-audits"
+      idField="audit_id"
+      columns={[
+        { key: "audit_name", label: "Audit" },
+        { key: "branch_id", label: "Branch" },
+        { key: "location_id", label: "Location" },
+        { key: "status", label: "Status" },
+        { key: "start_date", label: "Start Date" },
+      ]}
+      fields={[
+        { name: "branch_id", label: "Branch", type: "select", resource: "branches", valueKey: "branch_id", labelKey: "name" },
+        { name: "location_id", label: "Location", type: "select", resource: "locations", valueKey: "location_id", labelKey: "name" },
+        { name: "audit_name", label: "Audit Name" },
+        { name: "status", label: "Status", type: "select", options: [{ id:'draft',name:'Draft'},{id:'in_progress',name:'In Progress'},{id:'completed',name:'Completed'}], valueKey:'id', labelKey:'name' },
+        { name: "start_date", label: "Start Date", type: "date" },
+        { name: "end_date", label: "End Date", type: "date" },
+        { name: "note", label: "Note", type: "textarea" },
+      ]}
+    />
+  );
+}
