@@ -189,6 +189,8 @@ function App() {
 
         {/* Auth Route */}
         <Route path="/auth" element={<Login />} />
+          <Route path="/auth/login" element={<Login />} />
+        {/* auth/login */}
 
         {/* Protected Routes */}
         <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
