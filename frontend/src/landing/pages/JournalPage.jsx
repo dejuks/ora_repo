@@ -176,7 +176,6 @@ export default function PublicManuscriptsPage() {
             <p>{error}</p>
           </div>
         )}
-
         {/* ARTICLES SECTION */}
         <section style={styles.articlesSection}>
           <div style={styles.sectionHeader}>
