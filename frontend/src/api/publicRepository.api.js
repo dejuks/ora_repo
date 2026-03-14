@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api/repository/public",
+  baseURL: process.env.REACT_APP_API_URL + "/repository/public",
 });
 
 export const searchPublicItems = (params) =>

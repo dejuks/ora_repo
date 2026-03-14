@@ -10,7 +10,7 @@ import {
   requestRevision
 } from "../../api/repository.api";
 
-const API = "http://localhost:5000/api/repository-items";
+const API =  process.env.REACT_APP_API_URL + "/repository-items";
 
 function CuratorRepositoryReview() {
   const { uuid } = useParams();
@@ -24,7 +24,7 @@ function CuratorRepositoryReview() {
   const [vocabResults, setVocabResults] = useState(null);
   const [similarityScore, setSimilarityScore] = useState(null);
 
-  const FILE_BASE_URL = "http://localhost:5000";
+  const FILE_BASE_URL =  process.env.REACT_APP_API_URL;
 
   const getFileUrl = (path) => {
     if (!path) return null;
