@@ -24,7 +24,7 @@ function CuratorRepositoryReview() {
   const [vocabResults, setVocabResults] = useState(null);
   const [similarityScore, setSimilarityScore] = useState(null);
 
-  const FILE_BASE_URL =  process.env.REACT_APP_API_URL + "/files"; // Base URL for file access
+  const FILE_BASE_URL =  process.env.REACT_APP_API_URL;
 
   const getFileUrl = (path) => {
     if (!path) return null;
