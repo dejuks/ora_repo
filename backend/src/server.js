@@ -67,7 +67,7 @@ app.use(
 ======================= */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use("/api/manuscripts", publicManuscriptRoutes);
+app.use("/api/msc", publicManuscriptRoutes);
 app.use("/api/manuscripts", manuscriptRoutes);
 /* =======================
    STATIC FILES
