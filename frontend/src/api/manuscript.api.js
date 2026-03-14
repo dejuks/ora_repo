@@ -1,7 +1,7 @@
 import axios from "./axios";
+const API_URL_public = `${process.env.REACT_APP_API_URL}/manuscripts/public`;
 
 const API_URL = `${process.env.REACT_APP_API_URL}/manuscripts`;
-const API_URL_public = `${process.env.REACT_APP_API_URL}/manuscripts/public`;
 
 // ================= Get Public API METHODS =================
 // For public routes, we need to ensure no auth headers are sent
