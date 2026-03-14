@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create Axios instance
 const API = axios.create({
-  baseURL: "http://localhost:5000/api/repository-items",
+  baseURL: process.env.REACT_APP_API_URL,
   headers: {
     Authorization: `Bearer ${localStorage.getItem("token")}`,
   },
