@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api/researcher", // FIXED: Added /researcher
+  baseURL:process.env.REACT_APP_API_URL + "/researcher", // FIXED: Added /researcher
 });
 
 API.interceptors.request.use((config) => {
