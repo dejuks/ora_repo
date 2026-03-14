@@ -67,7 +67,8 @@ app.use(
 ======================= */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use("/api/manuscripts", publicManuscriptRoutes);
+app.use("/api/manuscripts", manuscriptRoutes);
 /* =======================
    STATIC FILES
 ======================= */
@@ -81,8 +82,7 @@ app.set("trust proxy", 1);
 /* =======================
    API ROUTES
 ======================= */
-app.use("/api/manuscripts", publicManuscriptRoutes);
-app.use("/api/manuscripts", manuscriptRoutes);
+
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
