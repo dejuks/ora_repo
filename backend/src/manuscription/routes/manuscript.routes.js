@@ -2,7 +2,7 @@ import express from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 
 import {
   getAllManuscripts,
@@ -10,7 +10,9 @@ import {
   createManuscript,
   updateManuscript,
   deleteManuscript,
-  getDraftManuscripts,getAllPublicManuscripts,getPublicManuscriptById,
+  getDraftManuscripts,
+  getAllPublicManuscripts,
+  getPublicManuscriptById,
   submitDraftManuscript,
   getSubmittedManuscripts,
   moveToScreening,
@@ -31,86 +33,160 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-/* ======================================================
-   MULTER CONFIG - Configure for file uploads
-====================================================== */
+
+// ======================================================
+// MULTER CONFIGURATION
+// ======================================================
+
 // Ensure upload directory exists
-const uploadDir = path.join(__dirname, '../../uploads/manuscripts');
+const uploadDir = path.join(__dirname, "../../uploads/manuscripts");
+
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// Storage config
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix =
+      Date.now() + "-" + Math.round(Math.random() * 1e9);
+
     const ext = path.extname(file.originalname);
+
     cb(null, `manuscript-${uniqueSuffix}${ext}`);
-  }
+  },
 });
 
+// File validation
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+  const allowedTypes = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
+
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Invalid file type. Only PDF and Word documents are allowed'), false);
+    cb(
+      new Error(
+        "Invalid file type. Only PDF and Word documents are allowed"
+      ),
+      false
+    );
   }
 };
 
+// Upload instance
 const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  storage,
+  fileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
-/* ======================================================
-   PUBLIC ROUTES (if any)
-====================================================== */
+
+// ======================================================
+// PUBLIC ROUTES (NO AUTH)
+// ======================================================
+
+// Get all public manuscripts
+router.get("/public", getAllPublicManuscripts);
+
+// Get single public manuscript
+router.get("/public/:id", getPublicManuscriptById);
+
+// Download manuscript file
 router.get("/files/:fileId/download", downloadFile);
 
-/* ======================================================
-   ALL ROUTES REQUIRE AUTHENTICATION
-====================================================== */
-router.get("/public", getAllPublicManuscripts);
-router.get("/public/:id", getPublicManuscriptById);
-// router.use(authenticate);
 
-// Additional AE/EIC routes for under review, recommendations, decisions
-router.get("/under-review", authenticate,fetchUnderReviewManuscripts);
-router.get("/ae-recommendations",authenticate, fetchAERecommendations);
-router.get("/eic-decisions",authenticate, fetchEICDecisions);
-/* ======================================================
-   AE / EIC ROUTES
-====================================================== */
-router.get("/submitted", authenticate,getSubmittedManuscripts);
-router.get("/screening",authenticate, getScreeningManuscripts);
-router.get("/initial-screening", authenticate, getInitialScreenedManuscripts);
-router.post("/:manuscriptId/screening", authenticate, moveToScreening);
-router.post("/:manuscriptId/reject", authenticate, rejectToAuthor);
-router.post("/:manuscriptId/resubmit", authenticate, resubmitManuscript);
+// ======================================================
+// AUTHOR ROUTES
+// ======================================================
 
-/* ======================================================
-   AUTHOR – DRAFT ROUTES
-====================================================== */
-router.get("/drafts", getDraftManuscripts);
+// Draft manuscripts
+router.get("/drafts", authenticate, getDraftManuscripts);
+
+// Submit draft
 router.post("/:manuscriptId/submit", authenticate, submitDraftManuscript);
 
-/* ======================================================
-   NORMAL CRUD
-====================================================== */
-router.get("/", authenticate,getAllManuscripts);
+
+// ======================================================
+// AE / EIC ROUTES
+// ======================================================
+
+// Submitted manuscripts
+router.get("/submitted", authenticate, getSubmittedManuscripts);
+
+// Screening
+router.get("/screening", authenticate, getScreeningManuscripts);
+
+// Initial screening
+router.get("/initial-screening", authenticate, getInitialScreenedManuscripts);
+
+// Move to screening
+router.post("/:manuscriptId/screening", authenticate, moveToScreening);
+
+// Reject manuscript
+router.post("/:manuscriptId/reject", authenticate, rejectToAuthor);
+
+// Resubmit manuscript
+router.post("/:manuscriptId/resubmit", authenticate, resubmitManuscript);
+
+
+// ======================================================
+// REVIEW / EDITOR ROUTES
+// ======================================================
+
+router.get("/under-review", authenticate, fetchUnderReviewManuscripts);
+
+router.get("/ae-recommendations", authenticate, fetchAERecommendations);
+
+router.get("/eic-decisions", authenticate, fetchEICDecisions);
+
+
+// ======================================================
+// ADMIN / NORMAL CRUD
+// ======================================================
+
+// Get all manuscripts
+router.get("/", authenticate, getAllManuscripts);
+
+// Get manuscript by ID
 router.get("/:id", authenticate, getManuscriptById);
 
-/* ✅ CREATE MANUSCRIPT WITH FILE UPLOAD */
-router.post("/", upload.array('files', 5),authenticate, createManuscript);
 
-/* ✅ UPDATE MANUSCRIPT WITH FILE UPLOAD */
-router.put("/:id", upload.array('files', 5),authenticate, updateManuscript);
+// ======================================================
+// CREATE MANUSCRIPT
+// ======================================================
 
-router.delete("/:id",authenticate, deleteManuscript);
+router.post(
+  "/",
+  authenticate,
+  upload.array("files", 5),
+  createManuscript
+);
+
+
+// ======================================================
+// UPDATE MANUSCRIPT
+// ======================================================
+
+router.put(
+  "/:id",
+  authenticate,
+  upload.array("files", 5),
+  updateManuscript
+);
+
+
+// ======================================================
+// DELETE MANUSCRIPT
+// ======================================================
+
+router.delete("/:id", authenticate, deleteManuscript);
 
 
 export default router;
