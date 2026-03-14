@@ -12,16 +12,22 @@ const JournalAuthPage = ({ initialMode = "login", redirectPath }) => {
   const redirect = redirectPath || queryParams.get('redirect') || '/journal/contribute';
 
   // Check if already logged in
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    
-    if (token && user) {
-      // If already logged in, redirect to the intended page
+// pages/journals/authors/JournalAuthPage.jsx - update the useEffect
+useEffect(() => {
+  const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  
+  if (token && user) {
+    // Check if there's a stored redirect from sessionStorage
+    const storedRedirect = sessionStorage.getItem('redirectAfterLogin');
+    if (storedRedirect) {
+      sessionStorage.removeItem('redirectAfterLogin');
+      navigate(storedRedirect);
+    } else {
       navigate(redirect);
     }
-  }, [navigate, redirect]);
-
+  }
+}, [navigate, redirect]);
   const [isLogin, setIsLogin] = useState(initialMode === "login");
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
