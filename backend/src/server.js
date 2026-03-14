@@ -78,6 +78,8 @@ app.set("trust proxy", 1);
 /* =======================
    API ROUTES
 ======================= */
+app.use("/api/manuscripts", manuscriptRoutes);
+
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/roles", roleRoutes);
@@ -91,7 +93,6 @@ app.use("/api/journals", journalRoutes);
 app.use("/api", journalSectionRoutes);
 
 app.use("/api/manuscript-statuses", manuscriptStatusRoutes);
-app.use("/api/manuscripts", manuscriptRoutes);
 app.use("/api/files", ManuscriptFileRoute);
 app.use("/api/manuscriptions/ae", manuscriptAERoutes);
 app.use("/api/manuscripts/reviewer", manuscriptReviewerRoutes);
