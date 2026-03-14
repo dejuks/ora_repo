@@ -6,7 +6,7 @@ export default function AdminPendingResearchers({ token }) {
 
   const fetchPending = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/admin/pending-researchers", {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/admin/pending-researchers`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setPending(res.data);
@@ -17,7 +17,7 @@ export default function AdminPendingResearchers({ token }) {
 
   const approveUser = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/admin/approve-researcher/${id}`, {}, {
+      await axios.put(`${process.env.REACT_APP_API_URL}/admin/approve-researcher/${id}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert("User approved!");
