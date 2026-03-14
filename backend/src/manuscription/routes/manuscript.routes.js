@@ -80,18 +80,7 @@ const upload = multer({
 });
 
 
-// ======================================================
-// PUBLIC ROUTES (NO AUTH)
-// ======================================================
 
-// Public manuscripts list
-router.get("/public", getAllPublicManuscripts);
-
-// Public manuscript by ID
-router.get("/public/:id", getPublicManuscriptById);
-
-// Download manuscript file
-router.get("/files/:fileId/download", downloadFile);
 
 
 // ======================================================

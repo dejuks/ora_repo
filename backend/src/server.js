@@ -45,6 +45,9 @@ import eicDecisionRoutes from "./eic/routes/eic.decision.routes.js";
 import paymentRoutes from "./eic/routes/payment.routes.js";
 import ebookAuthorRoutes from "./ebooks/routes/ebookAuthorRoutes.js";
 
+import publicManuscriptRoutes from "./manuscription/routes/public.manuscripts.routes.js";
+
+
 dotenv.config();
 
 const app = express();
@@ -78,6 +81,7 @@ app.set("trust proxy", 1);
 /* =======================
    API ROUTES
 ======================= */
+app.use("/api/manuscripts", publicManuscriptRoutes);
 app.use("/api/manuscripts", manuscriptRoutes);
 
 app.use("/api/auth", authRoutes);
