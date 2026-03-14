@@ -4,18 +4,51 @@ const API_URL = `${process.env.REACT_APP_API_URL}/manuscripts`;
 const API_URL_public = `${process.env.REACT_APP_API_URL}/manuscripts/public`;
 
 // ================= Get Public API METHODS =================
+// For public routes, we need to ensure no auth headers are sent
 export const fetchPublicManuscripts = async () => {
-  const res = await axios.get(API_URL_public);
-  return res.data;
+  // Create a manual request without auth headers for public routes
+  const res = await fetch(API_URL_public, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  });
+  
+  if (!res.ok) {
+    throw new Error('Failed to fetch manuscripts');
+  }
+  
+  return res.json();
 };
+
 export const fetchPublicManuscriptById = async (id) => {
-  const res = await axios.get(`${API_URL_public}/${id}`);
-  return res.data;
+  const res = await fetch(`${API_URL_public}/${id}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  });
+  
+  if (!res.ok) {
+    throw new Error('Failed to fetch manuscript');
+  }
+  
+  return res.json();
 };
 
 export const fetchPublicManuscript = async (id) => {
-  const res = await axios.get(`${API_URL_public}/${id}`);
-  return res.data;
+  const res = await fetch(`${API_URL_public}/${id}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  });
+  
+  if (!res.ok) {
+    throw new Error('Failed to fetch manuscript');
+  }
+  
+  return res.json();
 };
 
 /* =====================================================
@@ -140,6 +173,7 @@ export const fetchEICDecisions = async () => {
   const res = await axios.get(`${API_URL}/eic-decisions`);
   return res.data;
 };
+
 // reassign manuscript to another AE or reviewer
 export const reassignManuscript = async (manuscriptId, newAssigneeId, role) => {
   const res = await axios.post(`${API_URL}/${manuscriptId}/reassign`, {
