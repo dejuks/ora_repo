@@ -1,3 +1,4 @@
+// pages/journals/public/PublicManuscriptsPage.jsx
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
@@ -16,6 +17,13 @@ export default function PublicManuscriptsPage() {
   const [error, setError] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Check authentication status
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    setIsAuthenticated(!!token);
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -74,10 +82,13 @@ export default function PublicManuscriptsPage() {
 
   // Handle contribute click - redirect to login/register
   const handleContributeClick = () => {
-    // You can pass a redirect URL to come back to this page after login
-    navigate("/journal/author-login?redirect=/manuscripts/contribute");
-    // Or if you want to go directly to registration:
-    // navigate("/register?redirect=/manuscripts/contribute");
+    if (isAuthenticated) {
+      navigate("/manuscripts/contribute");
+    } else {
+      // Store the intended destination
+      sessionStorage.setItem('redirectAfterLogin', '/manuscripts/contribute');
+      navigate("/journal/author-login?redirect=/manuscripts/contribute");
+    }
   };
 
   return (
