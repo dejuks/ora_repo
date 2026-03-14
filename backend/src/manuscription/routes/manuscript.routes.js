@@ -45,7 +45,6 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Storage config
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -60,7 +59,6 @@ const storage = multer.diskStorage({
   },
 });
 
-// File validation
 const fileFilter = (req, file, cb) => {
   const allowedTypes = [
     "application/pdf",
@@ -71,20 +69,14 @@ const fileFilter = (req, file, cb) => {
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(
-      new Error(
-        "Invalid file type. Only PDF and Word documents are allowed"
-      ),
-      false
-    );
+    cb(new Error("Only PDF and Word files allowed"), false);
   }
 };
 
-// Upload instance
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: { fileSize: 10 * 1024 * 1024 },
 });
 
 
@@ -92,10 +84,10 @@ const upload = multer({
 // PUBLIC ROUTES (NO AUTH)
 // ======================================================
 
-// Get all public manuscripts
+// Public manuscripts list
 router.get("/public", getAllPublicManuscripts);
 
-// Get single public manuscript
+// Public manuscript by ID
 router.get("/public/:id", getPublicManuscriptById);
 
 // Download manuscript file
@@ -120,13 +112,13 @@ router.post("/:manuscriptId/submit", authenticate, submitDraftManuscript);
 // Submitted manuscripts
 router.get("/submitted", authenticate, getSubmittedManuscripts);
 
-// Screening
+// Screening manuscripts
 router.get("/screening", authenticate, getScreeningManuscripts);
 
-// Initial screening
+// Initial screened manuscripts
 router.get("/initial-screening", authenticate, getInitialScreenedManuscripts);
 
-// Move to screening
+// Move manuscript to screening
 router.post("/:manuscriptId/screening", authenticate, moveToScreening);
 
 // Reject manuscript
@@ -140,22 +132,22 @@ router.post("/:manuscriptId/resubmit", authenticate, resubmitManuscript);
 // REVIEW / EDITOR ROUTES
 // ======================================================
 
+// Under review
 router.get("/under-review", authenticate, fetchUnderReviewManuscripts);
 
+// AE recommendations
 router.get("/ae-recommendations", authenticate, fetchAERecommendations);
 
+// EIC decisions
 router.get("/eic-decisions", authenticate, fetchEICDecisions);
 
 
 // ======================================================
-// ADMIN / NORMAL CRUD
+// ADMIN ROUTES
 // ======================================================
 
 // Get all manuscripts
 router.get("/", authenticate, getAllManuscripts);
-
-// Get manuscript by ID
-router.get("/:id", authenticate, getManuscriptById);
 
 
 // ======================================================
@@ -187,6 +179,14 @@ router.put(
 // ======================================================
 
 router.delete("/:id", authenticate, deleteManuscript);
+
+
+// ======================================================
+// IMPORTANT: DYNAMIC ROUTE LAST
+// ======================================================
+
+// Get manuscript by ID
+router.get("/:id", authenticate, getManuscriptById);
 
 
 export default router;
