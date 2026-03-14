@@ -7,8 +7,7 @@ import {
 } from "../../api/manuscript.api";
 
 const API_BASE =
-  process.env.REACT_APP_API_URL?.replace("/api", "") ||
-  "http://localhost:5000";
+  process.env.REACT_APP_API_URL?.replace("/api", "");
 
 export default function PublicManuscriptsPage() {
   const navigate = useNavigate();
