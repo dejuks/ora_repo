@@ -76,41 +76,41 @@ router.get("/files/:fileId/download", downloadFile);
 ====================================================== */
 router.get("/public", getAllPublicManuscripts);
 router.get("/public/:id", getPublicManuscriptById);
-router.use(authenticate);
+// router.use(authenticate);
 
 // Additional AE/EIC routes for under review, recommendations, decisions
-router.get("/under-review", fetchUnderReviewManuscripts);
-router.get("/ae-recommendations", fetchAERecommendations);
-router.get("/eic-decisions", fetchEICDecisions);
+router.get("/under-review", authenticate,fetchUnderReviewManuscripts);
+router.get("/ae-recommendations",authenticate, fetchAERecommendations);
+router.get("/eic-decisions",authenticate, fetchEICDecisions);
 /* ======================================================
    AE / EIC ROUTES
 ====================================================== */
-router.get("/submitted", getSubmittedManuscripts);
-router.get("/screening", getScreeningManuscripts);
-router.get("/initial-screening", getInitialScreenedManuscripts);
-router.post("/:manuscriptId/screening", moveToScreening);
-router.post("/:manuscriptId/reject", rejectToAuthor);
-router.post("/:manuscriptId/resubmit", resubmitManuscript);
+router.get("/submitted", authenticate,getSubmittedManuscripts);
+router.get("/screening",authenticate, getScreeningManuscripts);
+router.get("/initial-screening", authenticate, getInitialScreenedManuscripts);
+router.post("/:manuscriptId/screening", authenticate, moveToScreening);
+router.post("/:manuscriptId/reject", authenticate, rejectToAuthor);
+router.post("/:manuscriptId/resubmit", authenticate, resubmitManuscript);
 
 /* ======================================================
    AUTHOR – DRAFT ROUTES
 ====================================================== */
 router.get("/drafts", getDraftManuscripts);
-router.post("/:manuscriptId/submit", submitDraftManuscript);
+router.post("/:manuscriptId/submit", authenticate, submitDraftManuscript);
 
 /* ======================================================
    NORMAL CRUD
 ====================================================== */
-router.get("/", getAllManuscripts);
-router.get("/:id", getManuscriptById);
+router.get("/", authenticate,getAllManuscripts);
+router.get("/:id", authenticate, getManuscriptById);
 
 /* ✅ CREATE MANUSCRIPT WITH FILE UPLOAD */
-router.post("/", upload.array('files', 5), createManuscript);
+router.post("/", upload.array('files', 5),authenticate, createManuscript);
 
 /* ✅ UPDATE MANUSCRIPT WITH FILE UPLOAD */
-router.put("/:id", upload.array('files', 5), updateManuscript);
+router.put("/:id", upload.array('files', 5),authenticate, updateManuscript);
 
-router.delete("/:id", deleteManuscript);
+router.delete("/:id",authenticate, deleteManuscript);
 
 
 export default router;
