@@ -1,5 +1,5 @@
 import axios from "./axios";
-const API_URL_public = `${process.env.REACT_APP_API_URL}/manuscripts/online`;
+const API_URL_public = `${process.env.REACT_APP_API_URL}/msc/online`;
 
 const API_URL = `${process.env.REACT_APP_API_URL}/manuscripts`;
 
