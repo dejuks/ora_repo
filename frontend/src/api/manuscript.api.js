@@ -1,5 +1,6 @@
 import axios from "./axios";
 const API_URL_public = `${process.env.REACT_APP_API_URL}/public-manuscripts`;
+
 const API_URL = `${process.env.REACT_APP_API_URL}/manuscripts`;
 
 // ================= Get Public API METHODS =================
