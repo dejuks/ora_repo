@@ -7,8 +7,8 @@ import {
 
 const router = express.Router();
 
-router.get("/online", getAllPublicManuscripts);
-router.get("/online/:id", getPublicManuscriptById);
+router.get("/", getAllPublicManuscripts);
+router.get("/:id", getPublicManuscriptById);
 router.get("/files/:fileId/download", downloadFile);
 
 export default router;
