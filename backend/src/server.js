@@ -44,10 +44,7 @@ import publicUserRoutes from "./publicUsers/routes/publicUser.routes.js";
 import eicDecisionRoutes from "./eic/routes/eic.decision.routes.js";
 import paymentRoutes from "./eic/routes/payment.routes.js";
 import ebookAuthorRoutes from "./ebooks/routes/ebookAuthorRoutes.js";
-
-import publicManuscriptRoutes from "./manuscription/routes/public.manuscripts.routes.js";
-
-
+import publicManuscription  from "./manuscription/routes/public.manuscripts.routes.js";
 dotenv.config();
 
 const app = express();
@@ -67,8 +64,7 @@ app.use(
 ======================= */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use("/api/msc", publicManuscriptRoutes);
-app.use("/api/manuscripts", manuscriptRoutes);
+
 /* =======================
    STATIC FILES
 ======================= */
@@ -82,8 +78,6 @@ app.set("trust proxy", 1);
 /* =======================
    API ROUTES
 ======================= */
-
-
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/roles", roleRoutes);
@@ -97,6 +91,9 @@ app.use("/api/journals", journalRoutes);
 app.use("/api", journalSectionRoutes);
 
 app.use("/api/manuscript-statuses", manuscriptStatusRoutes);
+
+app.use("/api/manuscripts", manuscriptRoutes);
+app.use("/api/public-manuscripts", publicManuscription);
 app.use("/api/files", ManuscriptFileRoute);
 app.use("/api/manuscriptions/ae", manuscriptAERoutes);
 app.use("/api/manuscripts/reviewer", manuscriptReviewerRoutes);
