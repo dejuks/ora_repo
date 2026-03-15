@@ -425,22 +425,42 @@ export const ebookWorkflowService = {
   },
 
   async assignReviewer(submissionId, actorId, payload = {}) {
-    const reviewerId = payload.reviewer_id;
-    if (!reviewerId) throw badRequest("reviewer_id is required");
+    const reviewerIds = Array.from(new Set([
+      ...(Array.isArray(payload.reviewer_ids) ? payload.reviewer_ids : []),
+      ...(payload.reviewer_id ? [payload.reviewer_id] : []),
+    ].filter(Boolean)));
+    if (!reviewerIds.length) throw badRequest("reviewer_id or reviewer_ids is required");
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
       const currentRes = await client.query(`SELECT * FROM ebook_submissions WHERE submission_id = $1 FOR UPDATE`, [submissionId]);
       const current = currentRes.rows[0];
       if (!current) throw notFound("Submission not found");
-      const assignmentRes = await client.query(
-        `INSERT INTO ebook_review_assignments (submission_id, reviewer_id, assigned_by, status, due_date, invitation_note)
-         VALUES ($1,$2,$3,'assigned',$4,$5)
-         ON CONFLICT (submission_id, reviewer_id)
-         DO UPDATE SET assigned_by = EXCLUDED.assigned_by, status = 'assigned', due_date = EXCLUDED.due_date, invitation_note = EXCLUDED.invitation_note, assigned_at = NOW()
-         RETURNING *`,
-        [submissionId, reviewerId, actorId, payload.due_date || null, payload.invitation_note || null]
+      const validReviewers = await client.query(
+        `SELECT DISTINCT u.uuid
+         FROM users u
+         INNER JOIN user_roles ur ON ur.user_id = u.uuid
+         INNER JOIN roles r ON r.uuid = ur.role_id
+         WHERE u.uuid = ANY($1::uuid[])
+           AND UPPER(REPLACE(TRIM(r.name), ' ', '_')) = 'EBOOK_REVIEWER'`,
+        [reviewerIds]
       );
+      const validIds = validReviewers.rows.map((r) => r.uuid);
+      if (!validIds.length) throw badRequest("No valid EBOOK_REVIEWER users selected");
+
+      const assignments = [];
+      for (const reviewerId of validIds) {
+        const assignmentRes = await client.query(
+          `INSERT INTO ebook_review_assignments (submission_id, reviewer_id, assigned_by, status, due_date, invitation_note)
+           VALUES ($1,$2,$3,'assigned',$4,$5)
+           ON CONFLICT (submission_id, reviewer_id)
+           DO UPDATE SET assigned_by = EXCLUDED.assigned_by, status = 'assigned', due_date = EXCLUDED.due_date, invitation_note = EXCLUDED.invitation_note, assigned_at = NOW(), updated_at = NOW()
+           RETURNING *`,
+          [submissionId, reviewerId, actorId, payload.due_date || null, payload.invitation_note || null]
+        );
+        assignments.push(assignmentRes.rows[0]);
+      }
+
       const updateRes = await client.query(
         `UPDATE ebook_submissions
          SET status = 'under_review', editor_id = COALESCE(editor_id, $2), assigned_reviewer_count = (
@@ -451,7 +471,7 @@ export const ebookWorkflowService = {
       );
       await addHistory(client, submissionId, current.status, updateRes.rows[0].status, "assign_reviewer", actorId, payload.invitation_note || null);
       await client.query("COMMIT");
-      return { assignment: assignmentRes.rows[0], submission: updateRes.rows[0] };
+      return { assignments, submission: updateRes.rows[0] };
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;
@@ -527,17 +547,15 @@ export const ebookWorkflowService = {
     }
   },
 
-  async editorialDecision(submissionId, actorId, payload = {}) {
-    const rawDecision = payload?.decision ?? payload?.recommendation ?? "";
-    const note = payload?.note ?? payload?.comments ?? null;
-    const decision = String(rawDecision).trim().toLowerCase().replace(/\s+/g, "_");
+  async editorialDecision(submissionId, actorId, { decision, note = null }) {
+    const normalizedDecision = String(decision || '').trim().toLowerCase().replace(/\s+/g, '_');
     const map = {
       accept: "accepted",
       minor_revision: "revision_requested",
       major_revision: "revision_requested",
       reject: "rejected",
     };
-    const nextStatus = map[decision];
+    const nextStatus = map[normalizedDecision];
     if (!nextStatus) throw badRequest("Invalid editorial decision");
     const client = await pool.connect();
     try {
@@ -550,9 +568,9 @@ export const ebookWorkflowService = {
          SET status = $2, editor_id = COALESCE(editor_id, $3), final_decision = $4, final_decision_note = $5,
              accepted_at = CASE WHEN $2 = 'accepted' THEN NOW() ELSE accepted_at END, updated_at = NOW()
          WHERE submission_id = $1 RETURNING *`,
-        [submissionId, nextStatus, actorId, decision, note]
+        [submissionId, nextStatus, actorId, normalizedDecision, note]
       );
-      await addHistory(client, submissionId, current.status, nextStatus, `editorial_decision.${decision}`, actorId, note);
+      await addHistory(client, submissionId, current.status, nextStatus, `editorial_decision.${normalizedDecision}`, actorId, note);
       await client.query("COMMIT");
       return updateRes.rows[0];
     } catch (error) {

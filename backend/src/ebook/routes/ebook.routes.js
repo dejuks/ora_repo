@@ -29,12 +29,13 @@ router.post('/submissions/:id/files/upload', authorize('ebook.file.upload'), upl
   res.status(201).json(await ebookWorkflowService.uploadFile(req.params.id, req.user?.uuid, req.file, req.body.file_role || 'manuscript'));
 }));
 
+router.get('/reviewer-options', authorize('ebook.reviewer.assign'), ebookSubmissionController.reviewerOptions);
+
 router.get('/dashboard/author', authorize('ebook.dashboard.author'), ebookSubmissionController.authorDashboard);
 router.get('/dashboard/editor', authorize('ebook.dashboard.editor'), ebookSubmissionController.editorDashboard);
 router.get('/dashboard/reviewer', authorize('ebook.dashboard.reviewer'), ebookSubmissionController.reviewerDashboard);
 router.get('/dashboard/finance', authorize('ebook.dashboard.finance'), ebookSubmissionController.financeDashboard);
 router.get('/dashboard/production', authorize('ebook.dashboard.production'), ebookSubmissionController.productionDashboard);
-router.get('/reviewer-options', authorize('ebook.reviewer.assign'), ebookSubmissionController.reviewerOptions);
 
 router.get('/review-assignments', authorize('ebook.review.assignment.view'), ebookReviewAssignmentController.index);
 router.get('/review-assignments/:id', authorize('ebook.review.assignment.view'), ebookReviewAssignmentController.show);

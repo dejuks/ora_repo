@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout";
 import ebookApi from "../../api/ebook.api";
@@ -24,8 +24,7 @@ export default function EbookSubmissionDetailPage() {
   const [screening, setScreening] = useState({ decision: 'send_to_review', note: '' });
   const [reviewerForm, setReviewerForm] = useState({ reviewer_ids: [], due_date: '', invitation_note: '' });
   const [reviewerOptions, setReviewerOptions] = useState([]);
-  const [reviewerLoading, setReviewerLoading] = useState(false);
-  const [reviewerError, setReviewerError] = useState('');
+  const [reviewerOptionsError, setReviewerOptionsError] = useState('');
   const [decisionForm, setDecisionForm] = useState({ decision: 'accept', note: '' });
   const [financeForm, setFinanceForm] = useState({ invoice_number: '', currency_code: 'ETB', amount_due: '', amount_paid: '', payment_status: 'pending', payment_reference: '', receipt_number: '', review_note: '' });
   const [productionForm, setProductionForm] = useState({ pdf_ready: false, epub_ready: false, proof_sent_to_author: false, author_proof_approved: false, isbn: '', doi: '', repository_path: '', quality_note: '' });
@@ -35,6 +34,28 @@ export default function EbookSubmissionDetailPage() {
   const canEditor = hasRole(user, ['EBOOK_EDITOR', 'EBOOK_ADMIN']);
   const canFinance = hasRole(user, ['EBOOK_FINANCE_OFFICER', 'EBOOK_ADMIN']);
   const canProduction = hasRole(user, ['EBOOK_DIGITAL_CONTENT_MANAGER', 'EBOOK_ADMIN']);
+
+  const loadReviewerOptions = async () => {
+    if (!canEditor) return;
+    try {
+      setReviewerOptionsError('');
+      const res = await ebookApi.getReviewerOptions();
+      const rows = Array.isArray(res) ? res : (res?.rows || []);
+      setReviewerOptions(rows);
+    } catch (e) {
+      setReviewerOptions([]);
+      setReviewerOptionsError(e?.response?.data?.message || e?.message || 'Failed to load EBOOK_REVIEWER users.');
+    }
+  };
+
+  const toggleReviewer = (uuid) => {
+    setReviewerForm((prev) => ({
+      ...prev,
+      reviewer_ids: prev.reviewer_ids.includes(uuid)
+        ? prev.reviewer_ids.filter((id) => id !== uuid)
+        : [...prev.reviewer_ids, uuid],
+    }));
+  };
 
   const load = async () => {
     setLoading(true);
@@ -52,33 +73,9 @@ export default function EbookSubmissionDetailPage() {
     }
   };
 
-  useEffect(() => { load(); }, [id]);
-  useEffect(() => { loadReviewerOptions(); }, [id, canEditor]);
+  useEffect(() => { load(); loadReviewerOptions(); }, [id]);
 
-
-  const loadReviewerOptions = async () => {
-    if (!canEditor) return;
-    setReviewerLoading(true);
-    setReviewerError('');
-    try {
-      const res = await ebookApi.getReviewerOptions();
-      setReviewerOptions(Array.isArray(res?.rows) ? res.rows : Array.isArray(res) ? res : []);
-    } catch (err) {
-      setReviewerOptions([]);
-      setReviewerError(err?.response?.data?.message || 'Failed to load EBOOK_REVIEWER users.');
-    } finally {
-      setReviewerLoading(false);
-    }
-  };
-
-  const toggleReviewer = (uuid) => {
-    setReviewerForm((prev) => ({
-      ...prev,
-      reviewer_ids: prev.reviewer_ids.includes(uuid)
-        ? prev.reviewer_ids.filter((id) => id !== uuid)
-        : [...prev.reviewer_ids, uuid],
-    }));
-  };
+  const reviewers = useMemo(() => (JSON.parse(localStorage.getItem('all_users_cache') || '[]') || []).filter(Boolean), []);
 
   const doAction = async (fn, success) => {
     setSaving(true);
@@ -191,15 +188,21 @@ export default function EbookSubmissionDetailPage() {
               <hr />
               <div className="form-group">
                 <label>Select reviewer(s)</label>
-                {reviewerLoading ? <div className="text-muted small">Loading EBOOK_REVIEWER users…</div> : null}
-                {reviewerError ? <div className="alert alert-danger py-2">{reviewerError}</div> : null}
-                <div className="border rounded p-2" style={{ maxHeight: 220, overflowY: 'auto' }}>
-                  {!reviewerOptions.length ? <div className="text-muted small">No EBOOK_REVIEWER users found.</div> : reviewerOptions.map((item) => (
-                    <div className="form-check mb-2" key={item.uuid}>
-                      <input className="form-check-input" type="checkbox" id={`reviewer_${item.uuid}`} checked={reviewerForm.reviewer_ids.includes(item.uuid)} onChange={() => toggleReviewer(item.uuid)} />
-                      <label className="form-check-label" htmlFor={`reviewer_${item.uuid}`}>
-                        <strong>{item.full_name || item.email}</strong><br />
-                        <small className="text-muted">{item.email} • Active assignments: {item.active_assignment_count ?? 0}</small>
+                {reviewerOptionsError ? <div className="alert alert-danger py-2">{reviewerOptionsError}</div> : null}
+                {!reviewerOptionsError && !reviewerOptions.length ? <div className="text-muted small">No EBOOK_REVIEWER users found.</div> : null}
+                <div className="border rounded p-2" style={{maxHeight:'200px', overflowY:'auto'}}>
+                  {reviewerOptions.map((r) => (
+                    <div className="form-check" key={r.uuid}>
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id={`reviewer-${r.uuid}`}
+                        checked={reviewerForm.reviewer_ids.includes(r.uuid)}
+                        onChange={() => toggleReviewer(r.uuid)}
+                      />
+                      <label className="form-check-label" htmlFor={`reviewer-${r.uuid}`}>
+                        {(r.reviewer_name || r.email)} {r.email ? `(${r.email})` : ''}
+                        <span className="text-muted"> — active: {r.active_assignment_count || 0}</span>
                       </label>
                     </div>
                   ))}
@@ -207,7 +210,7 @@ export default function EbookSubmissionDetailPage() {
               </div>
               <div className="form-group"><label>Due date</label><input type="date" className="form-control" value={reviewerForm.due_date} onChange={(e)=>setReviewerForm({...reviewerForm,due_date:e.target.value})} /></div>
               <div className="form-group"><label>Invitation note</label><textarea className="form-control" rows="2" value={reviewerForm.invitation_note} onChange={(e)=>setReviewerForm({...reviewerForm,invitation_note:e.target.value})} /></div>
-              <button className="btn btn-outline-warning btn-block mb-3" disabled={saving || !reviewerForm.reviewer_ids.length} onClick={()=>doAction(()=>ebookApi.assignReviewer(id, reviewerForm), 'Reviewer assigned.')}>Assign reviewer(s)</button>
+              <button className="btn btn-outline-warning btn-block mb-3" disabled={saving || !reviewerForm.reviewer_ids.length} onClick={()=>doAction(()=>ebookApi.assignReviewer(id, reviewerForm), 'Reviewer assigned.')}>Assign reviewer</button>
               <hr />
               <div className="form-group"><label>Editorial decision</label><select className="form-control" value={decisionForm.decision} onChange={(e)=>setDecisionForm({...decisionForm,decision:e.target.value})}><option value="accept">Accept</option><option value="minor_revision">Minor revision</option><option value="major_revision">Major revision</option><option value="reject">Reject</option></select></div>
               <div className="form-group"><label>Decision note</label><textarea className="form-control" rows="2" value={decisionForm.note} onChange={(e)=>setDecisionForm({...decisionForm,note:e.target.value})} /></div>

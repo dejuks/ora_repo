@@ -37,10 +37,8 @@ const ebookApi = {
   resubmitSubmission: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/resubmit`, payload)),
   screening: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/screening`, payload)),
   assignReviewer: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/assign-reviewer`, payload)),
-  makeDecision: (id, payload) => {
-    const normalized = { ...payload, decision: String(payload?.decision || '').trim().toLowerCase().replace(/\s+/g, '_') };
-    return unwrap(() => api.post(`/ebook/submissions/${id}/decision`, normalized));
-  },
+  getReviewerOptions: () => unwrap(() => api.get('/ebook/reviewer-options')),
+  makeDecision: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/decision`, { ...payload, decision: String(payload?.decision || '').trim().toLowerCase().replace(/\s+/g, '_') })),
   upsertFinance: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/finance`, payload)),
   upsertProduction: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/production`, payload)),
   publishSubmission: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/publish`, payload)),
@@ -58,7 +56,6 @@ const ebookApi = {
   getReviewerDashboard: () => unwrap(() => api.get('/ebook/dashboard/reviewer')),
   getFinanceDashboard: () => unwrap(() => api.get('/ebook/dashboard/finance')),
   getProductionDashboard: () => unwrap(() => api.get('/ebook/dashboard/production')),
-  getReviewerOptions: (params = {}) => unwrap(() => api.get('/ebook/reviewer-options', { params })),
   listReviewAssignments: () => unwrap(() => api.get('/ebook/review-assignments')),
   respondAssignment: (id, payload) => unwrap(() => api.post(`/ebook/review-assignments/${id}/respond`, payload)),
   submitReview: (id, payload) => unwrap(() => api.post(`/ebook/review-assignments/${id}/submit-review`, payload)),
