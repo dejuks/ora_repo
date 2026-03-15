@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { publicationAPI } from "../api/publication.api";
+import { publicationAPI } from "../../api/publication.api";
 
 export default function JournalArticleDetail() {
   const { id } = useParams();

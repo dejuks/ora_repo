@@ -1,4 +1,3 @@
-// src/api/auth.api.js
 import axios from "axios";
 
 const API = axios.create({
@@ -13,4 +12,8 @@ export const login = (data) => {
     email: data.email,
     password: data.password,
   });
+};
+
+export const registerEbookAuthor = (data) => {
+  return API.post("/auth/ebook-author-register", data);
 };

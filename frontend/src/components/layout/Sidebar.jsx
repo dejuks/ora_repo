@@ -1,67 +1,229 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
 import { logout } from "../../utils/auth";
+import { useSidebar } from "../../context/SidebarContext";
 
-/* ===============================
-   MODULE UUIDS
-================================ */
 const MODULES = {
   SYSTEM_WIDE: "e936cd83-5383-4220-8cb5-8d1df4338b86",
-  JOURNAL: "991aefe2-d96c-4712-a5c4-3be6b56dfe68",
   LIBRARY: "8e1967f9-b9d7-42a9-ae20-2e1d7cdc16bb",
-  ORO_WIKI: "643dd068-b8d7-4cc1-bb14-ec42f11180fc",
-  REPOSITORY: "87efa5b1-59dd-4c1e-8168-c82a519cb167",
-  RESEARCHER_NETWORK: "e35249ea-4f4f-4a2d-9389-4903a6e1ad64",
   EBOOK: "aeca9002-e3e1-498d-a9da-34066db00744",
 };
 
-/* ===============================
-   ROLE UUIDS / ROLE CODES
-================================ */
 const ROLES = {
   SUPER_ADMIN: "bf22a62f-e672-4e88-9c28-fa1eee3e0e22",
-  EDITOR: "33333333-aaaa-bbbb-cccc-333333333333",
-  LIBRARY_MANAGER: "5042b3f2-2cd6-4a1b-8015-6774c3956409",
-  RESEARCHER_NETWORK_MANAGER: "d2db77c2-177c-44e6-921a-d635abd674d3",
-
-  JOURNAL_MANAGER: "311b2831-99d3-426b-9a7c-6453756d5d9a",
-  JOURNAL_AUTHOR: "1d67d32d-dcee-4302-8369-26ca00385a09",
-  REVIEWER: "5c6f2f3e-8f4b-4d3a-9f7a-2e5e8b6c4d2b",
-  JOURNAL_EIC: "ad657069-0dd4-4bd1-8a19-ee6733dd303d",
-  JOURNAL_ASSOCIATE_EDITOR: "45494844-658a-4837-8df6-f6fc61348bbb",
-  JOURNAL_REFREE: "30d22914-dc7f-4532-ba19-31be2beb2e9d",
-
-  REPOSITORY_ADMIN: "5205b388-a2e4-4e40-baae-8fe018e08d18",
-  REPOSITORY_CURATOR: "7047bc22-6575-436c-9777-e06869004a4a",
-  REPOSITORY_CONTENT_REVIEWER: "9ef6032d-85da-4d1b-910e-72469e4f068c",
-  RESEARCHER_AUTHOR: "bcb471d4-e59c-45f3-b512-e7c17a03c46c",
-  REPOSITORY_PUBLIC_USER: "bcb471d4-e59c-45f3-b512-e7c17a03c46c",
-  REPOSITORY_GUEST: "efdda7b9-6884-42c7-b6f3-bed7ab4eb92e",
-
-  ORO_WIKI_MANAGER: "f06cb194-d9cf-4fb1-9ce8-55ded280e9b9",
-  ORO_WIKI_EDITOR: "7caffcac-18e8-4682-8341-7c405071551c",
-  ORO_WIKI_BUREAUCRAT: "faa28d6c-de7f-41ce-961a-6c975885f47a",
-  ORO_WIKI_OVERSIGHTER: "5d46563f-a72c-433c-9115-4219c9e16a6c",
-  ORO_WIKI_PUBLISHER: "8c7747ae-837d-425e-874b-fb97cf7776e6",
-
-  EBOOK_AUTHOR: "60ac2e7a-39a5-4ff6-80e2-6d95423ec1d8",
-  EBOOK_EDITOR: "ec2b0056-b7fc-4860-926e-101d7cc10c33",
-  EBOOK_REVIEWER: "7caffcac-18e8-4682-8341-7c405071551c",
-  EBOOK_FINANCE_OFFICER: "00000000-0000-0000-0000-000000000001",
-  EBOOK_DIGITAL_CONTENT_MANAGER: "00000000-0000-0000-0000-000000000002",
-  EBOOK_ADMIN: "00000000-0000-0000-0000-000000000003",
-
-  RESEARCHER_NETWORK_MODERATOR: "ee6bebf7-5961-4917-9752-8ad704d40c77",
-
-  // Library role names/codes
+  LIBRARY_MANAGER_UUID: "5042b3f2-2cd6-4a1b-8015-6774c3956409",
   LIBRARY_ADMIN: "LIBRARY_ADMIN",
-  LIBRARY_MANAGER_CODE: "LIBRARY_MANAGER",
+  LIBRARY_MANAGER: "LIBRARY_MANAGER",
   LIBRARIAN: "LIBRARIAN",
   CATALOGER: "CATALOGER",
   ACQUISITION_OFFICER: "ACQUISITION_OFFICER",
   INVENTORY_MANAGER: "INVENTORY_MANAGER",
   CONTENT_UPLOADER: "CONTENT_UPLOADER",
   LIBRARY_MEMBER: "LIBRARY_MEMBER",
+  EXTERNAL_PUBLISHER: "EXTERNAL_PUBLISHER",
+  EBOOK_ADMIN: "EBOOK_ADMIN",
+  EBOOK_AUTHOR: "EBOOK_AUTHOR",
+  EBOOK_EDITOR: "EBOOK_EDITOR",
+  EBOOK_REVIEWER: "EBOOK_REVIEWER",
+  EBOOK_DIGITAL_CONTENT_MANAGER: "EBOOK_DIGITAL_CONTENT_MANAGER",
+  EBOOK_FINANCE_OFFICER: "EBOOK_FINANCE_OFFICER",
+};
+
+function normalizeRoleName(value) {
+  return (value || "").toString().trim().toUpperCase().replace(/\s+/g, "_");
+}
+
+function buildLibraryRoutes() {
+  const A = ROLES.LIBRARY_ADMIN;
+  const M = [ROLES.LIBRARY_MANAGER, ROLES.LIBRARY_MANAGER_UUID];
+  const L = ROLES.LIBRARIAN;
+  const C = ROLES.CATALOGER;
+  const AQ = ROLES.ACQUISITION_OFFICER;
+  const I = ROLES.INVENTORY_MANAGER;
+  const U = ROLES.CONTENT_UPLOADER;
+  const MB = ROLES.LIBRARY_MEMBER;
+  const P = ROLES.EXTERNAL_PUBLISHER;
+
+  return [
+    {
+      name: "Dashboards",
+      subMenu: [
+        { name: "Admin Dashboard", path: "/library/admin/dashboard", roles: [A] },
+        { name: "Manager Dashboard", path: "/library/manager/dashboard", roles: M },
+        { name: "Librarian Dashboard", path: "/library/librarian/dashboard", roles: [L] },
+        { name: "Cataloger Dashboard", path: "/library/cataloger/dashboard", roles: [C] },
+        { name: "Acquisition Dashboard", path: "/library/acquisition/dashboard", roles: [AQ] },
+        { name: "Inventory Dashboard", path: "/library/inventory/dashboard", roles: [I] },
+        { name: "Uploader Dashboard", path: "/library/uploader/dashboard", roles: [U] },
+        { name: "Member Dashboard", path: "/library/member/dashboard", roles: [MB] },
+      ],
+    },
+    {
+      name: "Administration",
+      roles: [A],
+      subMenu: [
+        { name: "Library Users", path: "/library/admin/users", roles: [A] },
+        { name: "Create User", path: "/library/users/create", roles: [A] },
+        { name: "Roles & Permissions", path: "/library/roles", roles: [A] },
+        { name: "System Logs", path: "/library/audit-logs", roles: [A] },
+        { name: "Security Alerts", path: "/library/admin/security-alerts", roles: [A] },
+        { name: "System Settings", path: "/library/admin/system-settings", roles: [A] },
+      ],
+    },
+    {
+      name: "Library Settings",
+      roles: [A, ...M, L, C, I],
+      subMenu: [
+        { name: "Library Settings", path: "/library/settings", roles: [A] },
+        { name: "Material Types", path: "/library/settings/material-types", roles: [A, C] },
+        { name: "Categories", path: "/library/settings/categories", roles: [A, C] },
+        { name: "Publishers", path: "/library/settings/publishers", roles: [A, C] },
+        { name: "Languages", path: "/library/settings/languages", roles: [A, C] },
+        { name: "Subjects", path: "/library/settings/subjects", roles: [A, C] },
+        { name: "Contributors", path: "/library/settings/contributors", roles: [A, C] },
+        { name: "Branches", path: "/library/settings/branches", roles: [A, L] },
+        { name: "Locations", path: "/library/settings/locations", roles: [A, L, I] },
+        { name: "Member Types", path: "/library/settings/member-types", roles: [A, ...M] },
+      ],
+    },
+    {
+      name: "Management & Reports",
+      roles: [A, ...M],
+      subMenu: [
+        { name: "Policies", path: "/library/policies", roles: [A, ...M] },
+        { name: "Summary Reports", path: "/library/reports", roles: [A, ...M] },
+        { name: "Usage Reports", path: "/library/manager/usage-reports", roles: [A, ...M] },
+        { name: "Loan Reports", path: "/library/manager/loan-reports", roles: [A, ...M] },
+        { name: "Inventory Reports", path: "/library/manager/inventory-reports", roles: [A, ...M] },
+        { name: "Acquisition Approvals", path: "/library/acquisitions/approvals", roles: [A, ...M] },
+      ],
+    },
+    {
+      name: "Catalog & Circulation",
+      roles: [A, ...M, L, C, I, AQ, MB],
+      subMenu: [
+        { name: "OPAC Search", path: "/library/opac", roles: [A, ...M, L, C, I, AQ, MB] },
+        { name: "Browse Catalog", path: "/library/books", roles: [A, ...M, L, C, I, AQ, MB] },
+        { name: "All Books", path: "/library/books/all", roles: [A, ...M, L, C] },
+        { name: "Add Book", path: "/library/books/new", roles: [A, ...M, L, C] },
+        { name: "Catalog Metadata", path: "/library/books/metadata", roles: [A, ...M, L, C] },
+        { name: "Cataloging Tools", path: "/library/cataloger/tools", roles: [A, ...M, C] },
+        { name: "Book Copies", path: "/library/copies", roles: [A, ...M, L, C, I] },
+        { name: "Circulation Desk", path: "/library/circulation/desk", roles: [A, ...M, L] },
+        { name: "Loans", path: "/library/loans", roles: [A, ...M, L] },
+        { name: "Holds / Reservations", path: "/library/holds", roles: [A, ...M, L] },
+        { name: "Fines & Fees", path: "/library/fines", roles: [A, ...M, L] },
+        { name: "Borrowing History", path: "/library/history", roles: [A, ...M, L, MB] },
+      ],
+    },
+    {
+      name: "Acquisitions",
+      roles: [A, ...M, AQ],
+      subMenu: [
+        { name: "Requests", path: "/library/acquisitions/requests", roles: [A, ...M, AQ] },
+        { name: "Orders", path: "/library/acquisitions/orders", roles: [A, ...M, AQ] },
+        { name: "Deliveries", path: "/library/acquisitions/deliveries", roles: [A, ...M, AQ] },
+        { name: "Vendors", path: "/library/vendors", roles: [A, ...M, AQ] },
+      ],
+    },
+    {
+      name: "Inventory",
+      roles: [A, ...M, I, L, C],
+      subMenu: [
+        { name: "Inventory Report", path: "/library/inventory/report", roles: [A, ...M, I, L] },
+        { name: "Audits", path: "/library/inventory/audits", roles: [A, ...M, I, L] },
+        { name: "Missing Items", path: "/library/inventory/missing", roles: [A, ...M, I, L] },
+        { name: "Damaged Items", path: "/library/inventory/damaged", roles: [A, ...M, I, L] },
+        { name: "Tags / Barcodes", path: "/library/inventory/tags", roles: [A, ...M, I, C, L] },
+      ],
+    },
+    {
+      name: "Digital Library",
+      roles: [A, ...M, L, U, MB, P],
+      subMenu: [
+        { name: "Digital Resources", path: "/library/digital", roles: [A, ...M, L, U, MB, P] },
+        { name: "Upload Resource", path: "/library/digital/new", roles: [A, ...M, L, U, P] },
+        { name: "Metadata Management", path: "/library/digital/metadata", roles: [A, ...M, L, U, P] },
+        { name: "Access Rights", path: "/library/digital/access", roles: [A, ...M, L] },
+        { name: "Approvals", path: "/library/digital/approvals", roles: [A, ...M, L] },
+        { name: "Collections", path: "/library/digital/collections", roles: [A, ...M, L] },
+        { name: "Workflow Tracking", path: "/library/digital", roles: [A, ...M, L, U] },
+        { name: "Usage Analytics", path: "/library/digital/analytics", roles: [A, ...M, L, U] },
+        { name: "Member Digital Portal", path: "/library/member/digital", roles: [MB] },
+        { name: "Publisher Packages", path: "/library/digital/publisher-packages", roles: [A, ...M, L, P] },
+      ],
+    },
+    {
+      name: "My Library",
+      roles: [MB],
+      subMenu: [
+        { name: "My Account", path: "/library/account", roles: [MB] },
+        { name: "My Loans", path: "/library/my-loans", roles: [MB] },
+        { name: "My Holds", path: "/library/my-holds", roles: [MB] },
+        { name: "My Fines", path: "/library/my-fines", roles: [MB] },
+        { name: "Borrowing History", path: "/library/history", roles: [MB] },
+        { name: "Digital Library", path: "/library/member/digital", roles: [MB] },
+      ],
+    },
+  ];
+}
+
+
+function buildEbookRoutes() {
+  const A = ROLES.EBOOK_ADMIN;
+  const AU = ROLES.EBOOK_AUTHOR;
+  const E = ROLES.EBOOK_EDITOR;
+  const R = ROLES.EBOOK_REVIEWER;
+  const D = ROLES.EBOOK_DIGITAL_CONTENT_MANAGER;
+  const F = ROLES.EBOOK_FINANCE_OFFICER;
+
+  return [
+    { name: "Dashboard", path: "/ebook/dashboard", roles: [A, AU, E, R, D, F] },
+    {
+      name: "Manuscripts",
+      roles: [A, AU, E, D, F],
+      subMenu: [
+        { name: "Submission List", path: "/ebook/submissions", roles: [A, AU, E, D, F] },
+        { name: "Create Submission", path: "/ebook/submissions/create", roles: [A, AU] },
+        { name: "Published Catalog", path: "/ebook/publications", roles: [A, AU, E, D, F] },
+      ],
+    },
+    {
+      name: "Peer Review",
+      roles: [A, E, R],
+      subMenu: [
+        { name: "Reviewer Workspace", path: "/ebook/reviewer", roles: [R, A] },
+        { name: "Submission Queue", path: "/ebook/submissions", roles: [A, E] },
+      ],
+    },
+    {
+      name: "Production & Finance",
+      roles: [A, D, F],
+      subMenu: [
+        { name: "Production Queue", path: "/ebook/submissions", roles: [A, D] },
+        { name: "Finance Clearance", path: "/ebook/submissions", roles: [A, F] },
+      ],
+    },
+  ];
+}
+
+const moduleRoutes = {
+  [MODULES.SYSTEM_WIDE]: [
+    { name: "Dashboard", path: "/admin-dashboard", roles: [ROLES.SUPER_ADMIN] },
+    {
+      name: "User Management",
+      roles: [ROLES.SUPER_ADMIN],
+      subMenu: [
+        { name: "All Users", path: "/users", roles: [ROLES.SUPER_ADMIN] },
+        { name: "Roles", path: "/roles", roles: [ROLES.SUPER_ADMIN] },
+        { name: "Permissions", path: "/permissions", roles: [ROLES.SUPER_ADMIN] },
+        { name: "Modules", path: "/modules", roles: [ROLES.SUPER_ADMIN] },
+      ],
+    },
+  ],
+  [MODULES.LIBRARY]: buildLibraryRoutes(),
+  [MODULES.EBOOK]: buildEbookRoutes(),
 };
 
 export default function Sidebar() {
@@ -69,1121 +231,122 @@ export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [expandedMenus, setExpandedMenus] = useState({});
+  const { open, setOpen } = useSidebar();
+
+  const userRoleIds = user?.roles?.map((r) => r.role_id) || [];
+  const userRoleNames =
+    user?.roles
+      ?.map((r) => normalizeRoleName(r.role_name || r.name || r.code))
+      .filter(Boolean) || [];
+
+  const hasRole = (allowedRoles = []) =>
+    allowedRoles.some((allowed) => {
+      const raw = (allowed || "").toString();
+      if (!raw) return false;
+      return raw.includes("-") ? userRoleIds.includes(raw) : userRoleNames.includes(normalizeRoleName(raw));
+    });
+
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/");
+
+  const routes = useMemo(() => {
+    if (!user) return [];
+    const currentModuleRoutes = moduleRoutes[user.module_id] || [];
+    return currentModuleRoutes
+      .map((route) => {
+        if (route.roles && !hasRole(route.roles)) return null;
+        if (!route.subMenu) return route;
+        const visibleChildren = route.subMenu.filter((sub) => !sub.roles || hasRole(sub.roles));
+        if (!visibleChildren.length) return null;
+        return { ...route, subMenu: visibleChildren };
+      })
+      .filter(Boolean);
+  }, [user, userRoleIds.join(","), userRoleNames.join(",")]);
 
   if (!user) return null;
 
-  const moduleId = user.module_id;
-  const userRoleIds = user.roles?.map((r) => r.role_id) || [];
-  const userRoleNames =
-    user.roles
-      ?.map((r) => (r.role_name || r.name || r.code || "").toString())
-      .filter(Boolean)
-      .map((s) => s.toUpperCase()) || [];
-
-  const hasRole = (allowedRoles = []) => {
-    return allowedRoles.some((ar) => {
-      if (!ar) return false;
-      const s = ar.toString();
-      if (s.includes("-")) return userRoleIds.includes(s);
-      return userRoleNames.includes(s.toUpperCase());
-    });
-  };
-
-  const toggleMenu = (label) => {
-    setExpandedMenus((prev) => ({ ...prev, [label]: !prev[label] }));
-  };
-
-  const isActive = (path) =>
-    location.pathname === path || location.pathname.startsWith(path + "/");
-
-  const filterRoutesByRole = (routes) =>
-    routes
-      .map((route) => {
-        if (route.roles && !hasRole(route.roles)) return null;
-
-        if (route.subMenu) {
-          const children = route.subMenu.filter((c) =>
-            c.roles ? hasRole(c.roles) : true
-          );
-          if (!children.length) return null;
-          return { ...route, subMenu: children };
-        }
-        return route;
-      })
-      .filter(Boolean);
-
-  const moduleRoutes = {
-    [MODULES.SYSTEM_WIDE]: [
-      {
-        type: "single",
-        path: "/admin-dashboard",
-        name: "Dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [ROLES.SUPER_ADMIN],
-      },
-      {
-        name: "User Management",
-        icon: "fas fa-users",
-        roles: [ROLES.SUPER_ADMIN],
-        subMenu: [
-          {
-            name: "All Users",
-            path: "/users",
-            roles: [ROLES.SUPER_ADMIN],
-            icon: "fas fa-list",
-          },
-          {
-            name: "Roles",
-            path: "/roles",
-            roles: [ROLES.SUPER_ADMIN],
-            icon: "fas fa-user-tag",
-          },
-          {
-            name: "Modules",
-            path: "/modules",
-            roles: [ROLES.SUPER_ADMIN],
-            icon: "fas fa-th",
-          },
-        ],
-      },
-      {
-        name: "System Settings",
-        icon: "fas fa-cogs",
-        roles: [ROLES.SUPER_ADMIN],
-        subMenu: [
-          {
-            name: "General Settings",
-            path: "/settings/general",
-            roles: [ROLES.SUPER_ADMIN],
-            icon: "fas fa-sliders-h",
-          },
-          {
-            name: "Permissions",
-            path: "/permissions",
-            roles: [ROLES.SUPER_ADMIN],
-            icon: "fas fa-key",
-          },
-          {
-            name: "Audit Logs",
-            path: "/settings/logs",
-            roles: [ROLES.SUPER_ADMIN],
-            icon: "fas fa-file-alt",
-          },
-        ],
-
-        
-      },
-      {
-        name: "Reports",
-        icon: "fas fa-chart-pie",
-        roles: [ROLES.SUPER_ADMIN],
-        subMenu: [
-          {
-            name: "User Activity",
-            path: "/reports/user-activity",
-            roles: [ROLES.SUPER_ADMIN],
-            icon: "fas fa-user-clock",
-          },
-          {
-            name: "System Usage",
-            path: "/reports/system-usage",
-            roles: [ROLES.SUPER_ADMIN],
-            icon: "fas fa-server",
-          },
-        ],
-      },
-    ],
-
-    [MODULES.JOURNAL]: [
-      {
-        name: "Dashboard",
-        path: "/journal-dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR, ROLES.REVIEWER],
-      },
-      {
-        name: "Dashboard",
-        path: "/journal/author-dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [ROLES.JOURNAL_AUTHOR],
-      },
-      {
-        name: "Users & Roles",
-        icon: "fas fa-users",
-        roles: [ROLES.JOURNAL_MANAGER],
-        subMenu: [
-          {
-            name: "All Users",
-            path: "/journal/users",
-            icon: "fas fa-user",
-          },
-          {
-            name: "Add New User",
-            path: "/module/users/add",
-            icon: "fas fa-user-tag",
-          },
-        ],
-      },
-      {
-        name: "Journals",
-        icon: "fas fa-book",
-        roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
-        subMenu: [
-          {
-            name: "Add Journal",
-            path: "/journal/create",
-            icon: "fas fa-plus",
-          },
-        ],
-      },
-      {
-        name: "Submissions",
-        icon: "fas fa-file-alt",
-        roles: [ROLES.JOURNAL_MANAGER, ROLES.JOURNAL_AUTHOR, ROLES.EDITOR],
-        subMenu: [
-          {
-            name: "My Submissions",
-            path: "/journal/manuscripts",
-            icon: "fas fa-inbox",
-            roles: [ROLES.JOURNAL_AUTHOR],
-          },
-          {
-            name: "New Submission",
-            path: "/manuscripts/create",
-            icon: "fas fa-paper-plane",
-            roles: [ROLES.JOURNAL_AUTHOR],
-          },
-          {
-            name: "IncompleteSubmissions",
-            path: "/manuscript/draft-manuscript",
-            icon: "fas fa-file",
-            roles: [ROLES.JOURNAL_AUTHOR],
-          },
-          {
-            name: "Revisions",
-            path: "/journal/manuscripts/revisions",
-            icon: "fas fa-edit",
-            roles: [ROLES.JOURNAL_AUTHOR],
-          },
-        ],
-      },
-    ],
-
-    [MODULES.EBOOK]: [
-      {
-        name: "Dashboard",
-        path: "/ebook/dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [
-          ROLES.EBOOK_AUTHOR,
-          ROLES.EBOOK_EDITOR,
-          ROLES.EBOOK_REVIEWER,
-          ROLES.EBOOK_DIGITAL_CONTENT_MANAGER,
-          ROLES.EBOOK_FINANCE_OFFICER,
-          ROLES.EBOOK_ADMIN,
-        ],
-      },
-      {
-        name: "Author Workspace",
-        icon: "fas fa-pen-nib",
-        roles: [ROLES.EBOOK_AUTHOR],
-        subMenu: [
-          {
-            name: "New Submission",
-            path: "/ebook/submit",
-            icon: "fas fa-paper-plane",
-            roles: [ROLES.EBOOK_AUTHOR],
-          },
-          {
-            name: "My Submissions",
-            path: "/ebook/my-submissions",
-            icon: "fas fa-inbox",
-            roles: [ROLES.EBOOK_AUTHOR],
-          },
-          {
-            name: "Draft / Incomplete",
-            path: "/ebook/author/draft",
-            icon: "fas fa-file",
-            roles: [ROLES.EBOOK_AUTHOR],
-          },
-          {
-            name: "Revisions",
-            path: "/ebook/submissions/revisions",
-            icon: "fas fa-edit",
-            roles: [ROLES.EBOOK_AUTHOR],
-          },
-          {
-            name: "Reviewer Comments",
-            path: "/ebook/submissions/reviewer-comments",
-            icon: "fas fa-comments",
-            roles: [ROLES.EBOOK_AUTHOR],
-          },
-          {
-            name: "Final Proof Approval",
-            path: "/ebook/submissions/final-proof",
-            icon: "fas fa-check-double",
-            roles: [ROLES.EBOOK_AUTHOR],
-          },
-          {
-            name: "Copyright / License",
-            path: "/ebook/submissions/license",
-            icon: "fas fa-file-signature",
-            roles: [ROLES.EBOOK_AUTHOR],
-          },
-        ],
-      },
-      {
-        name: "Screening",
-        icon: "fas fa-user-shield",
-        roles: [ROLES.EBOOK_EDITOR],
-        subMenu: [
-          {
-            name: "Initial Screening",
-            path: "/ebook/editor/screening",
-            icon: "fas fa-search",
-            roles: [ROLES.EBOOK_EDITOR],
-          },
-          {
-            name: "Assigned manuscripts",
-            path: "/editor/assigned",
-            icon: "fas fa-user-check",
-            roles: [ROLES.EBOOK_EDITOR],
-          },
-          {
-            name: "Rejected manuscripts",
-            path: "/editor/rejected",
-            icon: "fas fa-clipboard-list",
-            roles: [ROLES.EBOOK_EDITOR],
-          },
-        ],
-      },
-      {
-        name: "Peer Review",
-        icon: "fas fa-user-check",
-        roles: [ROLES.EBOOK_REVIEWER, "EBOOK_REVIEWER", "REVIEWER"],
-        subMenu: [
-          {
-            name: "My Reviews",
-            path: "/reviewer/my-reviews",
-            icon: "fas fa-inbox",
-            roles: [ROLES.EBOOK_REVIEWER, "EBOOK_REVIEWER", "REVIEWER"],
-          },
-          {
-            name: "Completed",
-            path: "/reviewer/completed",
-            icon: "fas fa-check-circle",
-            roles: [ROLES.EBOOK_REVIEWER, "EBOOK_REVIEWER", "REVIEWER"],
-          },
-        ],
-      },
-      {
-        name: "Finance (BPC)",
-        icon: "fas fa-money-check-alt",
-        roles: [
-          ROLES.EBOOK_FINANCE_OFFICER,
-          "EBOOK_FINANCE_OFFICER",
-          "FINANCE",
-          ROLES.EBOOK_EDITOR,
-        ],
-        subMenu: [
-          {
-            name: "Pending Clearance",
-            path: "/ebook/finance/pending",
-            icon: "fas fa-hourglass-half",
-            roles: [
-              ROLES.EBOOK_FINANCE_OFFICER,
-              "EBOOK_FINANCE_OFFICER",
-              "FINANCE",
-            ],
-          },
-        ],
-      },
-      {
-        name: "Digital Production",
-        icon: "fas fa-cogs",
-        roles: [
-          ROLES.EBOOK_DIGITAL_CONTENT_MANAGER,
-          "EBOOK_DIGITAL_CONTENT_MANAGER",
-          "DIGITAL_CONTENT_MANAGER",
-        ],
-        subMenu: [
-          {
-            name: "Production Queue",
-            path: "/ebook/production/queue",
-            icon: "fas fa-layer-group",
-            roles: [
-              ROLES.EBOOK_DIGITAL_CONTENT_MANAGER,
-              "EBOOK_DIGITAL_CONTENT_MANAGER",
-              "DIGITAL_CONTENT_MANAGER",
-            ],
-          },
-        ],
-      },
-      {
-        name: "Public Library",
-        path: "/ebook/library",
-        icon: "fas fa-book-open",
-        roles: [
-          ROLES.EBOOK_AUTHOR,
-          ROLES.EBOOK_EDITOR,
-          ROLES.EBOOK_REVIEWER,
-          ROLES.EBOOK_DIGITAL_CONTENT_MANAGER,
-          ROLES.EBOOK_FINANCE_OFFICER,
-          ROLES.EBOOK_ADMIN,
-          "EBOOK_AUTHOR",
-          "EBOOK_EDITOR",
-          "EBOOK_REVIEWER",
-          "EBOOK_DIGITAL_CONTENT_MANAGER",
-          "EBOOK_FINANCE_OFFICER",
-          "EBOOK_ADMIN",
-        ],
-      },
-    ],
-
-    /* ================= LIBRARY MODULE ================= */
-    [MODULES.LIBRARY]: [
-      // Role-specific dashboards
-      {
-        name: "Dashboard",
-        path: "/library/admin/dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [ROLES.LIBRARY_ADMIN],
-      },
-      {
-        name: "Dashboard",
-        path: "/library/manager/dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [ROLES.LIBRARY_MANAGER, ROLES.LIBRARY_MANAGER_CODE],
-      },
-      {
-        name: "Dashboard",
-        path: "/library/librarian/dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [ROLES.LIBRARIAN],
-      },
-      {
-        name: "Dashboard",
-        path: "/library/cataloger/dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [ROLES.CATALOGER],
-      },
-      {
-        name: "Dashboard",
-        path: "/library/acquisition/dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [ROLES.ACQUISITION_OFFICER],
-      },
-      {
-        name: "Dashboard",
-        path: "/library/inventory/dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [ROLES.INVENTORY_MANAGER],
-      },
-      {
-        name: "Dashboard",
-        path: "/library/uploader/dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [ROLES.CONTENT_UPLOADER],
-      },
-      {
-        name: "Dashboard",
-        path: "/library/member/dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [ROLES.LIBRARY_MEMBER],
-      },
-
-      // Admin
-      {
-        name: "Administration",
-        icon: "fas fa-users-cog",
-        roles: [ROLES.LIBRARY_ADMIN],
-        subMenu: [
-          {
-            name: "Library Users",
-            path: "/library/users",
-            icon: "fas fa-users",
-            roles: [ROLES.LIBRARY_ADMIN],
-          },
-          {
-            name: "Create User",
-            path: "/library/users/create",
-            icon: "fas fa-user-plus",
-            roles: [ROLES.LIBRARY_ADMIN],
-          },
-          {
-            name: "Roles & Permissions",
-            path: "/library/roles",
-            icon: "fas fa-user-shield",
-            roles: [ROLES.LIBRARY_ADMIN],
-          },
-          {
-            name: "System Logs",
-            path: "/library/audit-logs",
-            icon: "fas fa-file-alt",
-            roles: [ROLES.LIBRARY_ADMIN],
-          },
-          {
-            name: "Settings",
-            path: "/library/settings",
-            icon: "fas fa-cogs",
-            roles: [ROLES.LIBRARY_ADMIN],
-          },
-          {
-            name: "Material Types",
-            path: "/library/settings/material-types",
-            icon: "fas fa-layer-group",
-            roles: [ROLES.LIBRARY_ADMIN, ROLES.CATALOGER],
-          },
-          {
-            name: "Categories",
-            path: "/library/settings/categories",
-            icon: "fas fa-folder-open",
-            roles: [ROLES.LIBRARY_ADMIN, ROLES.CATALOGER],
-          },
-          {
-            name: "Publishers",
-            path: "/library/settings/publishers",
-            icon: "fas fa-building",
-            roles: [ROLES.LIBRARY_ADMIN, ROLES.CATALOGER],
-          },
-          {
-            name: "Languages",
-            path: "/library/settings/languages",
-            icon: "fas fa-language",
-            roles: [ROLES.LIBRARY_ADMIN, ROLES.CATALOGER],
-          },
-          {
-            name: "Subjects",
-            path: "/library/settings/subjects",
-            icon: "fas fa-tags",
-            roles: [ROLES.LIBRARY_ADMIN, ROLES.CATALOGER],
-          },
-
-          
-        ],
-      },
-      
-
-      // Manager
-      {
-        name: "Management",
-        icon: "fas fa-clipboard-list",
-        roles: [ROLES.LIBRARY_ADMIN, ROLES.LIBRARY_MANAGER, ROLES.LIBRARY_MANAGER_CODE],
-        subMenu: [
-          {
-            name: "Policies",
-            path: "/library/policies",
-            icon: "fas fa-gavel",
-            roles: [ROLES.LIBRARY_ADMIN, ROLES.LIBRARY_MANAGER, ROLES.LIBRARY_MANAGER_CODE],
-          },
-          {
-            name: "Acquisition Approvals",
-            path: "/library/acquisitions/approvals",
-            icon: "fas fa-check-circle",
-            roles: [ROLES.LIBRARY_ADMIN, ROLES.LIBRARY_MANAGER, ROLES.LIBRARY_MANAGER_CODE],
-          },
-          {
-            name: "Reports",
-            path: "/library/reports",
-            icon: "fas fa-chart-bar",
-            roles: [ROLES.LIBRARY_ADMIN, ROLES.LIBRARY_MANAGER, ROLES.LIBRARY_MANAGER_CODE],
-          },
-        ],
-      },
-
-      // Catalog
-      {
-        name: "Catalog",
-        icon: "fas fa-book",
-        roles: [
-          ROLES.LIBRARY_ADMIN,
-          ROLES.LIBRARY_MANAGER,
-          ROLES.LIBRARY_MANAGER_CODE,
-          ROLES.LIBRARIAN,
-          ROLES.CATALOGER,
-          ROLES.LIBRARY_MEMBER,
-        ],
-        subMenu: [
-          {
-            name: "Browse Catalog",
-            path: "/library/books",
-            icon: "fas fa-search",
-            roles: [
-              ROLES.LIBRARY_ADMIN,
-              ROLES.LIBRARY_MANAGER,
-              ROLES.LIBRARY_MANAGER_CODE,
-              ROLES.LIBRARIAN,
-              ROLES.CATALOGER,
-              ROLES.LIBRARY_MEMBER,
-            ],
-          },
-          {
-            name: "All Books",
-            path: "/library/books/all",
-            icon: "fas fa-list",
-            roles: [
-              ROLES.LIBRARY_ADMIN,
-              ROLES.LIBRARY_MANAGER,
-              ROLES.LIBRARY_MANAGER_CODE,
-              ROLES.LIBRARIAN,
-              ROLES.CATALOGER,
-            ],
-          },
-          {
-            name: "Add Book",
-            path: "/library/books/new",
-            icon: "fas fa-plus",
-            roles: [
-              ROLES.LIBRARY_ADMIN,
-              ROLES.LIBRARY_MANAGER,
-              ROLES.LIBRARY_MANAGER_CODE,
-              ROLES.CATALOGER,
-            ],
-          },
-          {
-            name: "Book Copies",
-            path: "/library/copies",
-            icon: "fas fa-copy",
-            roles: [
-              ROLES.LIBRARY_ADMIN,
-              ROLES.LIBRARY_MANAGER,
-              ROLES.LIBRARY_MANAGER_CODE,
-              ROLES.CATALOGER,
-              ROLES.INVENTORY_MANAGER,
-              ROLES.LIBRARIAN,
-            ],
-          },
-        ],
-      },
-
-      // Circulation
-      {
-        name: "Circulation",
-        icon: "fas fa-exchange-alt",
-        roles: [
-          ROLES.LIBRARY_ADMIN,
-          ROLES.LIBRARY_MANAGER,
-          ROLES.LIBRARY_MANAGER_CODE,
-          ROLES.LIBRARIAN,
-          ROLES.LIBRARY_MEMBER,
-        ],
-        subMenu: [
-          {
-            name: "All Loans",
-            path: "/library/loans",
-            icon: "fas fa-hand-holding",
-            roles: [ROLES.LIBRARY_ADMIN, ROLES.LIBRARY_MANAGER, ROLES.LIBRARY_MANAGER_CODE, ROLES.LIBRARIAN],
-          },
-          {
-            name: "My Loans",
-            path: "/library/my-loans",
-            icon: "fas fa-book-reader",
-            roles: [ROLES.LIBRARY_MEMBER],
-          },
-          {
-            name: "All Holds",
-            path: "/library/holds",
-            icon: "fas fa-clock",
-            roles: [ROLES.LIBRARY_ADMIN, ROLES.LIBRARY_MANAGER, ROLES.LIBRARY_MANAGER_CODE, ROLES.LIBRARIAN],
-          },
-          {
-            name: "My Holds",
-            path: "/library/my-holds",
-            icon: "fas fa-bookmark",
-            roles: [ROLES.LIBRARY_MEMBER],
-          },
-          {
-            name: "All Fines",
-            path: "/library/fines",
-            icon: "fas fa-money-bill-wave",
-            roles: [ROLES.LIBRARY_ADMIN, ROLES.LIBRARY_MANAGER, ROLES.LIBRARY_MANAGER_CODE, ROLES.LIBRARIAN],
-          },
-          {
-            name: "My Fines",
-            path: "/library/my-fines",
-            icon: "fas fa-receipt",
-            roles: [ROLES.LIBRARY_MEMBER],
-          },
-          {
-            name: "Borrowing History",
-            path: "/library/history",
-            icon: "fas fa-history",
-            roles: [ROLES.LIBRARY_MEMBER],
-          },
-        ],
-      },
-
-      // Acquisitions
-      {
-        name: "Acquisitions",
-        icon: "fas fa-shopping-cart",
-        roles: [
-          ROLES.LIBRARY_ADMIN,
-          ROLES.LIBRARY_MANAGER,
-          ROLES.LIBRARY_MANAGER_CODE,
-          ROLES.ACQUISITION_OFFICER,
-        ],
-        subMenu: [
-          {
-            name: "Requests",
-            path: "/library/acquisitions/requests",
-            icon: "fas fa-file-signature",
-            roles: [
-              ROLES.LIBRARY_ADMIN,
-              ROLES.LIBRARY_MANAGER,
-              ROLES.LIBRARY_MANAGER_CODE,
-              ROLES.ACQUISITION_OFFICER,
-            ],
-          },
-          {
-            name: "Orders",
-            path: "/library/acquisitions/orders",
-            icon: "fas fa-shopping-basket",
-            roles: [
-              ROLES.LIBRARY_ADMIN,
-              ROLES.LIBRARY_MANAGER,
-              ROLES.LIBRARY_MANAGER_CODE,
-              ROLES.ACQUISITION_OFFICER,
-            ],
-          },
-          {
-            name: "Deliveries",
-            path: "/library/acquisitions/deliveries",
-            icon: "fas fa-truck",
-            roles: [
-              ROLES.LIBRARY_ADMIN,
-              ROLES.LIBRARY_MANAGER,
-              ROLES.LIBRARY_MANAGER_CODE,
-              ROLES.ACQUISITION_OFFICER,
-            ],
-          },
-          {
-            name: "Vendors",
-            path: "/library/vendors",
-            icon: "fas fa-store",
-            roles: [
-              ROLES.LIBRARY_ADMIN,
-              ROLES.LIBRARY_MANAGER,
-              ROLES.LIBRARY_MANAGER_CODE,
-              ROLES.ACQUISITION_OFFICER,
-            ],
-          },
-        ],
-      },
-
-      // Inventory
-      {
-        name: "Inventory",
-        icon: "fas fa-boxes",
-        roles: [
-          ROLES.LIBRARY_ADMIN,
-          ROLES.LIBRARY_MANAGER,
-          ROLES.LIBRARY_MANAGER_CODE,
-          ROLES.INVENTORY_MANAGER,
-          ROLES.LIBRARIAN,
-        ],
-        subMenu: [
-          {
-            name: "Audit",
-            path: "/library/inventory/audits",
-            icon: "fas fa-clipboard-check",
-            roles: [
-              ROLES.LIBRARY_ADMIN,
-              ROLES.LIBRARY_MANAGER,
-              ROLES.LIBRARY_MANAGER_CODE,
-              ROLES.INVENTORY_MANAGER,
-            ],
-          },
-          {
-            name: "Missing Items",
-            path: "/library/inventory/missing",
-            icon: "fas fa-search-minus",
-            roles: [
-              ROLES.LIBRARY_ADMIN,
-              ROLES.LIBRARY_MANAGER,
-              ROLES.LIBRARY_MANAGER_CODE,
-              ROLES.INVENTORY_MANAGER,
-            ],
-          },
-          {
-            name: "Damaged Items",
-            path: "/library/inventory/damaged",
-            icon: "fas fa-exclamation-triangle",
-            roles: [
-              ROLES.LIBRARY_ADMIN,
-              ROLES.LIBRARY_MANAGER,
-              ROLES.LIBRARY_MANAGER_CODE,
-              ROLES.INVENTORY_MANAGER,
-            ],
-          },
-          {
-            name: "Tags / Barcodes",
-            path: "/library/inventory/tags",
-            icon: "fas fa-barcode",
-            roles: [
-              ROLES.LIBRARY_ADMIN,
-              ROLES.LIBRARY_MANAGER,
-              ROLES.LIBRARY_MANAGER_CODE,
-              ROLES.INVENTORY_MANAGER,
-              ROLES.CATALOGER,
-            ],
-          },
-        ],
-      },
-
-      // Digital Library / Digital Librarian
-      {
-        name: "Digital Library",
-        icon: "fas fa-laptop",
-        roles: [
-          ROLES.LIBRARY_ADMIN,
-          ROLES.LIBRARY_MANAGER,
-          ROLES.LIBRARY_MANAGER_CODE,
-          ROLES.CONTENT_UPLOADER,
-          ROLES.LIBRARY_MEMBER,
-        ],
-        subMenu: [
-          {
-            name: "Resources",
-            path: "/library/digital",
-            icon: "fas fa-folder-open",
-            roles: [
-              ROLES.LIBRARY_ADMIN,
-              ROLES.LIBRARY_MANAGER,
-              ROLES.LIBRARY_MANAGER_CODE,
-              ROLES.CONTENT_UPLOADER,
-              ROLES.LIBRARY_MEMBER,
-            ],
-          },
-          {
-            name: "Upload Resource",
-            path: "/library/digital/new",
-            icon: "fas fa-upload",
-            roles: [
-              ROLES.LIBRARY_ADMIN,
-              ROLES.LIBRARY_MANAGER,
-              ROLES.LIBRARY_MANAGER_CODE,
-              ROLES.CONTENT_UPLOADER,
-            ],
-          },
-          {
-            name: "Metadata Management",
-            path: "/library/digital/metadata",
-            icon: "fas fa-tags",
-            roles: [
-              ROLES.LIBRARY_ADMIN,
-              ROLES.LIBRARY_MANAGER,
-              ROLES.LIBRARY_MANAGER_CODE,
-              ROLES.CONTENT_UPLOADER,
-            ],
-          },
-          {
-            name: "Access Rights",
-            path: "/library/digital/access",
-            icon: "fas fa-user-lock",
-            roles: [
-              ROLES.LIBRARY_ADMIN,
-              ROLES.LIBRARY_MANAGER,
-              ROLES.LIBRARY_MANAGER_CODE,
-              ROLES.CONTENT_UPLOADER,
-            ],
-          },
-          {
-            name: "Approvals",
-            path: "/library/digital/approvals",
-            icon: "fas fa-check-double",
-            roles: [ROLES.LIBRARY_ADMIN, ROLES.LIBRARY_MANAGER, ROLES.LIBRARY_MANAGER_CODE],
-          },
-          {
-            name: "Usage Analytics",
-            path: "/library/digital/analytics",
-            icon: "fas fa-chart-line",
-            roles: [ROLES.LIBRARY_ADMIN, ROLES.LIBRARY_MANAGER, ROLES.LIBRARY_MANAGER_CODE, ROLES.CONTENT_UPLOADER],
-          },
-        ],
-      },
-
-      // Member self-service
-      {
-        name: "My Library",
-        icon: "fas fa-user-graduate",
-        roles: [ROLES.LIBRARY_MEMBER],
-        subMenu: [
-          {
-            name: "Dashboard",
-            path: "/library/member/dashboard",
-            icon: "fas fa-home",
-            roles: [ROLES.LIBRARY_MEMBER],
-          },
-          {
-            name: "Browse Catalog",
-            path: "/library/books",
-            icon: "fas fa-search",
-            roles: [ROLES.LIBRARY_MEMBER],
-          },
-          {
-            name: "My Loans",
-            path: "/library/my-loans",
-            icon: "fas fa-book",
-            roles: [ROLES.LIBRARY_MEMBER],
-          },
-          {
-            name: "My Holds",
-            path: "/library/my-holds",
-            icon: "fas fa-bookmark",
-            roles: [ROLES.LIBRARY_MEMBER],
-          },
-          {
-            name: "My Fines",
-            path: "/library/my-fines",
-            icon: "fas fa-money-check-alt",
-            roles: [ROLES.LIBRARY_MEMBER],
-          },
-          {
-            name: "Borrowing History",
-            path: "/library/history",
-            icon: "fas fa-history",
-            roles: [ROLES.LIBRARY_MEMBER],
-          },
-          {
-            name: "Account Status",
-            path: "/library/account",
-            icon: "fas fa-user-check",
-            roles: [ROLES.LIBRARY_MEMBER],
-          },
-          {
-            name: "Digital Resources",
-            path: "/library/digital",
-            icon: "fas fa-download",
-            roles: [ROLES.LIBRARY_MEMBER],
-          },
-        ],
-      },
-    ],
-
-    [MODULES.ORO_WIKI]: [
-      {
-        name: "Manager Dashboard",
-        path: "/wiki/dashboard",
-        icon: "fas fa-globe",
-        roles: [ROLES.ORO_WIKI_MANAGER],
-      },
-      {
-        name: "Editor Dashboard",
-        path: "/wiki/dashboard",
-        icon: "fas fa-globe",
-        roles: [ROLES.ORO_WIKI_EDITOR],
-      },
-      {
-        name: "Publisher Dashboard",
-        path: "/wiki/dashboard",
-        icon: "fas fa-globe",
-        roles: [ROLES.ORO_WIKI_PUBLISHER],
-      },
-      {
-        name: "Governance Dashboard",
-        path: "/wiki/dashboard",
-        icon: "fas fa-globe",
-        roles: [ROLES.ORO_WIKI_BUREAUCRAT],
-      },
-      {
-        name: "Oversight Dashboard",
-        path: "/wiki/dashboard",
-        icon: "fas fa-globe",
-        roles: [ROLES.ORO_WIKI_OVERSIGHTER],
-      },
-    ],
-
-    [MODULES.REPOSITORY]: [
-      {
-        name: "Dashboard",
-        path: "/repository/admin/dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [ROLES.REPOSITORY_ADMIN],
-      },
-      {
-        name: "Curation Dashboard",
-        path: "/repository/curator/dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [ROLES.REPOSITORY_CURATOR],
-      },
-      {
-        name: "Reviewer Dashboard",
-        path: "/repository/reviewer/dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [ROLES.REPOSITORY_CONTENT_REVIEWER],
-      },
-      {
-        name: "My Repository",
-        path: "/repository/author/dashboard",
-        icon: "fas fa-home",
-        roles: [ROLES.RESEARCHER_AUTHOR],
-      },
-      {
-        name: "Search",
-        path: "/repository/search",
-        icon: "fas fa-search",
-        roles: [ROLES.REPOSITORY_PUBLIC_USER, ROLES.REPOSITORY_GUEST],
-      },
-    ],
-
-    [MODULES.RESEARCHER_NETWORK]: [
-      {
-        name: "Dashboard",
-        path: "/research-network/dashboard",
-        icon: "fas fa-network-wired",
-        roles: [
-          ROLES.RESEARCHER_NETWORK_MANAGER,
-          ROLES.RESEARCHER_NETWORK_MODERATOR,
-        ],
-      },
-      {
-        name: "Research Projects",
-        icon: "fas fa-flask",
-        roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
-        subMenu: [
-          {
-            name: "All Projects",
-            path: "/research-network/projects",
-            icon: "fas fa-list",
-            roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
-          },
-          {
-            name: "Create Project",
-            path: "/research-network/projects/create",
-            icon: "fas fa-plus",
-            roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
-          },
-        ],
-      },
-      {
-        name: "Groups & Moderation",
-        icon: "fas fa-users-cog",
-        roles: [
-          ROLES.RESEARCHER_NETWORK_MODERATOR,
-          ROLES.RESEARCHER_NETWORK_MANAGER,
-        ],
-        subMenu: [
-          {
-            name: "Research Groups",
-            path: "/research-network/groups",
-            icon: "fas fa-layer-group",
-          },
-          {
-            name: "Membership Requests",
-            path: "/research-network/groups/requests",
-            icon: "fas fa-user-check",
-          },
-          {
-            name: "Group Discussions",
-            path: "/research-network/groups/discussions",
-            icon: "fas fa-comments",
-          },
-        ],
-      },
-    ],
-  };
-
-  const routes = moduleRoutes[moduleId]
-    ? filterRoutesByRole(moduleRoutes[moduleId])
-    : [];
-
   const handleLogout = () => {
     logout();
-    navigate("/auth/login");
+    navigate("/auth");
   };
 
-  return (
-    <aside className="main-sidebar sidebar-dark-primary elevation-4">
-      <Link to="/" className="brand-link">
-        <span className="brand-text font-weight-light">UMS</span>
-      </Link>
+  const toggleMenu = (label) => setExpandedMenus((prev) => ({ ...prev, [label]: !prev[label] }));
+  const closeSidebar = () => setOpen(false);
 
-      <div className="sidebar">
-        <div className="user-panel mt-3 pb-3 mb-3 d-flex">
-          <div className="image">
-            <img src="ora.png" className="img-circle elevation-2" alt="User" />
-          </div>
-          <div className="info">
-            <Link to="/profile" className="d-block">
-              {user.full_name}
-            </Link>
-            <small className="text-muted">{user.module_name}</small>
+  return (
+    <>
+      <div className={`app-sidebar__backdrop ${open ? "show" : ""}`} onClick={closeSidebar} />
+      <aside className={`app-sidebar ${open ? "is-open" : "is-collapsed"}`}>
+        <div className="app-sidebar__brand">
+          <Link to="/" className="app-sidebar__logo" onClick={closeSidebar}>
+            <span>ORA</span>
+            <small>Platform</small>
+          </Link>
+          <button type="button" className="app-sidebar__close" onClick={closeSidebar} aria-label="Close sidebar">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="app-sidebar__profile">
+          <div className="app-sidebar__avatar">{(user.full_name || user.name || "U").charAt(0).toUpperCase()}</div>
+          <div>
+            <div className="app-sidebar__name">{user.full_name || user.name}</div>
+            <div className="app-sidebar__meta">{user.module_name || "Workspace"}</div>
           </div>
         </div>
 
-        <nav className="mt-2">
-          <ul
-            className="nav nav-pills nav-sidebar flex-column"
-            data-widget="treeview"
-            role="menu"
-            data-accordion="false"
-          >
-            {routes.map((route, i) => {
-              if (!route.subMenu) {
-                return (
-                  <li className="nav-item" key={i}>
-                    <Link
-                      to={route.path}
-                      className={`nav-link ${isActive(route.path) ? "active" : ""}`}
-                    >
-                      <i className={`nav-icon ${route.icon}`} />
-                      <p>{route.name}</p>
-                    </Link>
-                  </li>
-                );
-              }
-
-              const open = expandedMenus[route.name];
+        <nav className="app-sidebar__nav">
+          {routes.map((route, index) => {
+            if (!route.subMenu) {
               return (
-                <li
-                  key={i}
-                  className={`nav-item has-treeview ${open ? "menu-open" : ""}`}
+                <Link
+                  key={`${route.name}-${index}`}
+                  to={route.path}
+                  className={`app-nav-link ${isActive(route.path) ? "active" : ""}`}
+                  onClick={closeSidebar}
                 >
-                  <a
-                    href="#"
-                    className={`nav-link ${open ? "active" : ""}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleMenu(route.name);
-                    }}
-                  >
-                    <i className={`nav-icon ${route.icon}`} />
-                    <p>
-                      {route.name}
-                      <i className="right fas fa-angle-left" />
-                    </p>
-                  </a>
-                  <ul className="nav nav-treeview">
-                    {route.subMenu.map((sub, idx) => (
-                      <li className="nav-item" key={idx}>
-                        <Link
-                          to={sub.path}
-                          className={`nav-link ${isActive(sub.path) ? "active" : ""}`}
-                        >
-                          <i className={`far fa-circle nav-icon ${sub.icon}`} />
-                          <p>{sub.name}</p>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
+                  <span className="app-nav-link__dot" />
+                  <span>{route.name}</span>
+                </Link>
               );
-            })}
+            }
 
-            <li className="nav-item mt-2">
-              <button
-                type="button"
-                className="nav-link btn btn-link text-left w-100"
-                onClick={handleLogout}
-              >
-                <i className="nav-icon fas fa-sign-out-alt" />
-                <p>Logout</p>
-              </button>
-            </li>
-          </ul>
+            const openGroup = expandedMenus[route.name] ?? route.subMenu.some((sub) => isActive(sub.path));
+
+            return (
+              <div key={`${route.name}-${index}`} className={`app-nav-group ${openGroup ? "open" : ""}`}>
+                <button
+                  type="button"
+                  className={`app-nav-group__trigger ${openGroup ? "active" : ""}`}
+                  onClick={() => toggleMenu(route.name)}
+                >
+                  <span>{route.name}</span>
+                  <i className={`fas ${openGroup ? "fa-chevron-down" : "fa-chevron-right"}`} />
+                </button>
+                <div className="app-nav-group__content">
+                  {route.subMenu.map((sub, idx) => (
+                    <Link
+                      key={`${sub.name}-${idx}`}
+                      to={sub.path}
+                      className={`app-nav-sublink ${isActive(sub.path) ? "active" : ""}`}
+                      onClick={closeSidebar}
+                    >
+                      <span className="app-nav-link__dot small" />
+                      <span>{sub.name}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </nav>
-      </div>
-    </aside>
+
+        <div className="app-sidebar__footer">
+          <button type="button" className="app-sidebar__logout" onClick={handleLogout}>
+            <i className="fas fa-sign-out-alt" />
+            <span>Logout</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

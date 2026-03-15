@@ -16,6 +16,7 @@ export default function LibraryCatalogerDashboard() {
         { label: 'Add book', to: '/library/books/new', icon: 'fas fa-plus' },
         { label: 'Manage copies', to: '/library/copies', icon: 'fas fa-copy', className: 'btn-outline-success' },
         { label: 'Subjects', to: '/library/settings/subjects', icon: 'fas fa-tags', className: 'btn-outline-secondary' },
+        { label: 'Cataloging tools', to: '/library/cataloger/tools', icon: 'fas fa-barcode', className: 'btn-outline-primary' },
       ]}
       sections={[
         {

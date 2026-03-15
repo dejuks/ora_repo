@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import MainLayout from "../layout/MainLayout";
 import libraryApi from "../../api/library.api";
+import CrudModal from "../../pages/library/shared/CrudModal";
 
 function getValue(obj, path) {
   return path.split('.').reduce((acc, key) => (acc == null ? acc : acc[key]), obj);
@@ -40,6 +41,7 @@ export default function ResourcePage({
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({});
   const [options, setOptions] = useState({});
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   const effectiveIdField = idField || `${resource.replace(/-/g, '_').replace(/s$/, '')}_id`;
 
@@ -89,6 +91,7 @@ export default function ResourcePage({
     });
     setForm(initial);
     setNotice('');
+    setIsFormOpen(true);
   };
 
   useEffect(() => { if (!readonly && !editing && Object.keys(form).length === 0) beginCreate(); }, [readonly]);
@@ -101,6 +104,7 @@ export default function ResourcePage({
     });
     setForm(next);
     setNotice('');
+    setIsFormOpen(true);
   };
 
   const handleChange = (name, value, type) => {
@@ -124,6 +128,7 @@ export default function ResourcePage({
         setNotice(`${title} created successfully.`);
       }
       beginCreate();
+      setIsFormOpen(false);
       await load();
     } catch (err) {
       setError(err?.response?.data?.message || `Failed to save ${title}`);
@@ -161,72 +166,17 @@ export default function ResourcePage({
           {error ? <div className="alert alert-danger">{error}</div> : null}
           {notice ? <div className="alert alert-success">{notice}</div> : null}
           <div className="row">
-            {!readonly && fields.length ? (
-              <div className="col-lg-4">
-                <div className="card card-primary">
-                  <div className="card-header">
-                    <h3 className="card-title">{editing ? `Edit ${title}` : `New ${title}`}</h3>
-                  </div>
-                  <form onSubmit={submit}>
-                    <div className="card-body">
-                      {fields.map((field) => {
-                        const value = form[field.name] ?? (field.type === 'checkbox' ? false : '');
-                        if (field.type === 'textarea') {
-                          return (
-                            <div className="form-group" key={field.name}>
-                              <label>{field.label}</label>
-                              <textarea className="form-control" rows="3" value={value} onChange={(e) => handleChange(field.name, e.target.value)} />
-                            </div>
-                          );
-                        }
-                        if (field.type === 'checkbox') {
-                          return (
-                            <div className="form-group form-check" key={field.name}>
-                              <input type="checkbox" className="form-check-input" checked={Boolean(value)} onChange={(e) => handleChange(field.name, e.target.checked)} />
-                              <label className="form-check-label">{field.label}</label>
-                            </div>
-                          );
-                        }
-                        if (field.type === 'select') {
-                          const opts = field.options || options[field.name] || [];
-                          return (
-                            <div className="form-group" key={field.name}>
-                              <label>{field.label}</label>
-                              <select className="form-control" value={value} onChange={(e) => handleChange(field.name, e.target.value)}>
-                                <option value="">Select {field.label}</option>
-                                {opts.map((opt) => {
-                                  const optionValue = opt[field.valueKey || field.idField || 'id'] || opt[field.valueKey || field.idField || `${field.resource?.replace(/-/g, '_').replace(/s$/, '')}_id`] || opt.uuid || opt.id;
-                                  const optionLabel = field.getOptionLabel ? field.getOptionLabel(opt) : (opt[field.labelKey || 'name'] || opt.title || opt.code || optionValue);
-                                  return <option key={optionValue} value={optionValue}>{optionLabel}</option>;
-                                })}
-                              </select>
-                            </div>
-                          );
-                        }
-                        return (
-                          <div className="form-group" key={field.name}>
-                            <label>{field.label}</label>
-                            <input className="form-control" type={field.type || 'text'} value={value} onChange={(e) => handleChange(field.name, e.target.value, field.type)} />
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="card-footer d-flex justify-content-between">
-                      <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving...' : editing ? 'Update' : 'Create'}</button>
-                      {editing ? <button type="button" className="btn btn-secondary" onClick={beginCreate}>Cancel</button> : null}
-                    </div>
-                  </form>
-                </div>
-              </div>
-            ) : null}
-            <div className={readonly || !fields.length ? 'col-12' : 'col-lg-8'}>
+            <div className="col-12">
               <div className="card">
-                <div className="card-header d-flex justify-content-between align-items-center">
+                <div className="card-header d-flex justify-content-between align-items-center flex-wrap">
                   <h3 className="card-title mb-0">Records</h3>
-                  <div className="input-group" style={{ maxWidth: 320 }}>
-                    <input className="form-control" placeholder={`Search ${title.toLowerCase()}`} value={search} onChange={(e) => setSearch(e.target.value)} />
-                    <div className="input-group-append">
-                      <button className="btn btn-outline-secondary" type="button" onClick={load}>Refresh</button>
+                  <div className="d-flex align-items-center" style={{ gap: 8 }}>
+                    {!readonly && fields.length ? <button className="btn btn-primary" type="button" onClick={beginCreate}>Create New</button> : null}
+                    <div className="input-group" style={{ maxWidth: 320 }}>
+                      <input className="form-control" placeholder={`Search ${title.toLowerCase()}`} value={search} onChange={(e) => setSearch(e.target.value)} />
+                      <div className="input-group-append">
+                        <button className="btn btn-outline-secondary" type="button" onClick={load}>Refresh</button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -265,6 +215,65 @@ export default function ResourcePage({
             </div>
           </div>
         </div>
+          {!readonly && fields.length ? (
+            <CrudModal
+              open={isFormOpen}
+              title={editing ? `Edit ${title}` : `Create ${title}`}
+              onClose={() => setIsFormOpen(false)}
+              footer={(
+                <>
+                  <button type="button" className="btn btn-secondary" onClick={() => setIsFormOpen(false)}>Close</button>
+                  <button type="button" className="btn btn-primary" disabled={saving} onClick={submit}>
+                    {saving ? 'Saving...' : editing ? 'Update' : 'Create'}
+                  </button>
+                </>
+              )}
+            >
+              <form onSubmit={submit}>
+                {fields.map((field) => {
+                  const value = form[field.name] ?? (field.type === 'checkbox' ? false : '');
+                  if (field.type === 'textarea') {
+                    return (
+                      <div className="form-group" key={field.name}>
+                        <label>{field.label}</label>
+                        <textarea className="form-control" rows="3" value={value} onChange={(e) => handleChange(field.name, e.target.value)} />
+                      </div>
+                    );
+                  }
+                  if (field.type === 'checkbox') {
+                    return (
+                      <div className="form-group form-check" key={field.name}>
+                        <input type="checkbox" className="form-check-input" checked={Boolean(value)} onChange={(e) => handleChange(field.name, e.target.checked)} />
+                        <label className="form-check-label">{field.label}</label>
+                      </div>
+                    );
+                  }
+                  if (field.type === 'select') {
+                    const opts = field.options || options[field.name] || [];
+                    return (
+                      <div className="form-group" key={field.name}>
+                        <label>{field.label}</label>
+                        <select className="form-control" value={value} onChange={(e) => handleChange(field.name, e.target.value)}>
+                          <option value="">Select {field.label}</option>
+                          {opts.map((opt) => {
+                            const optionValue = opt[field.valueKey || field.idField || 'id'] || opt[field.valueKey || field.idField || `${field.resource?.replace(/-/g, '_').replace(/s$/, '')}_id`] || opt.uuid || opt.id;
+                            const optionLabel = field.getOptionLabel ? field.getOptionLabel(opt) : (opt[field.labelKey || 'name'] || opt.title || opt.code || optionValue);
+                            return <option key={optionValue} value={optionValue}>{optionLabel}</option>;
+                          })}
+                        </select>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="form-group" key={field.name}>
+                      <label>{field.label}</label>
+                      <input className="form-control" type={field.type || 'text'} value={value} onChange={(e) => handleChange(field.name, e.target.value, field.type)} />
+                    </div>
+                  );
+                })}
+              </form>
+            </CrudModal>
+          ) : null}
       </section>
     </MainLayout>
   );

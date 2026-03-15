@@ -4,12 +4,13 @@ import Sidebar from "./Sidebar";
 
 export default function MainLayout({ children }) {
   return (
-    <div className="wrapper">
-      <Navbar />
+    <div className="app-shell">
       <Sidebar />
-
-      <div className="content-wrapper p-3">
-        {children}
+      <div className="app-main">
+        <Navbar />
+        <main className="app-content">
+          <div className="container-fluid">{children}</div>
+        </main>
       </div>
     </div>
   );

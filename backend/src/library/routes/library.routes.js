@@ -11,10 +11,12 @@ import memberTypeRoutes from "./memberType.routes.js";
 import libraryMemberRoutes from "./libraryMember.routes.js";
 import memberStatusHistoryRoutes from "./memberStatusHistory.routes.js";
 import catalogMaterialRoutes from "./catalogMaterial.routes.js";
+import catalogRoutes from "./catalog.routes.js";
 import catalogMaterialContributorRoutes from "./catalogMaterialContributor.routes.js";
 import catalogMaterialSubjectRoutes from "./catalogMaterialSubject.routes.js";
 import materialCopyRoutes from "./materialCopy.routes.js";
 import circulationPolicyRoutes from "./circulationPolicy.routes.js";
+import circulationRoutes from "./circulation.routes.js";
 import loanRoutes from "./loan.routes.js";
 import loanRenewalRoutes from "./loanRenewal.routes.js";
 import holdRequestRoutes from "./holdRequest.routes.js";
@@ -35,6 +37,7 @@ import inventoryAuditItemRoutes from "./inventoryAuditItem.routes.js";
 import digitalResourceRoutes from "./digitalResource.routes.js";
 import digitalResourceFileRoutes from "./digitalResourceFile.routes.js";
 import digitalAccessRuleRoutes from "./digitalAccessRule.routes.js";
+import digitalCollectionRoutes from "./digitalCollection.routes.js";
 import digitalUsageLogRoutes from "./digitalUsageLog.routes.js";
 import digitalSubmissionRoutes from "./digitalSubmission.routes.js";
 import digitalSubmissionContributorRoutes from "./digitalSubmissionContributor.routes.js";
@@ -45,7 +48,10 @@ import digitalSubmissionPublicationRoutes from "./digitalSubmissionPublication.r
 import libraryNotificationRoutes from "./libraryNotification.routes.js";
 import libraryAuditLogRoutes from "./libraryAuditLog.routes.js";
 import reportRoutes from "./report.routes.js";
+import libraryDashboardRoutes from "./libraryDashboard.routes.js";
 import maintenanceRoutes from "./maintenance.routes.js";
+import catalogerToolRoutes from "./catalogerTool.routes.js";
+import inventoryRoutes from "./inventory.routes.js";
 import { authenticate } from "../../middleware/auth.middleware.js";
 import { resolveLibraryPermission } from "../middleware/libraryAuthorize.middleware.js";
 import { libraryErrorHandler } from "../middleware/errorHandler.js";
@@ -53,6 +59,10 @@ import { libraryErrorHandler } from "../middleware/errorHandler.js";
 
 
 const router = express.Router();
+
+// Public OPAC access
+router.use('/catalog', catalogRoutes);
+
 router.use(authenticate);
 router.use(resolveLibraryPermission);
 
@@ -72,6 +82,7 @@ router.use('/material-contributors', catalogMaterialContributorRoutes);
 router.use('/material-subjects', catalogMaterialSubjectRoutes);
 router.use('/copies', materialCopyRoutes);
 router.use('/circulation-policies', circulationPolicyRoutes);
+router.use('/circulation', circulationRoutes);
 router.use('/loans', loanRoutes);
 router.use('/loan-renewals', loanRenewalRoutes);
 router.use('/holds', holdRequestRoutes);
@@ -92,6 +103,7 @@ router.use('/inventory-audit-items', inventoryAuditItemRoutes);
 router.use('/digital-resources', digitalResourceRoutes);
 router.use('/digital-resource-files', digitalResourceFileRoutes);
 router.use('/digital-access-rules', digitalAccessRuleRoutes);
+router.use('/digital-collections', digitalCollectionRoutes);
 router.use('/digital-usage-logs', digitalUsageLogRoutes);
 router.use('/digital-submissions', digitalSubmissionRoutes);
 router.use('/digital-submission-contributors', digitalSubmissionContributorRoutes);
@@ -100,9 +112,12 @@ router.use('/digital-submission-reviews', digitalSubmissionReviewRoutes);
 router.use('/digital-submission-status-history', digitalSubmissionStatusHistoryRoutes);
 router.use('/digital-submission-publications', digitalSubmissionPublicationRoutes);
 router.use('/notifications', libraryNotificationRoutes);
+router.use('/dashboard', libraryDashboardRoutes);
 router.use('/audit-logs', libraryAuditLogRoutes);
 router.use('/reports', reportRoutes);
 router.use('/maintenance', maintenanceRoutes);
+router.use('/catalog-tools', catalogerToolRoutes);
+router.use('/inventory', inventoryRoutes);
 
 router.use(libraryErrorHandler);
 export default router;

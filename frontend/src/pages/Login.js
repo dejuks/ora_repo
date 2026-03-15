@@ -299,6 +299,9 @@ export default function Login() {
           <a href="/forgot-password" className="forgot-link">
             Forgot your password?
           </a>
+          <div className="text-center mt-3">
+            <a href="/ebook/author-register">Register as public eBook author</a>
+          </div>
         </div>
       </div>
     </div>

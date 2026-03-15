@@ -1,292 +1,595 @@
-INSERT INTO permissions (name, module_group) VALUES
--- ===============================
--- LIBRARY STRUCTURE / MASTER DATA
--- ===============================
-('library.branch.create', 'Library Management'),
-('library.branch.view', 'Library Management'),
-('library.branch.update', 'Library Management'),
-('library.branch.delete', 'Library Management'),
+1) Digital Librarian
 
-('library.location.create', 'Library Management'),
-('library.location.view', 'Library Management'),
-('library.location.update', 'Library Management'),
-('library.location.delete', 'Library Management'),
+Should have
 
-('library.materialtype.create', 'Library Management'),
-('library.materialtype.view', 'Library Management'),
-('library.materialtype.update', 'Library Management'),
-('library.materialtype.delete', 'Library Management'),
+library.digital.resource.view
 
-('library.language.create', 'Library Management'),
-('library.language.view', 'Library Management'),
-('library.language.update', 'Library Management'),
-('library.language.delete', 'Library Management'),
+library.digital.resource.create
 
-('library.publisher.create', 'Library Management'),
-('library.publisher.view', 'Library Management'),
-('library.publisher.update', 'Library Management'),
-('library.publisher.delete', 'Library Management'),
+library.digital.resource.update
 
-('library.contributor.create', 'Library Management'),
-('library.contributor.view', 'Library Management'),
-('library.contributor.update', 'Library Management'),
-('library.contributor.delete', 'Library Management'),
+library.digital.resource.delete
 
-('library.membertype.create', 'Library Management'),
-('library.membertype.view', 'Library Management'),
-('library.membertype.update', 'Library Management'),
-('library.membertype.delete', 'Library Management'),
+library.digital.resource.submit
 
-('library.member.create', 'Library Management'),
-('library.member.view', 'Library Management'),
-('library.member.update', 'Library Management'),
-('library.member.delete', 'Library Management'),
+library.digital.resource.approve
 
-('library.member.status.view', 'Library Management'),
-('library.member.status.create', 'Library Management'),
-('library.member.status.update', 'Library Management'),
-('library.member.status.delete', 'Library Management'),
+library.digital.resource.reject
 
--- ===============================
--- CATALOG
--- ===============================
-('library.catalog.search', 'Library Management'),
-('library.catalog.record.create', 'Library Management'),
-('library.catalog.record.view', 'Library Management'),
-('library.catalog.record.update', 'Library Management'),
-('library.catalog.record.delete', 'Library Management'),
-('library.catalog.classification.assign', 'Library Management'),
-('library.catalog.callnumber.assign', 'Library Management'),
-('library.catalog.subject.assign', 'Library Management'),
-('library.catalog.metadata.manage', 'Library Management'),
+library.digital.resource.publish
 
-('library.book.create', 'Library Management'),
-('library.book.view', 'Library Management'),
-('library.book.update', 'Library Management'),
-('library.book.delete', 'Library Management'),
+library.digital.resource.metadata.manage
 
-('library.material.contributor.create', 'Library Management'),
-('library.material.contributor.view', 'Library Management'),
-('library.material.contributor.update', 'Library Management'),
-('library.material.contributor.delete', 'Library Management'),
+library.digital.file.upload
 
-('library.material.subject.create', 'Library Management'),
-('library.material.subject.view', 'Library Management'),
-('library.material.subject.update', 'Library Management'),
-('library.material.subject.delete', 'Library Management'),
+library.digital.file.view
 
--- ===============================
--- COPIES / INVENTORY BASICS
--- ===============================
-('library.copy.create', 'Library Management'),
-('library.copy.view', 'Library Management'),
-('library.copy.update', 'Library Management'),
-('library.copy.delete', 'Library Management'),
-('library.barcode.assign', 'Library Management'),
-('library.rfid.assign', 'Library Management'),
-('library.inventory.location.update', 'Library Management'),
+library.digital.file.create
 
--- ===============================
--- LOAN / CIRCULATION
--- ===============================
-('library.loan.request', 'Library Management'),
-('library.loan.create', 'Library Management'),
-('library.loan.issue', 'Library Management'),
-('library.loan.return', 'Library Management'),
-('library.loan.renew', 'Library Management'),
-('library.loan.view', 'Library Management'),
-('library.loan.view.my', 'Library Management'),
-('library.loan.renew.my', 'Library Management'),
+library.digital.file.update
 
-('library.loan.renewal.create', 'Library Management'),
-('library.loan.renewal.view', 'Library Management'),
-('library.loan.renewal.update', 'Library Management'),
-('library.loan.renewal.delete', 'Library Management'),
+library.digital.file.delete
 
-('library.hold.create', 'Library Management'),
-('library.hold.fulfill', 'Library Management'),
-('library.hold.cancel', 'Library Management'),
-('library.hold.cancel.my', 'Library Management'),
-('library.hold.view', 'Library Management'),
-('library.hold.view.my', 'Library Management'),
+library.digital.collection.manage
 
-('library.fine.create', 'Library Management'),
-('library.fine.collect', 'Library Management'),
-('library.fine.waive', 'Library Management'),
-('library.fine.view', 'Library Management'),
-('library.fine.view.my', 'Library Management'),
-('library.history.view.my', 'Library Management'),
+library.digital.access.manage
 
-('library.fine.payment.create', 'Library Management'),
-('library.fine.payment.view', 'Library Management'),
-('library.fine.payment.update', 'Library Management'),
-('library.fine.payment.delete', 'Library Management'),
+library.digital.accessrule.view
 
-('library.fine.waiver.create', 'Library Management'),
-('library.fine.waiver.view', 'Library Management'),
-('library.fine.waiver.update', 'Library Management'),
-('library.fine.waiver.delete', 'Library Management'),
+library.digital.accessrule.create
 
--- ===============================
--- DIGITAL LIBRARY
--- ===============================
-('library.digital.resource.view', 'Library Management'),
-('library.digital.resource.create', 'Library Management'),
-('library.digital.resource.update', 'Library Management'),
-('library.digital.resource.update.own', 'Library Management'),
-('library.digital.resource.delete', 'Library Management'),
-('library.digital.resource.submit', 'Library Management'),
-('library.digital.resource.approve', 'Library Management'),
-('library.digital.resource.reject', 'Library Management'),
-('library.digital.resource.publish', 'Library Management'),
-('library.digital.resource.download', 'Library Management'),
-('library.digital.resource.metadata.manage', 'Library Management'),
+library.digital.accessrule.update
 
-('library.digital.metadata.create', 'Library Management'),
-('library.digital.metadata.update.own', 'Library Management'),
+library.digital.accessrule.delete
 
-('library.digital.file.upload', 'Library Management'),
-('library.digital.file.replace.own', 'Library Management'),
-('library.digital.file.view', 'Library Management'),
-('library.digital.file.create', 'Library Management'),
-('library.digital.file.update', 'Library Management'),
-('library.digital.file.delete', 'Library Management'),
+library.digital.license.manage
 
-('library.digital.collection.manage', 'Library Management'),
-('library.digital.access.manage', 'Library Management'),
-('library.digital.license.manage', 'Library Management'),
-('library.digital.drm.manage', 'Library Management'),
-('library.digital.issue.update', 'Library Management'),
-('library.digital.edition.update', 'Library Management'),
-('library.digital.package.upload', 'Library Management'),
-('library.digital.usage.view', 'Library Management'),
-('library.digital.usage.view.own', 'Library Management'),
+library.digital.drm.manage
 
-('library.digital.accessrule.view', 'Library Management'),
-('library.digital.accessrule.create', 'Library Management'),
-('library.digital.accessrule.update', 'Library Management'),
-('library.digital.accessrule.delete', 'Library Management'),
+library.digital.usage.view
 
-('library.digital.submission.file.view', 'Library Management'),
-('library.digital.submission.file.create', 'Library Management'),
-('library.digital.submission.file.update', 'Library Management'),
-('library.digital.submission.file.delete', 'Library Management'),
+library.reports.digital.view
 
-('library.digital.submission.review.view', 'Library Management'),
-('library.digital.submission.review.create', 'Library Management'),
-('library.digital.submission.review.update', 'Library Management'),
-('library.digital.submission.review.delete', 'Library Management'),
+library.notification.view
 
-('library.digital.submission.history.view', 'Library Management'),
-('library.digital.submission.history.create', 'Library Management'),
-('library.digital.submission.history.update', 'Library Management'),
-('library.digital.submission.history.delete', 'Library Management'),
+Possible missing permissions
 
-('library.digital.submission.publication.view', 'Library Management'),
-('library.digital.submission.publication.create', 'Library Management'),
-('library.digital.submission.publication.update', 'Library Management'),
-('library.digital.submission.publication.delete', 'Library Management'),
+library.digital.resource.preview
 
--- ===============================
--- ACQUISITION
--- ===============================
-('library.acquisition.request.create', 'Library Management'),
-('library.acquisition.request.view', 'Library Management'),
-('library.acquisition.request.approve', 'Library Management'),
+library.digital.collection.view
 
-('library.acquisition.order.create', 'Library Management'),
-('library.acquisition.order.view', 'Library Management'),
-('library.acquisition.order.update', 'Library Management'),
+library.digital.submission.view
 
-('library.acquisition.delivery.receive', 'Library Management'),
-('library.acquisition.delivery.inspect', 'Library Management'),
+library.digital.submission.review.approve
 
-('library.vendor.create', 'Library Management'),
-('library.vendor.view', 'Library Management'),
-('library.vendor.update', 'Library Management'),
-('library.vendor.contact.manage', 'Library Management'),
+library.digital.submission.review.reject
 
-('library.book.procurement.manage', 'Library Management'),
-('library.purchase.tracking.view', 'Library Management'),
-('library.purchase.request.create', 'Library Management'),
+library.digital.compliance.review
 
-('library.purchase.order.item.create', 'Library Management'),
-('library.purchase.order.item.view', 'Library Management'),
-('library.purchase.order.item.update', 'Library Management'),
-('library.purchase.order.item.delete', 'Library Management'),
+library.digital.quality.review
 
-('library.acquisition.receipt.item.create', 'Library Management'),
-('library.acquisition.receipt.item.view', 'Library Management'),
-('library.acquisition.receipt.item.update', 'Library Management'),
-('library.acquisition.receipt.item.delete', 'Library Management'),
+Reason: approval and compliance actions exist logically, but the permissions are spread across resource/review/publication tables rather than clear workflow permissions.
 
-('library.cataloging.job.create', 'Library Management'),
-('library.cataloging.job.view', 'Library Management'),
-('library.cataloging.job.update', 'Library Management'),
-('library.cataloging.job.delete', 'Library Management'),
+2) Member / User / Student
 
--- ===============================
--- INVENTORY
--- ===============================
-('library.inventory.update.basic', 'Library Management'),
-('library.inventory.audit.create', 'Library Management'),
-('library.inventory.audit.view', 'Library Management'),
-('library.inventory.audit.update', 'Library Management'),
-('library.inventory.stocktake.manage', 'Library Management'),
-('library.inventory.shelfreading.manage', 'Library Management'),
-('library.inventory.missing.report', 'Library Management'),
-('library.inventory.damaged.report', 'Library Management'),
-('library.inventory.tag.manage', 'Library Management'),
-('library.inventory.reconciliation.manage', 'Library Management'),
+Should have
 
-('library.inventory.audit.item.create', 'Library Management'),
-('library.inventory.audit.item.view', 'Library Management'),
-('library.inventory.audit.item.update', 'Library Management'),
-('library.inventory.audit.item.delete', 'Library Management'),
+library.catalog.search
 
--- ===============================
--- NOTIFICATIONS / AUDIT / REPORTS / POLICY
--- ===============================
-('library.notification.view', 'Library Management'),
-('library.notification.create', 'Library Management'),
-('library.notification.update', 'Library Management'),
-('library.notification.delete', 'Library Management'),
+library.book.view
 
-('library.auditlog.view', 'Library Management'),
+library.catalog.record.view
 
-('library.reports.view', 'Library Management'),
-('library.reports.system.view', 'Library Management'),
-('library.reports.digital.view', 'Library Management'),
-('library.reports.circulation.view', 'Library Management'),
-('library.reports.inventory.view', 'Library Management'),
+library.loan.request
 
-('library.policy.view', 'Library Management'),
-('library.policy.update', 'Library Management'),
+library.loan.view.my
 
--- ===============================
--- LIBRARY ADMIN SUPPORT
--- ===============================
-('users.create', 'Library Management'),
-('users.view', 'Library Management'),
-('users.update', 'Library Management'),
-('users.delete', 'Library Management'),
+library.loan.renew.my
 
-('roles.create', 'Library Management'),
-('roles.view', 'Library Management'),
-('roles.update', 'Library Management'),
-('roles.delete', 'Library Management'),
+library.hold.create
 
-('permissions.view', 'Library Management'),
-('permissions.assign', 'Library Management'),
+library.hold.cancel.my
 
-('system.settings.view', 'Library Management'),
-('system.settings.update', 'Library Management'),
-('system.logs.view', 'Library Management'),
-('system.backup.manage', 'Library Management'),
-('system.security.manage', 'Library Management'),
-('module.access.manage', 'Library Management'),
-('staff.supervise', 'Library Management'),
-('member.assist', 'Library Management'),
-('account.view.my', 'Library Management')
+library.hold.view.my
 
-ON CONFLICT (name) DO NOTHING;
+library.fine.view.my
+
+library.history.view.my
+
+account.view.my
+
+library.digital.resource.view
+
+library.digital.resource.download
+
+library.digital.usage.view.own
+
+Possible missing permissions
+
+account.update.my
+
+library.notification.view.my
+
+library.digital.resource.preview
+
+library.digital.resource.read
+
+library.member.profile.view.my
+
+library.member.profile.update.my
+
+Reason: members can view their account, but there is no self-update permission. Also there is no explicit preview/read permission for online reading.
+
+3) Admin
+
+Should have
+
+users.create
+
+users.view
+
+users.update
+
+users.delete
+
+roles.create
+
+roles.view
+
+roles.update
+
+roles.delete
+
+permissions.view
+
+permissions.assign
+
+system.settings.view
+
+system.settings.update
+
+system.logs.view
+
+system.backup.manage
+
+system.security.manage
+
+module.access.manage
+
+library.auditlog.view
+
+library.reports.system.view
+
+library.notification.view
+
+library.notification.create
+
+library.notification.update
+
+library.notification.delete
+
+Possible missing permissions
+
+system.backup.view
+
+system.backup.restore
+
+system.audit.security.view
+
+system.audit.security.manage
+
+system.user.session.manage
+
+system.role.assign
+
+system.permission.assign
+
+Reason: admin tasks mention backups, security, and audit oversight, but the SQL only has broad manage permissions, not more precise restore/security-alert operations.
+
+4) Content Uploader
+
+Should have
+
+library.digital.resource.view
+
+library.digital.resource.create
+
+library.digital.resource.update.own
+
+library.digital.resource.submit
+
+library.digital.metadata.create
+
+library.digital.metadata.update.own
+
+library.digital.file.upload
+
+library.digital.file.replace.own
+
+library.digital.submission.file.view
+
+library.digital.submission.file.create
+
+library.digital.submission.history.view
+
+library.digital.usage.view.own
+
+Possible missing permissions
+
+library.digital.resource.view.own
+
+library.digital.resource.delete.own
+
+library.digital.submission.view.own
+
+library.digital.submission.update.own
+
+library.digital.submission.resubmit
+
+library.digital.submission.withdraw.own
+
+Reason: uploader workflow includes correction and resubmission, but there is no explicit resubmit permission in the SQL. That is one of the clearest missing permissions.
+
+5) External Publisher
+
+Should have
+
+library.digital.package.upload
+
+library.digital.license.manage
+
+library.digital.drm.manage
+
+library.digital.issue.update
+
+library.digital.edition.update
+
+maybe limited library.digital.resource.create
+
+maybe limited library.digital.file.upload
+
+Possible missing permissions
+
+library.digital.package.view
+
+library.digital.package.update
+
+library.digital.package.delete
+
+library.digital.package.submit
+
+library.digital.package.history.view
+
+library.digital.resource.create.external
+
+library.digital.resource.update.external
+
+library.digital.usage.report.view.external
+
+Reason: external publisher workflow is under-modeled in the permission file. Upload is present, but package lifecycle permissions are missing.
+
+6) Librarian
+
+Should have
+
+library.loan.create
+
+library.loan.issue
+
+library.loan.return
+
+library.loan.renew
+
+library.loan.view
+
+library.hold.fulfill
+
+library.hold.cancel
+
+library.hold.view
+
+library.fine.create
+
+library.fine.collect
+
+library.fine.waive
+
+library.fine.view
+
+library.fine.payment.create
+
+library.fine.payment.view
+
+library.fine.waiver.create
+
+library.fine.waiver.view
+
+member.assist
+
+library.copy.view
+
+library.inventory.update.basic
+
+library.catalog.search
+
+Possible missing permissions
+
+library.purchase.request.view
+
+library.purchase.request.update
+
+library.member.note.create
+
+library.member.note.view
+
+library.member.issue.escalate
+
+Reason: the librarian workflow includes patron purchase requests and issue escalation, but those permissions do not appear clearly in the SQL. Only library.purchase.request.create exists.
+
+7) Library Manager
+
+Should have
+
+library.reports.view
+
+library.reports.circulation.view
+
+library.reports.inventory.view
+
+library.reports.digital.view
+
+library.policy.view
+
+library.policy.update
+
+staff.supervise
+
+library.acquisition.request.view
+
+library.acquisition.request.approve
+
+library.acquisition.order.view
+
+library.cataloging.job.view
+
+library.inventory.audit.view
+
+library.auditlog.view
+
+Possible missing permissions
+
+library.policy.create
+
+library.policy.delete
+
+library.budget.view
+
+library.budget.update
+
+library.staff.assignment.manage
+
+library.dashboard.manager.view
+
+Reason: manager responsibilities include policy setting and oversight, but policy only has view and update. No create/delete is defined.
+
+8) Acquisition Officer
+
+Should have
+
+library.acquisition.request.create
+
+library.acquisition.request.view
+
+library.acquisition.order.create
+
+library.acquisition.order.view
+
+library.acquisition.order.update
+
+library.acquisition.delivery.receive
+
+library.acquisition.delivery.inspect
+
+library.vendor.create
+
+library.vendor.view
+
+library.vendor.update
+
+library.vendor.contact.manage
+
+library.book.procurement.manage
+
+library.purchase.tracking.view
+
+library.purchase.request.create
+
+library.purchase.order.item.create
+
+library.purchase.order.item.view
+
+library.purchase.order.item.update
+
+library.acquisition.receipt.item.create
+
+library.acquisition.receipt.item.view
+
+library.acquisition.receipt.item.update
+
+Possible missing permissions
+
+library.acquisition.request.update
+
+library.acquisition.request.delete
+
+library.vendor.delete
+
+library.vendor.performance.view
+
+library.acquisition.receipt.create
+
+library.acquisition.receipt.view
+
+library.acquisition.receipt.update
+
+Reason: there are receipt item permissions, but not clear receipt header permissions. That is a likely gap.
+
+9) Cataloger
+
+Should have
+
+library.catalog.record.create
+
+library.catalog.record.view
+
+library.catalog.record.update
+
+library.catalog.record.delete
+
+library.catalog.classification.assign
+
+library.catalog.callnumber.assign
+
+library.catalog.subject.assign
+
+library.catalog.metadata.manage
+
+library.book.create
+
+library.book.view
+
+library.book.update
+
+library.material.contributor.create
+
+library.material.contributor.view
+
+library.material.contributor.update
+
+library.material.subject.create
+
+library.material.subject.view
+
+library.material.subject.update
+
+library.copy.create
+
+library.copy.view
+
+library.copy.update
+
+library.barcode.assign
+
+library.rfid.assign
+
+library.cataloging.job.view
+
+library.cataloging.job.update
+
+Possible missing permissions
+
+library.catalog.ddc.suggest
+
+library.catalog.lcc.suggest
+
+library.barcode.generate
+
+library.barcode.print
+
+library.copy.status.update
+
+library.catalog.edition.manage
+
+Reason: your workflow includes classification tools and barcode generation, but the SQL only has assign-level permissions, not explicit generate/print/suggest permissions.
+
+10) Inventory Manager
+
+Should have
+
+library.inventory.update.basic
+
+library.inventory.audit.create
+
+library.inventory.audit.view
+
+library.inventory.audit.update
+
+library.inventory.stocktake.manage
+
+library.inventory.shelfreading.manage
+
+library.inventory.missing.report
+
+library.inventory.damaged.report
+
+library.inventory.tag.manage
+
+library.inventory.reconciliation.manage
+
+library.inventory.audit.item.create
+
+library.inventory.audit.item.view
+
+library.inventory.audit.item.update
+
+library.copy.view
+
+library.copy.update
+
+library.inventory.location.update
+
+Possible missing permissions
+
+library.inventory.report.view
+
+library.inventory.audit.close
+
+library.inventory.audit.delete
+
+library.inventory.missing.resolve
+
+library.inventory.damaged.resolve
+
+library.inventory.tag.print
+
+Reason: reporting and reconciliation are implied, but not all audit lifecycle and issue resolution permissions are explicit.
+
+11) System Administrator
+
+Should have
+
+users.view
+
+users.update
+
+roles.view
+
+permissions.view
+
+module.access.manage
+
+system.settings.view
+
+system.settings.update
+
+system.logs.view
+
+system.backup.manage
+
+system.security.manage
+
+library.auditlog.view
+
+Possible missing permissions
+
+system.restore.manage
+
+system.monitoring.view
+
+system.integration.manage
+
+system.health.view
+
+system.cache.manage
+
+system.job.manage

@@ -9,6 +9,7 @@ router.use(authenticate);
 router.get('/', paginationRules, validateRequest, digitalResourceController.index);
 router.get('/:id', uuidParam(), validateRequest, digitalResourceController.show);
 router.get('/:id/access', uuidParam(), validateRequest, digitalResourceController.access);
+router.get('/:id/preview', uuidParam(), validateRequest, digitalResourceController.preview);
 router.get('/:id/download', uuidParam(), validateRequest, digitalResourceController.download);
 router.post('/', digitalResourceController.store);
 router.put('/:id', uuidParam(), validateRequest, digitalResourceController.update);

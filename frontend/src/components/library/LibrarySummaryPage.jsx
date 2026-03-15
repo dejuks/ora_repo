@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
 import MainLayout from "../layout/MainLayout";
 import libraryApi from "../../api/library.api";
+import { formatCurrency, formatDate, StatusBadge } from "../../pages/library/shared/libraryHelpers";
 
 const cards = [
   { key: 'materials', label: 'Catalog Materials', color: 'bg-primary', icon: 'fas fa-book' },
   { key: 'copies', label: 'Physical Copies', color: 'bg-info', icon: 'fas fa-copy' },
   { key: 'activeLoans', label: 'Active Loans', color: 'bg-success', icon: 'fas fa-hand-holding' },
   { key: 'pendingHolds', label: 'Pending Holds', color: 'bg-warning', icon: 'fas fa-bookmark' },
-  { key: 'outstandingFineBalance', label: 'Outstanding Fine Balance', color: 'bg-danger', icon: 'fas fa-money-bill-wave' },
+  { key: 'outstandingFineBalance', label: 'Outstanding Fine Balance', color: 'bg-danger', icon: 'fas fa-money-bill-wave', formatter: formatCurrency },
   { key: 'pendingDigitalSubmissions', label: 'Pending Digital Submissions', color: 'bg-secondary', icon: 'fas fa-upload' },
   { key: 'activeDigitalResources', label: 'Active Digital Resources', color: 'bg-dark', icon: 'fas fa-laptop' },
 ];
@@ -20,10 +21,7 @@ export default function LibrarySummaryPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [summaryData, overdueData] = await Promise.all([
-          libraryApi.getReportSummary(),
-          libraryApi.getOverdueLoans(),
-        ]);
+        const [summaryData, overdueData] = await Promise.all([libraryApi.getReportSummary(), libraryApi.getOverdueLoans()]);
         setSummary(summaryData);
         setOverdue(overdueData || []);
       } catch (err) {
@@ -41,7 +39,7 @@ export default function LibrarySummaryPage() {
           {cards.map((card) => (
             <div className="col-lg-3 col-md-6" key={card.key}>
               <div className={`small-box ${card.color}`}>
-                <div className="inner"><h3>{summary ? summary[card.key] : '...'}</h3><p>{card.label}</p></div>
+                <div className="inner"><h3>{summary ? (card.formatter ? card.formatter(summary[card.key]) : summary[card.key]) : '...'}</h3><p>{card.label}</p></div>
                 <div className="icon"><i className={card.icon}></i></div>
               </div>
             </div>
@@ -54,7 +52,7 @@ export default function LibrarySummaryPage() {
               <thead><tr><th>Member</th><th>Member Code</th><th>Title</th><th>Accession</th><th>Due Date</th><th>Status</th></tr></thead>
               <tbody>
                 {overdue.length === 0 ? <tr><td colSpan="6" className="text-center p-4">No overdue loans found.</td></tr> : overdue.map((row) => (
-                  <tr key={row.loan_id}><td>{row.full_name}</td><td>{row.member_code}</td><td>{row.title}</td><td>{row.accession_number}</td><td>{row.due_date ? new Date(row.due_date).toLocaleString() : ''}</td><td>{row.status}</td></tr>
+                  <tr key={row.loan_id}><td>{row.full_name}</td><td>{row.member_code}</td><td>{row.title}</td><td>{row.accession_number}</td><td>{formatDate(row.due_date, true)}</td><td><StatusBadge status={row.status} /></td></tr>
                 ))}
               </tbody>
             </table>
