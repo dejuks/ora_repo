@@ -112,6 +112,9 @@ export const ebookSubmissionController = {
   productionDashboard: asyncHandler(async (req, res) => {
     res.json(await ebookWorkflowService.productionDashboard());
   }),
+  reviewerOptions: asyncHandler(async (req, res) => {
+    res.json(await ebookWorkflowService.getReviewerOptions());
+  }),
   workflow: asyncHandler(async (req, res) => {
     res.json(await ebookWorkflowService.getWorkflow(req.params.id));
   }),
@@ -138,25 +141,6 @@ export const ebookSubmissionController = {
   }),
   publish: asyncHandler(async (req, res) => {
     res.json(await ebookWorkflowService.publishSubmission(req.params.id, req.user?.uuid, req.body || {}));
-  }),
-
-  reviewerOptions: asyncHandler(async (req, res) => {
-    const result = await pool.query(
-      `SELECT
-         u.uuid,
-         COALESCE(NULLIF(TRIM(u.full_name), ''), u.email) AS reviewer_name,
-         u.email,
-         COUNT(CASE WHEN era.status IN ('assigned', 'accepted') THEN 1 END)::int AS active_assignment_count
-       FROM users u
-       INNER JOIN user_roles ur ON ur.user_id = u.uuid
-       INNER JOIN roles r ON r.uuid = ur.role_id
-       LEFT JOIN ebook_review_assignments era ON era.reviewer_id = u.uuid
-       WHERE UPPER(REPLACE(TRIM(r.name), ' ', '_')) = 'EBOOK_REVIEWER'
-       GROUP BY u.uuid, reviewer_name, u.email
-       ORDER BY reviewer_name ASC`,
-      []
-    );
-    res.json({ rows: result.rows, meta: { total: result.rows.length } });
   }),
 };
 

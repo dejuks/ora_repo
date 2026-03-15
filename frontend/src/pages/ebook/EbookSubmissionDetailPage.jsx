@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout";
 import ebookApi from "../../api/ebook.api";
@@ -24,7 +24,6 @@ export default function EbookSubmissionDetailPage() {
   const [screening, setScreening] = useState({ decision: 'send_to_review', note: '' });
   const [reviewerForm, setReviewerForm] = useState({ reviewer_ids: [], due_date: '', invitation_note: '' });
   const [reviewerOptions, setReviewerOptions] = useState([]);
-  const [reviewerOptionsError, setReviewerOptionsError] = useState('');
   const [decisionForm, setDecisionForm] = useState({ decision: 'accept', note: '' });
   const [financeForm, setFinanceForm] = useState({ invoice_number: '', currency_code: 'ETB', amount_due: '', amount_paid: '', payment_status: 'pending', payment_reference: '', receipt_number: '', review_note: '' });
   const [productionForm, setProductionForm] = useState({ pdf_ready: false, epub_ready: false, proof_sent_to_author: false, author_proof_approved: false, isbn: '', doi: '', repository_path: '', quality_note: '' });
@@ -34,28 +33,6 @@ export default function EbookSubmissionDetailPage() {
   const canEditor = hasRole(user, ['EBOOK_EDITOR', 'EBOOK_ADMIN']);
   const canFinance = hasRole(user, ['EBOOK_FINANCE_OFFICER', 'EBOOK_ADMIN']);
   const canProduction = hasRole(user, ['EBOOK_DIGITAL_CONTENT_MANAGER', 'EBOOK_ADMIN']);
-
-  const loadReviewerOptions = async () => {
-    if (!canEditor) return;
-    try {
-      setReviewerOptionsError('');
-      const res = await ebookApi.getReviewerOptions();
-      const rows = Array.isArray(res) ? res : (res?.rows || []);
-      setReviewerOptions(rows);
-    } catch (e) {
-      setReviewerOptions([]);
-      setReviewerOptionsError(e?.response?.data?.message || e?.message || 'Failed to load EBOOK_REVIEWER users.');
-    }
-  };
-
-  const toggleReviewer = (uuid) => {
-    setReviewerForm((prev) => ({
-      ...prev,
-      reviewer_ids: prev.reviewer_ids.includes(uuid)
-        ? prev.reviewer_ids.filter((id) => id !== uuid)
-        : [...prev.reviewer_ids, uuid],
-    }));
-  };
 
   const load = async () => {
     setLoading(true);
@@ -73,9 +50,28 @@ export default function EbookSubmissionDetailPage() {
     }
   };
 
-  useEffect(() => { load(); loadReviewerOptions(); }, [id]);
+  useEffect(() => { load(); }, [id]);
 
-  const reviewers = useMemo(() => (JSON.parse(localStorage.getItem('all_users_cache') || '[]') || []).filter(Boolean), []);
+  useEffect(() => {
+    const loadReviewers = async () => {
+      try {
+        const result = await ebookApi.getReviewerOptions();
+        setReviewerOptions(Array.isArray(result) ? result : Array.isArray(result?.rows) ? result.rows : []);
+      } catch (err) {
+        setReviewerOptions([]);
+      }
+    };
+    if (canEditor) loadReviewers();
+  }, [canEditor]);
+
+  const toggleReviewerSelection = (reviewerId) => {
+    setReviewerForm((prev) => ({
+      ...prev,
+      reviewer_ids: prev.reviewer_ids.includes(reviewerId)
+        ? prev.reviewer_ids.filter((id) => id !== reviewerId)
+        : [...prev.reviewer_ids, reviewerId],
+    }));
+  };
 
   const doAction = async (fn, success) => {
     setSaving(true);
@@ -188,33 +184,34 @@ export default function EbookSubmissionDetailPage() {
               <hr />
               <div className="form-group">
                 <label>Select reviewer(s)</label>
-                {reviewerOptionsError ? <div className="alert alert-danger py-2">{reviewerOptionsError}</div> : null}
-                {!reviewerOptionsError && !reviewerOptions.length ? <div className="text-muted small">No EBOOK_REVIEWER users found.</div> : null}
-                <div className="border rounded p-2" style={{maxHeight:'200px', overflowY:'auto'}}>
-                  {reviewerOptions.map((r) => (
-                    <div className="form-check" key={r.uuid}>
+                <div className="border rounded p-2" style={{ maxHeight: '220px', overflowY: 'auto' }}>
+                  {!reviewerOptions.length ? (
+                    <div className="text-muted small">No users with the EBOOK_REVIEWER role were found.</div>
+                  ) : reviewerOptions.map((reviewer) => (
+                    <div className="form-check mb-2" key={reviewer.uuid}>
                       <input
                         className="form-check-input"
                         type="checkbox"
-                        id={`reviewer-${r.uuid}`}
-                        checked={reviewerForm.reviewer_ids.includes(r.uuid)}
-                        onChange={() => toggleReviewer(r.uuid)}
+                        id={`reviewer-${reviewer.uuid}`}
+                        checked={reviewerForm.reviewer_ids.includes(reviewer.uuid)}
+                        onChange={() => toggleReviewerSelection(reviewer.uuid)}
                       />
-                      <label className="form-check-label" htmlFor={`reviewer-${r.uuid}`}>
-                        {(r.reviewer_name || r.email)} {r.email ? `(${r.email})` : ''}
-                        <span className="text-muted"> — active: {r.active_assignment_count || 0}</span>
+                      <label className="form-check-label" htmlFor={`reviewer-${reviewer.uuid}`}>
+                        <strong>{reviewer.full_name || reviewer.email}</strong>
+                        <div className="text-muted small">{reviewer.email || 'No email'} • Active assignments: {reviewer.active_assignment_count ?? 0}</div>
                       </label>
                     </div>
                   ))}
                 </div>
+                <small className="text-muted">Selected reviewers: {reviewerForm.reviewer_ids.length}</small>
               </div>
               <div className="form-group"><label>Due date</label><input type="date" className="form-control" value={reviewerForm.due_date} onChange={(e)=>setReviewerForm({...reviewerForm,due_date:e.target.value})} /></div>
               <div className="form-group"><label>Invitation note</label><textarea className="form-control" rows="2" value={reviewerForm.invitation_note} onChange={(e)=>setReviewerForm({...reviewerForm,invitation_note:e.target.value})} /></div>
-              <button className="btn btn-outline-warning btn-block mb-3" disabled={saving || !reviewerForm.reviewer_ids.length} onClick={()=>doAction(()=>ebookApi.assignReviewer(id, reviewerForm), 'Reviewer assigned.')}>Assign reviewer</button>
+              <button className="btn btn-outline-warning btn-block mb-3" disabled={saving || !reviewerForm.reviewer_ids.length} onClick={()=>doAction(()=>ebookApi.assignReviewer(id, reviewerForm), reviewerForm.reviewer_ids.length > 1 ? 'Reviewers assigned.' : 'Reviewer assigned.')}>Assign reviewer</button>
               <hr />
               <div className="form-group"><label>Editorial decision</label><select className="form-control" value={decisionForm.decision} onChange={(e)=>setDecisionForm({...decisionForm,decision:e.target.value})}><option value="accept">Accept</option><option value="minor_revision">Minor revision</option><option value="major_revision">Major revision</option><option value="reject">Reject</option></select></div>
               <div className="form-group"><label>Decision note</label><textarea className="form-control" rows="2" value={decisionForm.note} onChange={(e)=>setDecisionForm({...decisionForm,note:e.target.value})} /></div>
-              <button className="btn btn-success btn-block" disabled={saving} onClick={()=>doAction(()=>ebookApi.makeDecision(id, decisionForm), 'Editorial decision recorded.')}>Save decision</button>
+              <button className="btn btn-success btn-block" disabled={saving} onClick={()=>doAction(()=>ebookApi.makeDecision(id, { ...decisionForm, decision: String(decisionForm.decision || '').trim().toLowerCase().replace(/\s+/g, '_') }), 'Editorial decision recorded.')}>Save decision</button>
             </div></div> : null}
 
             {canFinance ? <div className="card card-danger card-outline mb-4"><div className="card-header"><h3 className="card-title mb-0">Finance clearance</h3></div><div className="card-body">

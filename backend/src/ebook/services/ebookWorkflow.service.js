@@ -206,6 +206,25 @@ export const ebookWorkflowService = {
     };
   },
 
+  async getReviewerOptions() {
+    const { rows } = await pool.query(
+      `SELECT
+         u.uuid,
+         u.full_name,
+         u.email,
+         COUNT(era.assignment_id) FILTER (WHERE era.status IN ('assigned','accepted'))::int AS active_assignment_count,
+         COUNT(era.assignment_id)::int AS total_assignment_count
+       FROM users u
+       INNER JOIN user_roles ur ON ur.user_id = u.uuid
+       INNER JOIN roles r ON r.uuid = ur.role_id
+       LEFT JOIN ebook_review_assignments era ON era.reviewer_id = u.uuid
+       WHERE UPPER(REPLACE(r.name, ' ', '_')) = 'EBOOK_REVIEWER'
+       GROUP BY u.uuid, u.full_name, u.email
+       ORDER BY u.full_name ASC, u.email ASC`
+    );
+    return rows;
+  },
+
   async getWorkflow(submissionId) {
     const submissionRes = await pool.query(
       `SELECT es.*, a.full_name AS author_name, a.email AS author_email, e.full_name AS editor_name, e.email AS editor_email,
@@ -425,31 +444,37 @@ export const ebookWorkflowService = {
   },
 
   async assignReviewer(submissionId, actorId, payload = {}) {
-    const reviewerIds = Array.from(new Set([
-      ...(Array.isArray(payload.reviewer_ids) ? payload.reviewer_ids : []),
-      ...(payload.reviewer_id ? [payload.reviewer_id] : []),
-    ].filter(Boolean)));
-    if (!reviewerIds.length) throw badRequest("reviewer_id or reviewer_ids is required");
+    const reviewerIds = Array.isArray(payload.reviewer_ids)
+      ? payload.reviewer_ids.filter(Boolean)
+      : payload.reviewer_id
+      ? [payload.reviewer_id]
+      : [];
+    if (!reviewerIds.length) throw badRequest("At least one reviewer is required");
+
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
       const currentRes = await client.query(`SELECT * FROM ebook_submissions WHERE submission_id = $1 FOR UPDATE`, [submissionId]);
       const current = currentRes.rows[0];
       if (!current) throw notFound("Submission not found");
-      const validReviewers = await client.query(
+
+      const reviewerCheck = await client.query(
         `SELECT DISTINCT u.uuid
          FROM users u
          INNER JOIN user_roles ur ON ur.user_id = u.uuid
          INNER JOIN roles r ON r.uuid = ur.role_id
          WHERE u.uuid = ANY($1::uuid[])
-           AND UPPER(REPLACE(TRIM(r.name), ' ', '_')) = 'EBOOK_REVIEWER'`,
+           AND UPPER(REPLACE(r.name, ' ', '_')) = 'EBOOK_REVIEWER'`,
         [reviewerIds]
       );
-      const validIds = validReviewers.rows.map((r) => r.uuid);
-      if (!validIds.length) throw badRequest("No valid EBOOK_REVIEWER users selected");
+      const validReviewerIds = reviewerCheck.rows.map((row) => row.uuid);
+      const invalidReviewerIds = reviewerIds.filter((id) => !validReviewerIds.includes(id));
+      if (invalidReviewerIds.length) {
+        throw badRequest(`Some selected users are not valid reviewers: ${invalidReviewerIds.join(', ')}`);
+      }
 
       const assignments = [];
-      for (const reviewerId of validIds) {
+      for (const reviewerId of reviewerIds) {
         const assignmentRes = await client.query(
           `INSERT INTO ebook_review_assignments (submission_id, reviewer_id, assigned_by, status, due_date, invitation_note)
            VALUES ($1,$2,$3,'assigned',$4,$5)
@@ -471,7 +496,11 @@ export const ebookWorkflowService = {
       );
       await addHistory(client, submissionId, current.status, updateRes.rows[0].status, "assign_reviewer", actorId, payload.invitation_note || null);
       await client.query("COMMIT");
-      return { assignments, submission: updateRes.rows[0] };
+      return {
+        assignments,
+        submission: updateRes.rows[0],
+        assigned_count: assignments.length,
+      };
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;
@@ -547,34 +576,71 @@ export const ebookWorkflowService = {
     }
   },
 
-  async editorialDecision(submissionId, actorId, { decision, note = null }) {
-    const normalizedDecision = String(decision || '').trim().toLowerCase().replace(/\s+/g, '_');
+  async editorialDecision(submissionId, actorId, payload = {}) {
+    const decision = (payload?.decision ?? payload?.recommendation ?? payload?.editorial_decision ?? '')
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '_');
+    const note = payload?.note ?? payload?.comments ?? null;
     const map = {
-      accept: "accepted",
-      minor_revision: "revision_requested",
-      major_revision: "revision_requested",
-      reject: "rejected",
+      accept: 'accepted',
+      minor_revision: 'revision_requested',
+      major_revision: 'revision_requested',
+      reject: 'rejected',
     };
-    const nextStatus = map[normalizedDecision];
-    if (!nextStatus) throw badRequest("Invalid editorial decision");
+    const nextStatus = map[decision];
+    if (!nextStatus) throw badRequest('Decision must be one of accept, minor_revision, major_revision, reject');
+
     const client = await pool.connect();
     try {
-      await client.query("BEGIN");
+      await client.query('BEGIN');
       const currentRes = await client.query(`SELECT * FROM ebook_submissions WHERE submission_id = $1 FOR UPDATE`, [submissionId]);
       const current = currentRes.rows[0];
-      if (!current) throw notFound("Submission not found");
-      const updateRes = await client.query(
-        `UPDATE ebook_submissions
-         SET status = $2, editor_id = COALESCE(editor_id, $3), final_decision = $4, final_decision_note = $5,
-             accepted_at = CASE WHEN $2 = 'accepted' THEN NOW() ELSE accepted_at END, updated_at = NOW()
-         WHERE submission_id = $1 RETURNING *`,
-        [submissionId, nextStatus, actorId, normalizedDecision, note]
+      if (!current) throw notFound('Submission not found');
+
+      const colsRes = await client.query(
+        `SELECT column_name
+           FROM information_schema.columns
+          WHERE table_schema = current_schema()
+            AND table_name = 'ebook_submissions'`
       );
-      await addHistory(client, submissionId, current.status, nextStatus, `editorial_decision.${normalizedDecision}`, actorId, note);
-      await client.query("COMMIT");
+      const cols = new Set(colsRes.rows.map((r) => r.column_name));
+
+      const setParts = [
+        `status = $2`,
+        `editor_id = COALESCE(editor_id, $3)`,
+        `updated_at = NOW()`,
+      ];
+      const values = [submissionId, nextStatus, actorId];
+      let idx = 4;
+
+      if (cols.has('final_decision')) {
+        setParts.push(`final_decision = $${idx}`);
+        values.push(decision);
+        idx += 1;
+      }
+      if (cols.has('final_decision_note')) {
+        setParts.push(`final_decision_note = $${idx}`);
+        values.push(note);
+        idx += 1;
+      }
+      if (cols.has('accepted_at')) {
+        setParts.push(`accepted_at = CASE WHEN $2 = 'accepted' THEN NOW() ELSE accepted_at END`);
+      }
+
+      const updateSql = `
+        UPDATE ebook_submissions
+           SET ${setParts.join(', ')}
+         WHERE submission_id = $1
+         RETURNING *`;
+
+      const updateRes = await client.query(updateSql, values);
+      await addHistory(client, submissionId, current.status, nextStatus, `editorial_decision.${decision}`, actorId, note);
+      await client.query('COMMIT');
       return updateRes.rows[0];
     } catch (error) {
-      await client.query("ROLLBACK");
+      await client.query('ROLLBACK');
       throw error;
     } finally {
       client.release();
