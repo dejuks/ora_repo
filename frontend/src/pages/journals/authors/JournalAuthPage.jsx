@@ -118,7 +118,7 @@ const handleSocialLogin = (provider) => {
   
   // Use relative path - this will work in both development and production
   // as long as the API is on the same domain
-  window.location.href = `/api/auth/${provider}`;
+  window.location.href = `/api/journal/${provider}`;
 };
 
   if (success && !isLogin) {
@@ -183,19 +183,6 @@ const handleSocialLogin = (provider) => {
                 <div style={styles.featureItem}>
                   <span style={styles.featureIcon}>✓</span>
                   <span>Track your impact</span>
-                </div>
-              </div>
-
-              <div style={styles.testimonial}>
-                <p style={styles.testimonialText}>
-                  "The Oromo Research Journal has been instrumental in sharing my work with a global audience. The submission process is seamless and the review process is rigorous."
-                </p>
-                <div style={styles.testimonialAuthor}>
-                  <div style={styles.testimonialAvatar}>Dr. A.B.</div>
-                  <div>
-                    <p style={styles.testimonialName}>Dr. Abebech Bekele</p>
-                    <p style={styles.testimonialRole}>Contributing Author</p>
-                  </div>
                 </div>
               </div>
             </div>
