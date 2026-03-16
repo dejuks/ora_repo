@@ -25,6 +25,7 @@ const WikiArticlePage = () => {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('read');
   const [relatedArticles, setRelatedArticles] = useState([]);
+      const API_URL = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
     fetchArticle();
@@ -34,7 +35,8 @@ const WikiArticlePage = () => {
     setLoading(true);
     try {
       // Fetch article by slug
-      const res = await fetch(`http://localhost:5000/api/wiki/articles/slug/${slug}`);
+
+      const res = await fetch(`${API_URL}/wiki/articles/slug/${slug}`);
       
       if (!res.ok) {
         if (res.status === 404) {
@@ -61,6 +63,8 @@ const WikiArticlePage = () => {
 
   const fetchRelatedArticles = async (categoryId) => {
     try {
+      // dynamically use API_URL from environment variables      const API_URL = process.env.REACT_APP_API_URL;
+      
       const res = await fetch(`http://localhost:5000/api/articles?category=${categoryId}&limit=5`);
       const data = await res.json();
       setRelatedArticles(data.data?.articles || []);
