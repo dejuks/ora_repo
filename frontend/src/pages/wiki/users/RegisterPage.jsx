@@ -13,6 +13,9 @@ const WikiAuthorRegistrationForm = () => {
     password: "",
     confirmPassword: ""
   });
+  // dynamically use API_URL from environment variables
+  const API_URL = process.env.REACT_APP_API_URL;
+
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -85,7 +88,7 @@ const WikiAuthorRegistrationForm = () => {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/wiki/register", {
+      const res = await fetch(`${API_URL}/wiki/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
