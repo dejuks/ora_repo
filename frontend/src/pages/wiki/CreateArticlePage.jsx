@@ -1,132 +1,158 @@
 // CreateArticlePage.jsx
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Navbar from '../../landing/components/Navbar';
-import { FaSave, FaTimes } from 'react-icons/fa';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import Navbar from "../../landing/components/Navbar";
+import { FaSave, FaTimes } from "react-icons/fa";
 
 const CreateArticlePage = () => {
   const navigate = useNavigate();
+const API_URL = process.env.REACT_APP_API_URL;
+
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [authChecking, setAuthChecking] = useState(true);
+  const [error, setError] = useState("");
   const [categories, setCategories] = useState([]);
+
   const [formData, setFormData] = useState({
-    title: '',
-    content: '',
-    summary: '',
-    status: 'draft',
+    title: "",
+    content: "",
+    summary: "",
+    status: "draft",
     categories: [],
-    is_featured: false
+    is_featured: false,
   });
 
   useEffect(() => {
     checkAuth();
-    fetchCategories();
   }, []);
 
   const checkAuth = () => {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-    
-    console.log("🔍 Token exists:", !!token);
-    console.log("🔍 User exists:", !!user);
-    
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
+
     if (!token || !user) {
-      navigate('/wiki/login');
+      navigate("/wiki/login?redirect=/wiki/create-article", { replace: true });
       return;
     }
 
-    // Log token payload for debugging
+    // Optional: check if token expired
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      console.log("🔍 Token payload:", payload);
-    } catch (e) {
-      console.error("❌ Invalid token format");
+      const payload = JSON.parse(atob(token.split(".")[1]));
+
+      if (payload.exp * 1000 < Date.now()) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/wiki/login", { replace: true });
+        return;
+      }
+    } catch (err) {
+      console.error("Invalid token");
+      navigate("/wiki/login", { replace: true });
+      return;
     }
+
+    setAuthChecking(false);
+    fetchCategories();
   };
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/wiki/categories');
-      if (!res.ok) throw new Error('Failed to fetch categories');
+      const res = await fetch(`${API_URL}/wiki/categories`);
+
+      if (!res.ok) throw new Error("Failed to fetch categories");
+
       const data = await res.json();
       setCategories(data.data || []);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error("Error fetching categories:", error);
     }
   };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
     setFormData({
       ...formData,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     });
   };
 
   const handleCategoryChange = (e) => {
-    const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+    const selectedOptions = Array.from(
+      e.target.selectedOptions,
+      (option) => option.value
+    );
+
     setFormData({
       ...formData,
-      categories: selectedOptions
+      categories: selectedOptions,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+
+    setError("");
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
-      
+      const token = localStorage.getItem("token");
+
       if (!token) {
-        setError('Please login first');
-        setTimeout(() => navigate('/wiki/login'), 2000);
+        navigate("/wiki/login");
         return;
       }
 
-      // DEBUG: Log token
-      console.log("📤 Token being sent:", token.substring(0, 20) + "...");
+      const API_URL = process.env.REACT_APP_API_URL;
 
-      const API_URL = 'http://localhost:5000/api/wiki/articles';
-      
-      const res = await fetch(API_URL, {
-        method: 'POST',
+      const res = await fetch(`${API_URL}/wiki/articles`, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
       });
 
-      console.log("📥 Response status:", res.status);
-
       const data = await res.json();
-      console.log("📥 Response data:", data);
 
       if (!res.ok) {
-        throw new Error(data.message || `HTTP error! status: ${res.status}`);
+        throw new Error(data.message || "Failed to create article");
       }
 
       navigate(`/wiki/article/${data.data.slug}`);
     } catch (err) {
-      console.error('❌ Error:', err);
+      console.error("Error:", err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  // Prevent UI flash before auth check
+  if (authChecking) {
+    return (
+      <>
+        <Navbar />
+        <div style={{ padding: "40px", textAlign: "center" }}>
+          Checking authentication...
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <Navbar />
+
       <div style={styles.container}>
         <div style={styles.header}>
           <h1 style={styles.title}>Create New Article</h1>
-          <p style={styles.subtitle}>Share your knowledge with the Oromo Wikipedia community</p>
+          <p style={styles.subtitle}>
+            Share your knowledge with the Oromo Wikipedia community
+          </p>
         </div>
 
-     
         <form onSubmit={handleSubmit} style={styles.form}>
           {error && <div style={styles.error}>{error}</div>}
 
@@ -138,7 +164,6 @@ const CreateArticlePage = () => {
               value={formData.title}
               onChange={handleChange}
               style={styles.input}
-              placeholder="Enter article title"
               required
             />
           </div>
@@ -150,7 +175,6 @@ const CreateArticlePage = () => {
               value={formData.content}
               onChange={handleChange}
               style={styles.textarea}
-              placeholder="Write your article content here..."
               rows={15}
               required
             />
@@ -164,30 +188,30 @@ const CreateArticlePage = () => {
               value={formData.summary}
               onChange={handleChange}
               style={styles.input}
-              placeholder="Briefly describe your changes"
             />
           </div>
 
           <div style={styles.row}>
             <div style={styles.formGroup}>
               <label style={styles.label}>Categories</label>
+
               <select
                 multiple
-                name="categories"
                 value={formData.categories}
                 onChange={handleCategoryChange}
                 style={styles.select}
-                size={5}
               >
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
                 ))}
               </select>
-              <small style={styles.helpText}>Hold Ctrl/Cmd to select multiple</small>
             </div>
 
             <div style={styles.formGroup}>
               <label style={styles.label}>Status</label>
+
               <select
                 name="status"
                 value={formData.status}
@@ -202,15 +226,14 @@ const CreateArticlePage = () => {
           </div>
 
           <div style={styles.checkboxGroup}>
-            <label style={styles.checkboxLabel}>
+            <label>
               <input
                 type="checkbox"
                 name="is_featured"
                 checked={formData.is_featured}
                 onChange={handleChange}
-                style={styles.checkbox}
-              />
-              <span>Mark as featured article</span>
+              />{" "}
+              Mark as featured article
             </label>
           </div>
 
@@ -222,12 +245,17 @@ const CreateArticlePage = () => {
             >
               <FaTimes /> Cancel
             </button>
+
             <button
               type="submit"
               disabled={loading}
               style={styles.submitButton}
             >
-              {loading ? 'Creating...' : <><FaSave /> Create Article</>}
+              {loading ? "Creating..." : (
+                <>
+                  <FaSave /> Create Article
+                </>
+              )}
             </button>
           </div>
         </form>
@@ -238,131 +266,137 @@ const CreateArticlePage = () => {
 
 const styles = {
   container: {
-    maxWidth: '900px',
-    margin: '0 auto',
-    padding: '40px 20px',
+    maxWidth: "900px",
+    margin: "0 auto",
+    padding: "50px 20px",
     fontFamily: "'Inter', sans-serif",
   },
+
   header: {
-    marginBottom: '30px',
+    marginBottom: "35px",
   },
+
   title: {
-    fontSize: '2rem',
-    color: '#0F3D2E',
-    marginBottom: '10px',
+    fontSize: "32px",
+    fontWeight: "700",
+    color: "#0F3D2E",
+    marginBottom: "6px",
   },
+
   subtitle: {
-    color: '#666',
-    fontSize: '1rem',
+    color: "#6c757d",
+    fontSize: "15px",
   },
+
   form: {
-    background: 'white',
-    padding: '30px',
-    borderRadius: '12px',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+    background: "#ffffff",
+    padding: "40px",
+    borderRadius: "14px",
+    boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
   },
+
   formGroup: {
-    marginBottom: '20px',
+    marginBottom: "25px",
   },
+
   label: {
-    display: 'block',
-    marginBottom: '8px',
-    fontWeight: '500',
-    color: '#333',
+    display: "block",
+    marginBottom: "8px",
+    fontWeight: "600",
+    color: "#333",
+    fontSize: "14px",
   },
+
   input: {
-    width: '100%',
-    padding: '12px',
-    border: '2px solid #eaeef2',
-    borderRadius: '8px',
-    fontSize: '1rem',
-    outline: 'none',
+    width: "100%",
+    padding: "14px 16px",
+    fontSize: "15px",
+    borderRadius: "10px",
+    border: "2px solid #e4e7ec",
+    outline: "none",
+    transition: "all 0.25s ease",
+    background: "#fafafa",
   },
+
   textarea: {
-    width: '100%',
-    padding: '12px',
-    border: '2px solid #eaeef2',
-    borderRadius: '8px',
-    fontSize: '1rem',
-    outline: 'none',
-    resize: 'vertical',
-    fontFamily: 'inherit',
+    width: "100%",
+    padding: "16px",
+    fontSize: "15px",
+    borderRadius: "10px",
+    border: "2px solid #e4e7ec",
+    outline: "none",
+    minHeight: "220px",
+    resize: "vertical",
+    background: "#fafafa",
+    lineHeight: "1.6",
   },
+
   row: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '20px',
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "25px",
   },
+
   select: {
-    width: '100%',
-    padding: '12px',
-    border: '2px solid #eaeef2',
-    borderRadius: '8px',
-    fontSize: '1rem',
-    outline: 'none',
-    background: 'white',
+    width: "100%",
+    padding: "12px 14px",
+    borderRadius: "10px",
+    border: "2px solid #e4e7ec",
+    fontSize: "15px",
+    background: "#fafafa",
+    outline: "none",
   },
-  helpText: {
-    display: 'block',
-    marginTop: '5px',
-    color: '#999',
-    fontSize: '0.85rem',
-  },
+
   checkboxGroup: {
-    marginBottom: '20px',
+    marginBottom: "25px",
+    fontSize: "14px",
+    color: "#444",
   },
-  checkboxLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    cursor: 'pointer',
-  },
-  checkbox: {
-    width: '18px',
-    height: '18px',
-    cursor: 'pointer',
-  },
+
   actions: {
-    display: 'flex',
-    gap: '15px',
-    marginTop: '30px',
+    display: "flex",
+    gap: "15px",
+    marginTop: "20px",
   },
+
   submitButton: {
     flex: 1,
-    padding: '14px',
-    background: 'linear-gradient(135deg, #C9A227 0%, #B38F1F 100%)',
-    color: '#0F3D2E',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '1rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
+    padding: "15px",
+    background: "linear-gradient(135deg,#C9A227,#B8961E)",
+    color: "#0F3D2E",
+    border: "none",
+    borderRadius: "10px",
+    fontWeight: "600",
+    fontSize: "15px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "8px",
+    transition: "0.3s",
   },
+
   cancelButton: {
     flex: 1,
-    padding: '14px',
-    background: '#f8f9fa',
-    color: '#666',
-    border: '2px solid #eaeef2',
-    borderRadius: '8px',
-    fontSize: '1rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
+    padding: "15px",
+    background: "#f4f4f4",
+    border: "2px solid #e4e7ec",
+    borderRadius: "10px",
+    fontWeight: "600",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "8px",
   },
+
   error: {
-    background: '#ffebee',
-    color: '#c62828',
-    padding: '12px',
-    borderRadius: '8px',
-    marginBottom: '20px',
+    background: "#fff3f3",
+    color: "#c62828",
+    padding: "12px",
+    borderRadius: "8px",
+    marginBottom: "20px",
+    border: "1px solid #ffcdd2",
   },
 };
 
