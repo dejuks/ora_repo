@@ -209,6 +209,8 @@ function App() {
         <Route path="/wiki/profile/edit" element={<ProtectedRoute><WikiProfileEdit /></ProtectedRoute>} />
         {/* wiki/create no protection */}
         <Route path="/wiki/create" element={<CreateArticlePage />} />
+
+        
         <Route path="/wiki/articles/new" element={<ProtectedRoute><CreateArticlePage /></ProtectedRoute>} />
         <Route path="/wiki/articles/edit/:id" element={<ProtectedRoute><ArticleEdit /></ProtectedRoute>} />
         <Route path="/wiki/articles/drafts" element={<ProtectedRoute><ArticleDraftList /></ProtectedRoute>} />
