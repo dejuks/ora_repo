@@ -135,6 +135,8 @@ import JournalAuthorLoginPage from "./pages/journals/authors/JournalAuthorLoginP
 import ManuscriptContributePage from "./pages/journals/manuscriptions/pages/ManuscriptContributePage";
 import AuthorManuscriptView from "./pages/manuscription/AuthorManuscriptView";
 import UnderReviewAE from "./pages/manuscription/ae/UnderReviewAE";
+import JournalLoginPage from "./pages/journals/authors/JournalLoginPage";
+import JournalRegisterPage from "./pages/journals/authors/JournalRegisterPage";
 
 function App() {
   return (
@@ -305,10 +307,16 @@ function App() {
         <Route path="/wikipedia-dashboard" element={<ProtectedRoute><WikipediaDashboard /></ProtectedRoute>} />
         <Route path="/researcher-dashboard" element={<ProtectedRoute><ResearchersDashboard /></ProtectedRoute>} />
      
+
+     <Route path="/journal/auth/login" element={<JournalLoginPage />} />
+<Route path="/journal/auth/register" element={<JournalRegisterPage />} />
         {/* 404 Not Found - This should be the LAST route */}
         <Route path="*" element={<h1>404 Not Found</h1>} />
       </Routes>
     </BrowserRouter>
+
+
+
   );
 }
 

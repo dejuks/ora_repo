@@ -82,16 +82,16 @@ const handleSubmit = async (e) => {
     const apiBase = process.env.REACT_APP_API_URL || '';
     
     // Construct the full URL
-    const url = `${apiBase}/auth/${endpoint}`;
+    const url = `${apiBase}/journal/${endpoint}`;
     
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    
 
     const data = await res.json();
+
     if (!res.ok) {
       throw new Error(data.message || `${isLogin ? 'Login' : 'Registration'} failed`);
     }
@@ -118,7 +118,7 @@ const handleSocialLogin = (provider) => {
   
   // Use relative path - this will work in both development and production
   // as long as the API is on the same domain
-  window.location.href = `/api/journal/${provider}`;
+  window.location.href = `/api/auth/${provider}`;
 };
 
   if (success && !isLogin) {
