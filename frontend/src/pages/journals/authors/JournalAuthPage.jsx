@@ -59,13 +59,14 @@ const handleSubmit = async (e) => {
     setLoading(false);
     return;
   }
-
   if (!isLogin && !formData.agreeToTerms) {
     setError("You must agree to the Terms of Service and Privacy Policy");
     setLoading(false);
     return;
   }
 
+
+  // try to login or register
   try {
     const endpoint = isLogin ? "login" : "register";
     const payload = isLogin 
