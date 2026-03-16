@@ -95,15 +95,19 @@ export default function Users() {
 
   // Role modal
   const openRoleModal = async (user) => {
-    setRoleModalUser(user);
-    try {
-      const res = await fetchUserRoles(user.uuid);
-      setUserRoles(res.data.map((r) => r.uuid));
-    } catch (err) {
-      console.error(err);
-      Swal.fire("Error", "Failed to load user roles", "error");
-    }
-  };
+  setRoleModalUser(user);
+  try {
+    const res = await fetchUserRoles(user.uuid);
+
+    // ✅ FIX HERE
+    const roles = res.data?.data || [];
+
+    setUserRoles(roles.map((r) => r.uuid));
+  } catch (err) {
+    console.error(err);
+    Swal.fire("Error", "Failed to load user roles", "error");
+  }
+};
 
   const toggleRole = (roleId) => {
     setUserRoles((prev) =>
@@ -163,7 +167,7 @@ export default function Users() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((u, i) => (
+            {Array.isArray(users) && users.map((u, i) => (
                   <tr key={u.uuid}>
                     <td>{i + 1}</td>
                     <td>{u.full_name}</td>
@@ -194,7 +198,7 @@ export default function Users() {
                   </tr>
                 ))}
 
-                {users.length === 0 && (
+                {(!users || users.length === 0) && (
                   <tr>
                     <td colSpan="7" className="text-center text-muted">
                       No users found

@@ -2,14 +2,20 @@ import pool from "../config/db.js";
 
 export const Role = {
   // Get all roles
-  findAll: async () => {
-    const res = await pool.query(
-      `SELECT uuid, name, module_id, created_at
-       FROM roles
-       ORDER BY name`
-    );
-    return res.rows;
-  },
+findAll: async () => {
+  const res = await pool.query(`
+    SELECT
+      r.uuid,
+      r.name,
+      r.module_id,
+      m.name AS module_name,
+      r.created_at
+    FROM roles r
+    LEFT JOIN modules m ON m.uuid = r.module_id
+    ORDER BY m.name, r.name
+  `);
+  return res.rows;
+},
 
   // Get role by UUID
   findById: async (uuid) => {
