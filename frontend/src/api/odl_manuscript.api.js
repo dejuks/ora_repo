@@ -1,7 +1,8 @@
 import axios from "axios";
+  const API_URL = process.env.REACT_APP_API_URL;
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: API_URL,
 });
 
 // attach token if you use auth
@@ -10,6 +11,9 @@ API.interceptors.request.use((req) => {
   if (token) req.headers.Authorization = `Bearer ${token}`;
   return req;
 });
+export const getManuscriptSupporters = async () => {
+  return axios.get("/api/manuscript-supporters");
+};
 
 export const getManuscripts = () => API.get("/manuscripts");
 
