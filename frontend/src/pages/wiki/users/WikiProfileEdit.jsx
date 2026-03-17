@@ -24,6 +24,7 @@ import {
   FaBookOpen,
   FaLanguage
 } from "react-icons/fa";
+  const API_URL = process.env.REACT_APP_API_URL;
 
 const WikiProfileEdit = () => {
   const navigate = useNavigate();
@@ -89,8 +90,8 @@ const WikiProfileEdit = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
 
-      // Fetch user profile
-      const profileRes = await fetch('http://localhost:5000/api/wiki/profile/me', {
+      // Fetch user profile endpoint - Use the new endpoint
+      const profileRes = await fetch(`${API_URL}/wiki/profile/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -198,7 +199,7 @@ const WikiProfileEdit = () => {
         formDataToSend.append('cover', coverFile);
       }
 
-      const res = await fetch('http://localhost:5000/api/wiki/profile/update', {
+      const res = await fetch(`${API_URL}/wiki/profile/update`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`

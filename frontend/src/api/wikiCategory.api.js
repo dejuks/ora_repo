@@ -1,8 +1,10 @@
 import axios from "axios";
 
 // Axios instance with base URL and Authorization header
+  const API_URL = process.env.REACT_APP_API_URL;
+
 const API = axios.create({
-  baseURL: "http://localhost:5000/api/wiki/categories", // <-- correct endpoint for categories
+  baseURL: `${API_URL}/wiki/categories`, // <-- correct endpoint for categories
   headers: {
     Authorization: `Bearer ${localStorage.getItem("token")}`,
   },
