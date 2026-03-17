@@ -25,6 +25,7 @@ import {
   FaBookOpen,
   FaRegClock
 } from "react-icons/fa";
+  const API_URL = process.env.REACT_APP_API_URL;
 
 const WikiDashboard = () => {
   const navigate = useNavigate();
@@ -58,8 +59,8 @@ const fetchDashboardData = async () => {
     setError(null);
     const token = localStorage.getItem('token');
 
-    // Fetch user profile
-    const profileRes = await fetch('http://localhost:5000/api/wiki/profile/me', {
+    // Fetch user profile  endpoint - Use the new endpoint
+    const profileRes = await fetch(`${API_URL}/wiki/profile/me`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     
@@ -70,7 +71,7 @@ const fetchDashboardData = async () => {
 
     // Fetch user activity - Use the new endpoint
     try {
-      const activityRes = await fetch('http://localhost:5000/api/wiki/articles/user/activity?limit=20', {
+      const activityRes = await fetch(`${API_URL}/wiki/articles/user/activity?limit=20`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (activityRes.ok) {
@@ -85,7 +86,7 @@ const fetchDashboardData = async () => {
 
     // Fetch contributions (articles and edits) - Use the new endpoint
     try {
-      const contributionsRes = await fetch('http://localhost:5000/api/wiki/articles/user/contributions', {
+      const contributionsRes = await fetch(`${API_URL}/wiki/articles/user/contributions`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (contributionsRes.ok) {
@@ -105,7 +106,7 @@ const fetchDashboardData = async () => {
 
     // Fetch user stats - Use the new endpoint
     try {
-      const statsRes = await fetch('http://localhost:5000/api/wiki/articles/user/stats', {
+      const statsRes = await fetch(`${API_URL}/wiki/articles/user/stats`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (statsRes.ok) {
