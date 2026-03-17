@@ -15,7 +15,7 @@ export const getAuthors = () =>
 
   export const getUserRoles = async (userId) => {
   try {
-    const response = await api.get(`/users/${userId}/roles`);
+    const response = await api.get(`/user-roles/${userId}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching user roles:", error);

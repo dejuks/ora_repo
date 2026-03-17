@@ -1,9 +1,140 @@
 import React, { useState } from "react";
-import { login } from "../api/auth.api";
+import { login } from "../api/auth.api.js";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
+
+  const getRoleNames = (user) => {
+    return (user.roles || [])
+      .map((r) => (r.role_name || r.name || r.code || "").toUpperCase().trim())
+      .filter(Boolean);
+  };
+
+  const getRedirectPath = (user) => {
+    const roleNames = getRoleNames(user);
+
+    const roleDashboardMap = {
+      // System
+      SUPER_ADMIN: "/admin-dashboard",
+
+      // Library
+      LIBRARY_ADMIN: "/library/admin/dashboard",
+      LIBRARY_MANAGER: "/library/manager/dashboard",
+      LIBRARIAN: "/library/librarian/dashboard",
+      CATALOGER: "/library/cataloger/dashboard",
+      ACQUISITION_OFFICER: "/library/acquisition/dashboard",
+      INVENTORY_MANAGER: "/library/inventory/dashboard",
+      CONTENT_UPLOADER: "/library/uploader/dashboard",
+      LIBRARY_MEMBER: "/library/member/dashboard",
+
+      // eBook
+      EBOOK_ADMIN: "/ebook/dashboard",
+      EBOOK_EDITOR: "/ebook/dashboard",
+      EBOOK_AUTHOR: "/ebook/dashboard",
+      EBOOK_REVIEWER: "/ebook/dashboard",
+      EBOOK_DIGITAL_CONTENT_MANAGER: "/ebook/dashboard",
+      EBOOK_DCM: "/ebook/dashboard",
+      EBOOK_FINANCE_OFFICER: "/ebook/dashboard",
+      PUBLIC_READER: "/ebook/publications",
+      EBOOK_PUBLIC_READER: "/ebook/publications",
+
+      // Journal
+      JOURNAL_MANAGER: "/journal-dashboard",
+      JOURNAL_AUTHOR: "/journal/author-dashboard",
+      JOURNAL_EIC: "/journal-dashboard",
+      JOURNAL_ASSOCIATE_EDITOR: "/journal-dashboard",
+      JOURNAL_REFREE: "/journal-dashboard",
+      REVIEWER: "/journal-dashboard",
+      EDITOR: "/journal-dashboard",
+
+      // Repository
+      REPOSITORY_ADMIN: "/repository/admin/dashboard",
+      REPOSITORY_CURATOR: "/repository/curator/dashboard",
+      REPOSITORY_CONTENT_REVIEWER: "/repository/reviewer/dashboard",
+      RESEARCHER_AUTHOR: "/repository/author/dashboard",
+      REPOSITORY_PUBLIC_USER: "/repository/search",
+      REPOSITORY_GUEST: "/repository/search",
+
+      // Oromo Wiki
+      ORO_WIKI_MANAGER: "/wiki/dashboard",
+      ORO_WIKI_EDITOR: "/wiki/dashboard",
+      ORO_WIKI_BUREAUCRAT: "/wiki/dashboard",
+      ORO_WIKI_OVERSIGHTER: "/wiki/dashboard",
+      ORO_WIKI_PUBLISHER: "/wiki/dashboard",
+
+      // Researcher Network
+      RESEARCHER_NETWORK_MANAGER: "/research-network/dashboard",
+      RESEARCHER_NETWORK_MODERATOR: "/research-network/dashboard",
+    };
+
+    const rolePriority = [
+      "SUPER_ADMIN",
+
+      "LIBRARY_ADMIN",
+      "LIBRARY_MANAGER",
+      "LIBRARIAN",
+      "CATALOGER",
+      "ACQUISITION_OFFICER",
+      "INVENTORY_MANAGER",
+      "CONTENT_UPLOADER",
+      "LIBRARY_MEMBER",
+
+      "EBOOK_ADMIN",
+      "EBOOK_EDITOR",
+      "EBOOK_DIGITAL_CONTENT_MANAGER",
+      "EBOOK_DCM",
+      "EBOOK_FINANCE_OFFICER",
+      "PUBLIC_READER",
+      "EBOOK_PUBLIC_READER",
+      "EBOOK_REVIEWER",
+      "EBOOK_AUTHOR",
+
+      "JOURNAL_MANAGER",
+      "JOURNAL_EIC",
+      "JOURNAL_ASSOCIATE_EDITOR",
+      "EDITOR",
+      "REVIEWER",
+      "JOURNAL_REFREE",
+      "JOURNAL_AUTHOR",
+
+      "REPOSITORY_ADMIN",
+      "REPOSITORY_CURATOR",
+      "REPOSITORY_CONTENT_REVIEWER",
+      "RESEARCHER_AUTHOR",
+      "REPOSITORY_PUBLIC_USER",
+      "REPOSITORY_GUEST",
+
+      "ORO_WIKI_MANAGER",
+      "ORO_WIKI_BUREAUCRAT",
+      "ORO_WIKI_OVERSIGHTER",
+      "ORO_WIKI_PUBLISHER",
+      "ORO_WIKI_EDITOR",
+
+      "RESEARCHER_NETWORK_MANAGER",
+      "RESEARCHER_NETWORK_MODERATOR",
+    ];
+
+    // First try to match by role
+    const matchedRole = rolePriority.find((role) => roleNames.includes(role));
+    if (matchedRole && roleDashboardMap[matchedRole]) {
+      return roleDashboardMap[matchedRole];
+    }
+
+    // Fallback to module-based redirection
+    const module = user.module_name?.toLowerCase().trim();
+    const moduleDashboardMap = {
+      "system-wide": "/admin-dashboard",
+      "ebook publishing": "/ebook/dashboard",
+      "journal management": "/journal-dashboard",
+      "library management": "/library/member/dashboard",
+      "ora repository management": "/repository/admin/dashboard",
+      "oromo wikipedia": "/wiki/dashboard",
+      "researchers' network": "/research-network/dashboard",
+    };
+
+    return moduleDashboardMap[module] || "/dashboard";
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -16,19 +147,8 @@ export default function Login() {
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
-      const module = user.module_name?.toLowerCase().trim();
-
-      const dashboardMap = {
-        "system-wide": "/admin-dashboard",
-        "ebook publishing": "/ebook-dashboard",
-        "journal management": "/journal-dashboard",
-        "library management": "/library-dashboard",
-        "ora repository management": "/repository/admin/dashboard",
-        "oromo wikipedia": "/wikipedia-dashboard",
-        "researchers' network": "/researcher-dashboard",
-      };
-
-      window.location.href = dashboardMap[module] || "/dashboard";
+      const redirectTo = getRedirectPath(user);
+      window.location.href = redirectTo;
     } catch (err) {
       alert(err.response?.data?.message || "Invalid email or password");
     } finally {
@@ -38,7 +158,6 @@ export default function Login() {
 
   return (
     <div className="ora-login-page">
-      {/* ====== STYLES ====== */}
       <style>{`
         .ora-login-page {
           min-height: 100vh;
@@ -60,7 +179,6 @@ export default function Login() {
           overflow: hidden;
         }
 
-        /* LEFT – Illustration */
         .ora-illustration {
           background: linear-gradient(135deg, #eef2f3, #dfe9f3);
           padding: 50px;
@@ -85,7 +203,6 @@ export default function Login() {
           font-size: 0.95rem;
         }
 
-        /* RIGHT – Login Card */
         .ora-login-card {
           padding: 60px 50px;
         }
@@ -127,7 +244,22 @@ export default function Login() {
           margin-top: 18px;
         }
 
-        /* Mobile */
+        .register-link {
+          text-align: center;
+          margin-top: 15px;
+          font-size: 0.9rem;
+        }
+
+        .register-link a {
+          color: #2c5364;
+          text-decoration: none;
+          font-weight: 600;
+        }
+
+        .register-link a:hover {
+          text-decoration: underline;
+        }
+
         @media (max-width: 900px) {
           .ora-login-wrapper {
             grid-template-columns: 1fr;
@@ -139,28 +271,21 @@ export default function Login() {
         }
       `}</style>
 
-      {/* ====== CONTENT ====== */}
       <div className="ora-login-wrapper">
-        {/* LEFT PANEL */}
         <div className="ora-illustration">
-          <img
-            src="/login.png" width={340}
-            alt="Secure Login Illustration"
-          />
+          <img src="/login.png" width={340} alt="Secure Login Illustration" />
           <h2>Welcome Back 👋</h2>
           <p>
-            Access ORA securely.  
+            Access ORA securely.
             Research, knowledge, and collaboration — all in one place.
           </p>
         </div>
 
-        {/* RIGHT PANEL */}
         <div className="ora-login-card">
           <div className="ora-logo">ORA</div>
           <p className="ora-subtitle">Sign in to continue</p>
 
           <form onSubmit={submit}>
-            {/* Email */}
             <div className="form-group mb-3">
               <input
                 type="email"
@@ -174,7 +299,6 @@ export default function Login() {
               />
             </div>
 
-            {/* Password */}
             <div className="form-group mb-4">
               <input
                 type="password"
@@ -188,7 +312,6 @@ export default function Login() {
               />
             </div>
 
-            {/* Button */}
             <button
               type="submit"
               className="btn btn-ora btn-block text-white"
@@ -201,6 +324,10 @@ export default function Login() {
           <a href="/forgot-password" className="forgot-link">
             Forgot your password?
           </a>
+          
+          <div className="register-link">
+            <a href="/ebook/author-register">Register as public eBook author</a>
+          </div>
         </div>
       </div>
     </div>

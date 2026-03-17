@@ -2,11 +2,31 @@ import pool from "../config/db.js";
 import bcrypt from "bcryptjs";
 
 export const User = {
-  findAll: async () => {
+  findAll: async (filters = {}) => {
+    const params = [];
+    const conditions = [];
+
+    if (filters.role_id) {
+      params.push(filters.role_id);
+      conditions.push(`EXISTS (
+        SELECT 1 FROM user_roles ur
+        WHERE ur.user_id = users.uuid AND ur.role_id = $${params.length}
+      )`);
+    }
+
+    if (filters.module_id) {
+      params.push(filters.module_id);
+      conditions.push(`users.module_id = $${params.length}`);
+    }
+
+    const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+
     const res = await pool.query(`
       SELECT uuid, full_name, email, phone, gender, dob, module_id, photo
-      FROM users ORDER BY full_name
-    `);
+      FROM users
+      ${whereClause}
+      ORDER BY full_name
+    `, params);
     return res.rows;
   },
 
