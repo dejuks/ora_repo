@@ -321,13 +321,11 @@ export default function Login() {
             </button>
           </form>
 
-          <a href="/forgot-password" className="forgot-link">
-            Forgot your password?
+          <a href="/" className="forgot-link">
+            back to home
           </a>
           
-          <div className="register-link">
-            <a href="/ebook/author-register">Register as public eBook author</a>
-          </div>
+           
         </div>
       </div>
     </div>

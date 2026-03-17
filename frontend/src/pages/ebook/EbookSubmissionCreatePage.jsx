@@ -6,15 +6,9 @@ import ebookApi from "../../api/ebook.api";
 const currentYear = new Date().getFullYear();
 const blankForm = {
   title: "",
-  subtitle: "",
   abstract: "",
   keywords: "",
-  category: "",
   language: "English",
-  publication_year: String(currentYear),
-  target_audience: "Researchers and students",
-  requires_bpc: false,
-  bpc_amount: 0,
 };
 
 const allowedExtensions = ["pdf", "doc", "docx", "epub", "zip", "txt"];
@@ -37,7 +31,6 @@ export default function EbookSubmissionCreatePage() {
   const validations = useMemo(() => {
     const errors = {};
     const keywords = keywordList(form.keywords);
-    const year = Number(form.publication_year);
     const fileExt = manuscriptFile?.name?.split(".")?.pop()?.toLowerCase();
 
     if (!form.title.trim()) errors.title = "Title is required.";
@@ -49,16 +42,7 @@ export default function EbookSubmissionCreatePage() {
     if (!keywords.length) errors.keywords = "Add at least 3 keywords separated by commas.";
     else if (keywords.length < 3) errors.keywords = "Please provide at least 3 keywords.";
 
-    if (!form.category.trim()) errors.category = "Category is required.";
     if (!form.language.trim()) errors.language = "Language is required.";
-
-    if (!Number.isInteger(year) || year < 1900 || year > currentYear + 2) {
-      errors.publication_year = `Enter a valid year between 1900 and ${currentYear + 2}.`;
-    }
-
-    if (form.requires_bpc && Number(form.bpc_amount) < 0) {
-      errors.bpc_amount = "BPC amount cannot be negative.";
-    }
 
     if (!manuscriptFile) errors.file = "Please upload the manuscript file.";
     else if (fileExt && !allowedExtensions.includes(fileExt)) {
@@ -72,7 +56,7 @@ export default function EbookSubmissionCreatePage() {
     { label: "Title added", done: !!form.title.trim() },
     { label: "Abstract completed", done: form.abstract.trim().length >= 80 },
     { label: "At least 3 keywords", done: keywordList(form.keywords).length >= 3 },
-    { label: "Category selected", done: !!form.category.trim() },
+    { label: "Language selected", done: !!form.language.trim() },
     { label: "Manuscript file attached", done: !!manuscriptFile },
   ];
 
@@ -85,7 +69,7 @@ export default function EbookSubmissionCreatePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setTouched({ title: true, abstract: true, keywords: true, category: true, language: true, publication_year: true, bpc_amount: true, file: true });
+    setTouched({ title: true, abstract: true, keywords: true, language: true, file: true });
     setServerError("");
 
     if (!isValid) return;
@@ -94,8 +78,6 @@ export default function EbookSubmissionCreatePage() {
     try {
       const created = await ebookApi.createSubmission({
         ...form,
-        publication_year: form.publication_year ? Number(form.publication_year) : null,
-        bpc_amount: form.requires_bpc ? Number(form.bpc_amount || 0) : 0,
         keywords: keywordList(form.keywords).join(", "),
         file: manuscriptFile,
         file_role: "manuscript",
@@ -138,11 +120,6 @@ export default function EbookSubmissionCreatePage() {
                 </div>
 
                 <div className="form-group">
-                  <label>Subtitle</label>
-                  <input className="form-control" value={form.subtitle} onChange={(e)=>setField("subtitle", e.target.value)} placeholder="Optional subtitle" />
-                </div>
-
-                <div className="form-group">
                   <label>Abstract <span className="text-danger">*</span></label>
                   <textarea rows="6" className={`form-control ${touched.abstract && validations.abstract ? "is-invalid" : ""}`} value={form.abstract} onChange={(e)=>setField("abstract", e.target.value)} onBlur={()=>setTouched((prev)=>({...prev,abstract:true}))} placeholder="Provide a clear summary of the manuscript." />
                   <div className="d-flex justify-content-between mt-1">
@@ -159,43 +136,10 @@ export default function EbookSubmissionCreatePage() {
                   {feedback("keywords")}
                 </div>
 
-                <div className="form-row">
-                  <div className="form-group col-md-6">
-                    <label>Category <span className="text-danger">*</span></label>
-                    <input className={`form-control ${touched.category && validations.category ? "is-invalid" : ""}`} value={form.category} onChange={(e)=>setField("category", e.target.value)} onBlur={()=>setTouched((prev)=>({...prev,category:true}))} placeholder="Example: Education, Health, Engineering" />
-                    {feedback("category")}
-                  </div>
-                  <div className="form-group col-md-6">
-                    <label>Language <span className="text-danger">*</span></label>
-                    <input className={`form-control ${touched.language && validations.language ? "is-invalid" : ""}`} value={form.language} onChange={(e)=>setField("language", e.target.value)} onBlur={()=>setTouched((prev)=>({...prev,language:true}))} placeholder="English" />
-                    {feedback("language")}
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group col-md-4">
-                    <label>Publication Year <span className="text-danger">*</span></label>
-                    <input type="number" className={`form-control ${touched.publication_year && validations.publication_year ? "is-invalid" : ""}`} value={form.publication_year} onChange={(e)=>setField("publication_year", e.target.value)} onBlur={()=>setTouched((prev)=>({...prev,publication_year:true}))} min="1900" max={currentYear + 2} />
-                    {feedback("publication_year")}
-                  </div>
-                  <div className="form-group col-md-8">
-                    <label>Target Audience</label>
-                    <input className="form-control" value={form.target_audience} onChange={(e)=>setField("target_audience", e.target.value)} placeholder="Who is this ebook intended for?" />
-                  </div>
-                </div>
-
-                <div className="form-row align-items-center">
-                  <div className="form-group col-md-4">
-                    <div className="form-check mt-4">
-                      <input id="requires_bpc" type="checkbox" className="form-check-input" checked={form.requires_bpc} onChange={(e)=>setField("requires_bpc", e.target.checked)} />
-                      <label htmlFor="requires_bpc" className="form-check-label">Requires BPC</label>
-                    </div>
-                  </div>
-                  <div className="form-group col-md-8">
-                    <label>BPC Amount</label>
-                    <input type="number" className={`form-control ${touched.bpc_amount && validations.bpc_amount ? "is-invalid" : ""}`} value={form.bpc_amount} onChange={(e)=>setField("bpc_amount", e.target.value)} min="0" disabled={!form.requires_bpc} />
-                    {feedback("bpc_amount")}
-                  </div>
+                <div className="form-group">
+                  <label>Language <span className="text-danger">*</span></label>
+                  <input className={`form-control ${touched.language && validations.language ? "is-invalid" : ""}`} value={form.language} onChange={(e)=>setField("language", e.target.value)} onBlur={()=>setTouched((prev)=>({...prev,language:true}))} placeholder="English" />
+                  {feedback("language")}
                 </div>
 
                 <div className="form-group">
@@ -233,7 +177,6 @@ export default function EbookSubmissionCreatePage() {
                 <ul className="mb-0 mt-2 pl-3">
                   <li>Use the final manuscript version.</li>
                   <li>Keep keywords specific and searchable.</li>
-                  <li>Check whether BPC applies to this submission.</li>
                 </ul>
               </div>
             </div>

@@ -1,9 +1,11 @@
 // pages/EbookDashboard.jsx
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import api from "../../api/axios"; // Your configured axios instance
 
 export default function EbookDashboard() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState([]);
   const [featuredEbooks, setFeaturedEbooks] = useState([]);
@@ -16,6 +18,21 @@ export default function EbookDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Auth modal state
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState("login"); // "login" or "register"
+  const [authForm, setAuthForm] = useState({
+    full_name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    phone: "",
+    gender: "",
+    dob: ""
+  });
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -73,12 +90,182 @@ export default function EbookDashboard() {
     }
   };
 
+  const handleSubmitManuscript = () => {
+    const token = localStorage.getItem("token");
+    
+    if (token) {
+      // If logged in, navigate to submission page
+      navigate("/ebook/submissions/create");
+    } else {
+      // If not logged in, show auth modal
+      setShowAuthModal(true);
+      setAuthMode("login");
+      setAuthError("");
+    }
+  };
+
+  const handleAuthInputChange = (e) => {
+    setAuthForm({
+      ...authForm,
+      [e.target.name]: e.target.value
+    });
+    setAuthError("");
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError("");
+
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email: authForm.email,
+          password: authForm.password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      // Store token and user data
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // Close modal
+      setShowAuthModal(false);
+      
+      // Navigate to submission page
+      navigate("/ebook/submissions/create");
+      
+      // Reset form
+      setAuthForm({
+        full_name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        phone: "",
+        gender: "",
+        dob: ""
+      });
+
+    } catch (err) {
+      setAuthError(err.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError("");
+
+    // Validation
+    if (authForm.password !== authForm.confirmPassword) {
+      setAuthError("Passwords do not match");
+      setAuthLoading(false);
+      return;
+    }
+
+    if (authForm.password.length < 6) {
+      setAuthError("Password must be at least 6 characters");
+      setAuthLoading(false);
+      return;
+    }
+
+    try {
+      // Create FormData for user registration (supports file upload if needed)
+      const formData = new FormData();
+      formData.append("full_name", authForm.full_name);
+      formData.append("email", authForm.email);
+      formData.append("password", authForm.password);
+      formData.append("phone", authForm.phone || "");
+      formData.append("gender", authForm.gender || "");
+      formData.append("dob", authForm.dob || "");
+      
+      // Assign author role (using the author role ID from your system)
+      // You might want to fetch this dynamically or set it from env
+      formData.append("module_id", "ebook"); // or appropriate module ID
+      
+      // Note: The role assignment might be handled differently in your system
+      // You may need to assign the author role after user creation
+
+      const response = await fetch("http://localhost:5000/api/users", {
+        method: "POST",
+        body: formData
+        // Don't set Content-Type header - it will be set automatically with boundary
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.error === "Email already registered" || data.error?.includes("duplicate")) {
+          throw new Error("This email is already registered. Please login instead.");
+        }
+        throw new Error(data.error || data.message || "Registration failed");
+      }
+
+      // Registration successful - now login
+      const loginResponse = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email: authForm.email,
+          password: authForm.password
+        })
+      });
+
+      const loginData = await loginResponse.json();
+
+      if (!loginResponse.ok) {
+        throw new Error(loginData.message || "Auto-login failed");
+      }
+
+      // Store token and user data
+      localStorage.setItem("token", loginData.token);
+      localStorage.setItem("user", JSON.stringify(loginData.user));
+
+      // Close modal
+      setShowAuthModal(false);
+      
+      // Navigate to submission page
+      navigate("/ebook/submissions/create");
+      
+      // Reset form
+      setAuthForm({
+        full_name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        phone: "",
+        gender: "",
+        dob: ""
+      });
+
+    } catch (err) {
+      setAuthError(err.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
   const handleDownload = async (ebookId) => {
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch(`http://localhost:5000/api/ebook/download/${ebookId}`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("token")}`
+          "Authorization": token ? `Bearer ${token}` : ""
         }
       });
       
@@ -138,6 +325,14 @@ export default function EbookDashboard() {
               and cultural literature in multiple formats
             </p>
             
+            {/* Submit Manuscript Button */}
+            <button 
+              onClick={handleSubmitManuscript}
+              style={styles.submitButton}
+            >
+              📝 Submit Your Manuscript
+            </button>
+
             {/* Search Bar */}
             <form onSubmit={handleSearch} style={styles.searchContainer}>
               <input
@@ -339,6 +534,179 @@ export default function EbookDashboard() {
           </p>
         </footer>
       </div>
+
+      {/* Auth Modal */}
+      {showAuthModal && (
+        <div style={styles.modalOverlay} onClick={() => setShowAuthModal(false)}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <button 
+              onClick={() => setShowAuthModal(false)}
+              style={styles.modalClose}
+            >
+              ×
+            </button>
+            
+            <h2 style={styles.modalTitle}>
+              {authMode === "login" ? "Welcome Back!" : "Join as Author"}
+            </h2>
+            
+            <p style={styles.modalSubtitle}>
+              {authMode === "login" 
+                ? "Login to submit your manuscript" 
+                : "Create an account to start publishing your eBooks"}
+            </p>
+
+            {authError && (
+              <div style={styles.authError}>
+                {authError}
+              </div>
+            )}
+
+            <form onSubmit={authMode === "login" ? handleLogin : handleRegister} style={styles.authForm}>
+              {authMode === "register" && (
+                <>
+                  <div style={styles.formGroup}>
+                    <label style={styles.formLabel}>Full Name *</label>
+                    <input
+                      type="text"
+                      name="full_name"
+                      value={authForm.full_name}
+                      onChange={handleAuthInputChange}
+                      style={styles.formInput}
+                      required
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+
+                  <div style={styles.formGroup}>
+                    <label style={styles.formLabel}>Phone (Optional)</label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={authForm.phone}
+                      onChange={handleAuthInputChange}
+                      style={styles.formInput}
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+
+                  <div style={styles.formRow}>
+                    <div style={{...styles.formGroup, flex: 1}}>
+                      <label style={styles.formLabel}>Gender</label>
+                      <select
+                        name="gender"
+                        value={authForm.gender}
+                        onChange={handleAuthInputChange}
+                        style={styles.formInput}
+                      >
+                        <option value="">Select</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+
+                    <div style={{...styles.formGroup, flex: 1}}>
+                      <label style={styles.formLabel}>Date of Birth</label>
+                      <input
+                        type="date"
+                        name="dob"
+                        value={authForm.dob}
+                        onChange={handleAuthInputChange}
+                        style={styles.formInput}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Email *</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={authForm.email}
+                  onChange={handleAuthInputChange}
+                  style={styles.formInput}
+                  required
+                  placeholder="Enter your email"
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Password *</label>
+                <input
+                  type="password"
+                  name="password"
+                  value={authForm.password}
+                  onChange={handleAuthInputChange}
+                  style={styles.formInput}
+                  required
+                  placeholder={authMode === "login" ? "Enter your password" : "Create a password (min. 6 characters)"}
+                  minLength={authMode === "register" ? 6 : undefined}
+                />
+              </div>
+
+              {authMode === "register" && (
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>Confirm Password *</label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={authForm.confirmPassword}
+                    onChange={handleAuthInputChange}
+                    style={styles.formInput}
+                    required
+                    placeholder="Confirm your password"
+                  />
+                </div>
+              )}
+
+              <button 
+                type="submit" 
+                style={styles.authButton}
+                disabled={authLoading}
+              >
+                {authLoading ? (
+                  <span style={styles.buttonLoader}>⏳ Processing...</span>
+                ) : (
+                  authMode === "login" ? "Login" : "Create Account"
+                )}
+              </button>
+            </form>
+
+            <div style={styles.authSwitch}>
+              {authMode === "login" ? (
+                <p>
+                  Don't have an account?{" "}
+                  <button onClick={() => {
+                    setAuthMode("register");
+                    setAuthError("");
+                  }} style={styles.switchButton}>
+                    Register as Author
+                  </button>
+                </p>
+              ) : (
+                <p>
+                  Already have an account?{" "}
+                  <button onClick={() => {
+                    setAuthMode("login");
+                    setAuthError("");
+                  }} style={styles.switchButton}>
+                    Login here
+                  </button>
+                </p>
+              )}
+            </div>
+
+            <div style={styles.authFooter}>
+              <p style={styles.authFooterText}>
+                By continuing, you agree to our Terms of Service and Privacy Policy
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -448,9 +816,27 @@ const styles = {
   subtitle: {
     fontSize: "1.1rem",
     lineHeight: 1.6,
-    margin: "0 auto 30px",
+    margin: "0 auto 20px",
     opacity: 0.95,
     maxWidth: "700px",
+  },
+  submitButton: {
+    padding: "15px 40px",
+    background: "#C9A227",
+    color: "#0F3D2E",
+    border: "none",
+    borderRadius: "50px",
+    fontSize: "1.1rem",
+    fontWeight: "700",
+    cursor: "pointer",
+    margin: "0 auto 20px",
+    display: "inline-block",
+    boxShadow: "0 5px 20px rgba(0,0,0,0.3)",
+    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+    ":hover": {
+      transform: "translateY(-2px)",
+      boxShadow: "0 8px 25px rgba(0,0,0,0.4)",
+    },
   },
   searchContainer: {
     display: "flex",
@@ -743,15 +1129,6 @@ const styles = {
     display: "block",
     marginBottom: "15px",
   },
-  feature: {
-    textAlign: "center",
-    padding: "20px",
-  },
-  featureIcon: {
-    fontSize: "3rem",
-    display: "block",
-    marginBottom: "15px",
-  },
 
   // Newsletter
   newsletterSection: {
@@ -811,6 +1188,147 @@ const styles = {
     color: "white",
     opacity: 0.7,
     fontSize: "0.95rem",
+    margin: 0,
+  },
+
+  // Auth Modal Styles
+  modalOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+    backdropFilter: "blur(5px)",
+  },
+  modal: {
+    background: "white",
+    borderRadius: "20px",
+    padding: "40px",
+    maxWidth: "500px",
+    width: "90%",
+    maxHeight: "90vh",
+    overflowY: "auto",
+    position: "relative",
+    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+  },
+  modalClose: {
+    position: "absolute",
+    top: "15px",
+    right: "20px",
+    background: "none",
+    border: "none",
+    fontSize: "2rem",
+    cursor: "pointer",
+    color: "#5a6a7a",
+    ":hover": {
+      color: "#1a2639",
+    },
+  },
+  modalTitle: {
+    fontSize: "1.8rem",
+    margin: "0 0 10px",
+    color: "#0F3D2E",
+    fontWeight: "700",
+  },
+  modalSubtitle: {
+    fontSize: "1rem",
+    color: "#5a6a7a",
+    margin: "0 0 25px",
+  },
+  authError: {
+    backgroundColor: "#fee",
+    color: "#c33",
+    padding: "12px",
+    borderRadius: "8px",
+    marginBottom: "20px",
+    fontSize: "0.95rem",
+    border: "1px solid #fcc",
+  },
+  authForm: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "15px",
+  },
+  formGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "5px",
+  },
+  formRow: {
+    display: "flex",
+    gap: "10px",
+  },
+  formLabel: {
+    fontSize: "0.95rem",
+    fontWeight: "600",
+    color: "#1a2639",
+  },
+  formInput: {
+    padding: "12px 15px",
+    border: "2px solid #eaeef2",
+    borderRadius: "10px",
+    fontSize: "1rem",
+    transition: "border-color 0.3s ease",
+    outline: "none",
+    ":focus": {
+      borderColor: "#C9A227",
+    },
+  },
+  authButton: {
+    background: "#C9A227",
+    color: "#0F3D2E",
+    border: "none",
+    borderRadius: "10px",
+    padding: "14px",
+    fontSize: "1.1rem",
+    fontWeight: "700",
+    cursor: "pointer",
+    marginTop: "10px",
+    transition: "transform 0.3s ease, background 0.3s ease",
+    ":hover": {
+      background: "#b88c1f",
+      transform: "translateY(-2px)",
+    },
+    ":disabled": {
+      opacity: 0.7,
+      cursor: "not-allowed",
+    },
+  },
+  buttonLoader: {
+    display: "inline-block",
+  },
+  authSwitch: {
+    marginTop: "20px",
+    textAlign: "center",
+    color: "#5a6a7a",
+    fontSize: "0.95rem",
+  },
+  switchButton: {
+    background: "none",
+    border: "none",
+    color: "#C9A227",
+    fontWeight: "600",
+    cursor: "pointer",
+    textDecoration: "underline",
+    fontSize: "0.95rem",
+    ":hover": {
+      color: "#b88c1f",
+    },
+  },
+  authFooter: {
+    marginTop: "20px",
+    textAlign: "center",
+    borderTop: "1px solid #eaeef2",
+    paddingTop: "20px",
+  },
+  authFooterText: {
+    fontSize: "0.8rem",
+    color: "#5a6a7a",
     margin: 0,
   },
 };

@@ -98,6 +98,8 @@ import AdminGroupDetails from "./pages/researcher/groups/AdminGroupDetails";
 import AssignedReviewDetails from "./pages/journals/reviewer/AssignedReviewDetails";
 import Home from "./landing/pages/Home";
 import Repository from "./landing/pages/Repository";
+import EbookLanding from "./landing/pages/Ebooks.jsx";
+
 import Network from "./landing/pages/Network";
 import JournalPage from "./landing/pages/JournalPage";
 import JournalDetailPage from "./landing/pages/PublicManuscriptDetailPage";
@@ -193,6 +195,7 @@ function App() {
         <Route path="/journal/author-login" element={<JournalAuthorLoginPage />} />
         <Route path="/manuscripts/contribute" element={<ManuscriptContributePage />} />
         <Route path="/repository" element={<Repository />} />
+        <Route path="/ebooks" element={<EbookLanding />} />
         <Route path="/library" element={<LibraryPage />} />
         <Route path="/network" element={<Network />} />
         <Route path="/wikipedia" element={<OromoWikipedia />} />
