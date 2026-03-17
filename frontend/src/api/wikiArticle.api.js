@@ -1,11 +1,12 @@
 // api/wikiArticle.api.js
 import axios from "axios";
+  const API_URL = process.env.REACT_APP_API_URL;
 
 // Create Axios instance with dynamic token
 const getAPI = () => {
   const token = localStorage.getItem("token");
   return axios.create({
-    baseURL: "http://localhost:5000/api/wiki/articles",
+    baseURL: `${API_URL}/wiki/articles`,
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
