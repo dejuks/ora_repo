@@ -3,7 +3,8 @@ import { Role } from "../models/role.model.js";
 // Get all roles
 export const getRoles = async (req, res) => {
   try {
-    const roles = await Role.findAll();
+    const { module: moduleFilter } = req.query;
+    const roles = await Role.findAll(moduleFilter);
     res.json(roles);
   } catch (err) {
     console.error(err);

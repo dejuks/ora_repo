@@ -1,4 +1,4 @@
-import api from "./api";
+import api from "./api.js";
 
 export const getMaterialTypes = () => api.get("/library/material-types");
 export const createMaterialType = (data) => api.post("/library/material-types", data);

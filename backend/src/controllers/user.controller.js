@@ -1,7 +1,7 @@
 import { User } from "../models/user.model.js";
 
-export const getUsers = async (_, res) => {
-  res.json(await User.findAll());
+export const getUsers = async (req, res) => {
+  res.json(await User.findAll(req.query));
 };
 
 export const getUserById = async (req, res) => {

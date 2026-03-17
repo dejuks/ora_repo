@@ -2,7 +2,9 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
+import multer from "multer";
 
+import authRoutes from "./routes/auth.routes.js";
 import roleRoutes from "./routes/role.routes.js";
 
 import repositoryRoutes from "./repository/items/routes/repositoryItem.routes.js";
@@ -37,20 +39,19 @@ import connectionRoutes from "./researcher/routes/connection.route.js";
 import publicUserRoutes from "./publicUsers/routes/publicUser.routes.js";
 import eicDecisionRoutes from "./eic/routes/eic.decision.routes.js";
 import paymentRoutes from "./eic/routes/payment.routes.js";
-import ebookAuthorRoutes from "./ebooks/routes/ebookAuthorRoutes.js";
-import publicManuscription  from "./manuscription/routes/public.manuscripts.routes.js";
-
-
+import publicManuscription from "./manuscription/routes/public.manuscripts.routes.js";
 
 import userRoutes from "./routes/user.routes.js";
 import permissionRoutes from "./routes/permission.routes.js";
 import rolePermissionRoutes from "./routes/rolePermission.routes.js";
 import userRoleRoutes from "./routes/userRole.routes.js";
 import moduleRoutes from "./routes/module.routes.js";
+
 import libraryRoutes from "./library/routes/library.routes.js";
+import systemSettingRoutes from "./routes/systemSetting.routes.js";
+import publisherExternalRoutes from "./routes/publisher.routes.js";
 import ebookRoutes from "./ebook/routes/ebook.routes.js";
 import ebookPublicRoutes from "./ebook/routes/ebookPublic.routes.js";
-
 
 dotenv.config();
 
@@ -61,8 +62,10 @@ const app = express();
 ======================= */
 app.use(
   cors({
-    origin: true, // ⚠️ better for production behind nginx
+    origin: "http://localhost:3000",
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
   })
 );
 
@@ -75,10 +78,7 @@ app.use(express.urlencoded({ extended: true }));
 /* =======================
    STATIC FILES
 ======================= */
-app.use(
-  "/uploads",
-  express.static(path.join(process.cwd(), "uploads"))
-);
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.set("trust proxy", 1);
 
@@ -86,6 +86,7 @@ app.set("trust proxy", 1);
    API ROUTES
 ======================= */
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/permissions", permissionRoutes);
 app.use("/api/role-permissions", rolePermissionRoutes);
@@ -97,7 +98,6 @@ app.use("/api/journals", journalRoutes);
 app.use("/api", journalSectionRoutes);
 
 app.use("/api/manuscript-statuses", manuscriptStatusRoutes);
-
 app.use("/api/manuscripts", manuscriptRoutes);
 app.use("/api/public-manuscripts", publicManuscription);
 app.use("/api/files", ManuscriptFileRoute);
@@ -117,8 +117,6 @@ app.use("/api/wiki/categories", wikiCategoryRoutes);
 app.use("/api/wiki/media", wikiMediaRoute);
 app.use("/api/wiki", wikiRoutes);
 
-app.use("/api/ebooks", ebookAuthorRoutes);
-
 app.use("/api/researcher", researcherRoutes);
 app.use("/api/authors", authorRoutes);
 app.use("/api/researcher/groups", groupResearcherRoutes);
@@ -135,10 +133,7 @@ app.use("/api/system/settings", systemSettingRoutes);
 app.use("/api/publisher", publisherExternalRoutes);
 app.use("/api/ebook", ebookRoutes);
 app.use("/api/ebook-public", ebookPublicRoutes);
-
-/* LIBRARY */
 app.use("/api/library", libraryRoutes);
-
 
 /* =======================
    DEFAULT ROUTE
@@ -148,10 +143,58 @@ app.get("/api/ora-researcher", (req, res) => {
 });
 
 /* =======================
+   ERROR HANDLING
+======================= */
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ message: "API route not found." });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error(err);
+
+  if (err instanceof multer.MulterError) {
+    const message = err.code === "LIMIT_FILE_SIZE" 
+      ? "Uploaded file is too large." 
+      : err.message || "File upload failed.";
+    return res.status(400).json({ message, code: err.code });
+  }
+
+  if (err?.message === "Invalid file type") {
+    return res.status(400).json({ 
+      message: "Invalid file type. Please upload PDF, EPUB, DOC, DOCX, ZIP, TXT, PNG, or JPG files." 
+    });
+  }
+
+  if (err?.code === "23505") {
+    return res.status(409).json({ 
+      message: "This record already exists or duplicates a unique value." 
+    });
+  }
+
+  if (err?.code === "23503") {
+    return res.status(400).json({ 
+      message: "The requested record references data that does not exist." 
+    });
+  }
+
+  if (err?.code === "23502") {
+    return res.status(400).json({ 
+      message: `Missing required field: ${err.column || "unknown"}.` 
+    });
+  }
+
+  return res.status(err?.status || 500).json({
+    message: err?.message || "Internal server error.",
+  });
+});
+
+/* =======================
    SERVER START
 ======================= */
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

@@ -1,8 +1,7 @@
-// src/api/auth.api.js
 import axios from "axios";
 
 const API = axios.create({
-baseURL: process.env.REACT_APP_API_URL,
+  baseURL: "http://localhost:5000/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -13,4 +12,8 @@ export const login = (data) => {
     email: data.email,
     password: data.password,
   });
+};
+
+export const registerEbookAuthor = (data) => {
+  return API.post("/auth/ebook-author-register", data);
 };

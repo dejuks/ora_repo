@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { logout } from "../../utils/auth";
+import { logout } from "../../utils/auth.js";
+import ebookApi from "../../api/ebook.api";
 
 /* ===============================
    MODULE UUIDS
@@ -12,6 +13,7 @@ const MODULES = {
   ORO_WIKI: "643dd068-b8d7-4cc1-bb14-ec42f11180fc",
   REPOSITORY: "87efa5b1-59dd-4c1e-8168-c82a519cb167",
   RESEARCHER_NETWORK: "e35249ea-4f4f-4a2d-9389-4903a6e1ad64",
+  EBOOK: "aeca9002-e3e1-498d-a9da-34066db00744",
 };
 
 /* ===============================
@@ -20,7 +22,7 @@ const MODULES = {
 const ROLES = {
   SUPER_ADMIN: "bf22a62f-e672-4e88-9c28-fa1eee3e0e22",
   EDITOR: "33333333-aaaa-bbbb-cccc-333333333333",
-  LIBRARY_MANAGER: "5042b3f2-2cd6-4a1b-8015-6774c3956409",
+  LIBRARY_MANAGER_UUID: "5042b3f2-2cd6-4a1b-8015-6774c3956409",
   RESEARCHER_NETWORK_MANAGER: "d2db77c2-177c-44e6-921a-d635abd674d3",
 
   JOURNAL_MANAGER: "311b2831-99d3-426b-9a7c-6453756d5d9a",
@@ -30,6 +32,28 @@ const ROLES = {
   JOURNAL_ASSOCIATE_EDITOR: "45494844-658a-4837-8df6-f6fc61348bbb",
   JOURNAL_REFREE: "30d22914-dc7f-4532-ba19-31be2beb2e9d",
 
+  // Library Roles
+  LIBRARY_ADMIN: "LIBRARY_ADMIN",
+  LIBRARY_MANAGER: "LIBRARY_MANAGER",
+  LIBRARIAN: "LIBRARIAN",
+  CATALOGER: "CATALOGER",
+  ACQUISITION_OFFICER: "ACQUISITION_OFFICER",
+  INVENTORY_MANAGER: "INVENTORY_MANAGER",
+  CONTENT_UPLOADER: "CONTENT_UPLOADER",
+  LIBRARY_MEMBER: "LIBRARY_MEMBER",
+  EXTERNAL_PUBLISHER: "EXTERNAL_PUBLISHER",
+
+  // Ebook Roles
+  EBOOK_ADMIN: "EBOOK_ADMIN",
+  EBOOK_AUTHOR: "EBOOK_AUTHOR",
+  EBOOK_EDITOR: "EBOOK_EDITOR",
+  EBOOK_REVIEWER: "EBOOK_REVIEWER",
+  EBOOK_DIGITAL_CONTENT_MANAGER: "EBOOK_DIGITAL_CONTENT_MANAGER",
+  EBOOK_DCM: "EBOOK_DCM",
+  EBOOK_FINANCE_OFFICER: "EBOOK_FINANCE_OFFICER",
+  PUBLIC_READER: "PUBLIC_READER",
+  EBOOK_PUBLIC_READER: "EBOOK_PUBLIC_READER",
+
   // Repository Roles
   REPOSITORY_ADMIN: "5205b388-a2e4-4e40-baae-8fe018e08d18",
   REPOSITORY_CURATOR: "7047bc22-6575-436c-9777-e06869004a4a",
@@ -38,187 +62,431 @@ const ROLES = {
   REPOSITORY_PUBLIC_USER: "bcb471d4-e59c-45f3-b512-e7c17a03c46c",
   REPOSITORY_GUEST: "efdda7b9-6884-42c7-b6f3-bed7ab4eb92e",
 
+  // Oromo Wiki Roles
   ORO_WIKI_MANAGER: "f06cb194-d9cf-4fb1-9ce8-55ded280e9b9",
   ORO_WIKI_EDITOR: "7caffcac-18e8-4682-8341-7c405071551c",
   ORO_WIKI_BUREAUCRAT: "faa28d6c-de7f-41ce-961a-6c975885f47a",
   ORO_WIKI_OVERSIGHTER: "5d46563f-a72c-433c-9115-4219c9e16a6c",
   ORO_WIKI_PUBLISHER: "8c7747ae-837d-425e-874b-fb97cf7776e6",
 
-  //Researcher Network Roles
+  // Researcher Network Roles
   RESEARCHER_NETWORK_MODERATOR: "ee6bebf7-5961-4917-9752-8ad704d40c77",
 };
+
+function normalizeRoleName(value) {
+  return (value || "").toString().trim().toUpperCase().replace(/\s+/g, "_");
+}
+
+function buildLibraryRoutes() {
+  const A = ROLES.LIBRARY_ADMIN;
+  const M = [ROLES.LIBRARY_MANAGER, ROLES.LIBRARY_MANAGER_UUID];
+  const L = ROLES.LIBRARIAN;
+  const C = ROLES.CATALOGER;
+  const AQ = ROLES.ACQUISITION_OFFICER;
+  const I = ROLES.INVENTORY_MANAGER;
+  const U = ROLES.CONTENT_UPLOADER;
+  const MB = ROLES.LIBRARY_MEMBER;
+  const P = ROLES.EXTERNAL_PUBLISHER;
+
+  return [
+    {
+      name: "Dashboards",
+      icon: "fas fa-tachometer-alt",
+      subMenu: [
+        { name: "Admin Dashboard", path: "/library/admin/dashboard", icon: "fas fa-user-shield", roles: [A] },
+        { name: "Manager Dashboard", path: "/library/manager/dashboard", icon: "fas fa-user-tie", roles: M },
+        { name: "Librarian Dashboard", path: "/library/librarian/dashboard", icon: "fas fa-user-graduate", roles: [L] },
+        { name: "Cataloger Dashboard", path: "/library/cataloger/dashboard", icon: "fas fa-tags", roles: [C] },
+        { name: "Acquisition Dashboard", path: "/library/acquisition/dashboard", icon: "fas fa-shopping-cart", roles: [AQ] },
+        { name: "Inventory Dashboard", path: "/library/inventory/dashboard", icon: "fas fa-warehouse", roles: [I] },
+        { name: "Uploader Dashboard", path: "/library/uploader/dashboard", icon: "fas fa-upload", roles: [U] },
+        { name: "Member Dashboard", path: "/library/member/dashboard", icon: "fas fa-user", roles: [MB] },
+      ],
+    },
+    {
+      name: "Administration",
+      icon: "fas fa-crown",
+      roles: [A],
+      subMenu: [
+        { name: "Library Users", path: "/library/admin/users", icon: "fas fa-users-cog", roles: [A] },
+        { name: "Create User", path: "/library/users/create", icon: "fas fa-user-plus", roles: [A] },
+        { name: "Roles & Permissions", path: "/library/roles", icon: "fas fa-key", roles: [A] },
+        { name: "System Logs", path: "/library/audit-logs", icon: "fas fa-history", roles: [A] },
+        { name: "Security Alerts", path: "/library/admin/security-alerts", icon: "fas fa-shield-alt", roles: [A] },
+        { name: "System Settings", path: "/library/admin/system-settings", icon: "fas fa-cogs", roles: [A] },
+      ],
+    },
+    {
+      name: "Library Settings",
+      icon: "fas fa-sliders-h",
+      roles: [A, ...M, L, C, I],
+      subMenu: [
+        { name: "Library Settings", path: "/library/settings", icon: "fas fa-tools", roles: [A] },
+        { name: "Material Types", path: "/library/settings/material-types", icon: "fas fa-layer-group", roles: [A, C] },
+        { name: "Categories", path: "/library/settings/categories", icon: "fas fa-folder-tree", roles: [A, C] },
+        { name: "Publishers", path: "/library/settings/publishers", icon: "fas fa-building", roles: [A, C] },
+        { name: "Languages", path: "/library/settings/languages", icon: "fas fa-language", roles: [A, C] },
+        { name: "Subjects", path: "/library/settings/subjects", icon: "fas fa-book-open", roles: [A, C] },
+        { name: "Contributors", path: "/library/settings/contributors", icon: "fas fa-users", roles: [A, C] },
+        { name: "Branches", path: "/library/settings/branches", icon: "fas fa-code-branch", roles: [A, L] },
+        { name: "Locations", path: "/library/settings/locations", icon: "fas fa-map-marker-alt", roles: [A, L, I] },
+        { name: "Member Types", path: "/library/settings/member-types", icon: "fas fa-id-card", roles: [A, ...M] },
+      ],
+    },
+    {
+      name: "Management & Reports",
+      icon: "fas fa-chart-line",
+      roles: [A, ...M],
+      subMenu: [
+        { name: "Policies", path: "/library/policies", icon: "fas fa-file-contract", roles: [A, ...M] },
+        { name: "Summary Reports", path: "/library/reports", icon: "fas fa-chart-pie", roles: [A, ...M] },
+        { name: "Usage Reports", path: "/library/manager/usage-reports", icon: "fas fa-chart-bar", roles: [A, ...M] },
+        { name: "Loan Reports", path: "/library/manager/loan-reports", icon: "fas fa-hand-holding-heart", roles: [A, ...M] },
+        { name: "Inventory Reports", path: "/library/manager/inventory-reports", icon: "fas fa-clipboard-list", roles: [A, ...M] },
+        { name: "Acquisition Approvals", path: "/library/acquisitions/approvals", icon: "fas fa-check-double", roles: [A, ...M] },
+      ],
+    },
+    {
+      name: "Catalog & Circulation",
+      icon: "fas fa-book",
+      roles: [A, ...M, L, C, I, AQ, MB],
+      subMenu: [
+        { name: "OPAC Search", path: "/library/opac", icon: "fas fa-search", roles: [A, ...M, L, C, I, AQ, MB] },
+        { name: "Browse Catalog", path: "/library/books", icon: "fas fa-books", roles: [A, ...M, L, C, I, AQ, MB] },
+        { name: "All Books", path: "/library/books/all", icon: "fas fa-list", roles: [A, ...M, L, C] },
+        { name: "Add Book", path: "/library/books/new", icon: "fas fa-plus-circle", roles: [A, ...M, L, C] },
+        { name: "Catalog Metadata", path: "/library/books/metadata", icon: "fas fa-tags", roles: [A, ...M, L, C] },
+        { name: "Cataloging Tools", path: "/library/cataloger/tools", icon: "fas fa-tools", roles: [A, ...M, C] },
+        { name: "Book Copies", path: "/library/copies", icon: "fas fa-copy", roles: [A, ...M, L, C, I] },
+        { name: "Circulation Desk", path: "/library/circulation/desk", icon: "fas fa-desktop", roles: [A, ...M, L] },
+        { name: "Loans", path: "/library/loans", icon: "fas fa-hand-holding", roles: [A, ...M, L] },
+        { name: "Holds / Reservations", path: "/library/holds", icon: "fas fa-calendar-check", roles: [A, ...M, L] },
+        { name: "Fines & Fees", path: "/library/fines", icon: "fas fa-dollar-sign", roles: [A, ...M, L] },
+        { name: "Borrowing History", path: "/library/history", icon: "fas fa-history", roles: [A, ...M, L, MB] },
+      ],
+    },
+    {
+      name: "Acquisitions",
+      icon: "fas fa-truck",
+      roles: [A, ...M, AQ],
+      subMenu: [
+        { name: "Requests", path: "/library/acquisitions/requests", icon: "fas fa-clipboard-list", roles: [A, ...M, AQ] },
+        { name: "Orders", path: "/library/acquisitions/orders", icon: "fas fa-shopping-cart", roles: [A, ...M, AQ] },
+        { name: "Deliveries", path: "/library/acquisitions/deliveries", icon: "fas fa-truck-loading", roles: [A, ...M, AQ] },
+        { name: "Vendors", path: "/library/vendors", icon: "fas fa-store", roles: [A, ...M, AQ] },
+      ],
+    },
+    {
+      name: "Inventory",
+      icon: "fas fa-boxes",
+      roles: [A, ...M, I, L, C],
+      subMenu: [
+        { name: "Inventory Report", path: "/library/inventory/report", icon: "fas fa-file-alt", roles: [A, ...M, I, L] },
+        { name: "Audits", path: "/library/inventory/audits", icon: "fas fa-clipboard-check", roles: [A, ...M, I, L] },
+        { name: "Missing Items", path: "/library/inventory/missing", icon: "fas fa-question-circle", roles: [A, ...M, I, L] },
+        { name: "Damaged Items", path: "/library/inventory/damaged", icon: "fas fa-exclamation-triangle", roles: [A, ...M, I, L] },
+        { name: "Tags / Barcodes", path: "/library/inventory/tags", icon: "fas fa-qrcode", roles: [A, ...M, I, C, L] },
+      ],
+    },
+    {
+      name: "Digital Library",
+      icon: "fas fa-cloud-upload-alt",
+      roles: [A, ...M, L, U, MB, P],
+      subMenu: [
+        { name: "Digital Resources", path: "/library/digital", icon: "fas fa-cloud", roles: [A, ...M, L, U, MB, P] },
+        { name: "Upload Resource", path: "/library/digital/new", icon: "fas fa-upload", roles: [A, ...M, L, U, P] },
+        { name: "Metadata Management", path: "/library/digital/metadata", icon: "fas fa-tags", roles: [A, ...M, L, U, P] },
+        { name: "Access Rights", path: "/library/digital/access", icon: "fas fa-key", roles: [A, ...M, L] },
+        { name: "Approvals", path: "/library/digital/approvals", icon: "fas fa-check-circle", roles: [A, ...M, L] },
+        { name: "Collections", path: "/library/digital/collections", icon: "fas fa-folder", roles: [A, ...M, L] },
+        { name: "Workflow Tracking", path: "/library/digital/workflow", icon: "fas fa-tasks", roles: [A, ...M, L, U] },
+        { name: "Usage Analytics", path: "/library/digital/analytics", icon: "fas fa-chart-line", roles: [A, ...M, L, U] },
+        { name: "Member Digital Portal", path: "/library/member/digital", icon: "fas fa-user", roles: [MB] },
+        { name: "Publisher Packages", path: "/library/digital/publisher-packages", icon: "fas fa-box", roles: [A, ...M, L, P] },
+      ],
+    },
+    {
+      name: "My Library",
+      icon: "fas fa-id-card",
+      roles: [MB],
+      subMenu: [
+        { name: "My Account", path: "/library/account", icon: "fas fa-user-circle", roles: [MB] },
+        { name: "My Loans", path: "/library/my-loans", icon: "fas fa-hand-holding", roles: [MB] },
+        { name: "My Holds", path: "/library/my-holds", icon: "fas fa-calendar-check", roles: [MB] },
+        { name: "My Fines", path: "/library/my-fines", icon: "fas fa-dollar-sign", roles: [MB] },
+        { name: "Borrowing History", path: "/library/history", icon: "fas fa-history", roles: [MB] },
+        { name: "Digital Library", path: "/library/member/digital", icon: "fas fa-cloud", roles: [MB] },
+      ],
+    },
+  ];
+}
+
+function isReviewerOverdue(row) {
+  if (!row?.due_date) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(row.due_date);
+  due.setHours(0, 0, 0, 0);
+  return due < today && ["assigned", "accepted"].includes(String(row.status || "").toLowerCase());
+}
+
+function getReviewerCounts(rows) {
+  const safeRows = Array.isArray(rows) ? rows : [];
+  return {
+    all: safeRows.length,
+    pending: safeRows.filter((row) => row.status === "assigned").length,
+    accepted: safeRows.filter((row) => row.status === "accepted").length,
+    rejected: safeRows.filter((row) => row.status === "declined").length,
+    completed: safeRows.filter((row) => row.status === "submitted").length,
+    overdue: safeRows.filter((row) => isReviewerOverdue(row)).length,
+  };
+}
+
+function withReviewerCount(name, count) {
+  return `${name} (${count ?? 0})`;
+}
+
+function buildEbookRoutes() {
+  const A = ROLES.EBOOK_ADMIN;
+  const AU = ROLES.EBOOK_AUTHOR;
+  const E = ROLES.EBOOK_EDITOR;
+  const R = ROLES.EBOOK_REVIEWER;
+  const D = ROLES.EBOOK_DIGITAL_CONTENT_MANAGER;
+  const DX = ROLES.EBOOK_DCM;
+  const F = ROLES.EBOOK_FINANCE_OFFICER;
+  const PR = ROLES.PUBLIC_READER;
+  const EPR = ROLES.EBOOK_PUBLIC_READER;
+
+  return [
+    { 
+      name: "Dashboard", 
+      path: "/ebook/dashboard", 
+      icon: "fas fa-tachometer-alt",
+      roles: [A, AU, E, R, D, DX, F, PR, EPR] 
+    },
+    {
+      name: "Author Workspace",
+      icon: "fas fa-user-edit",
+      roles: [AU, A],
+      subMenu: [
+        { name: "My Submissions", path: "/ebook/my-submissions", icon: "fas fa-file-alt", roles: [AU, A] },
+        { name: "Revision Requests", path: "/ebook/my-revisions", icon: "fas fa-edit", roles: [AU, A] },
+        { name: "Payments & Waivers", path: "/ebook/my-payments", icon: "fas fa-credit-card", roles: [AU, A] },
+        { name: "Proof Approvals", path: "/ebook/my-proofs", icon: "fas fa-check-circle", roles: [AU, A] },
+        { name: "Rejected by Editor", path: "/ebook/my-rejected", icon: "fas fa-times-circle", roles: [AU, A] },
+        { name: "Create Submission", path: "/ebook/submissions/create", icon: "fas fa-plus-circle", roles: [AU, A] },
+        { name: "All Manuscripts", path: "/ebook/submissions", icon: "fas fa-list", roles: [AU, A] },
+      ],
+    },
+    {
+      name: "Editorial",
+      icon: "fas fa-pen-fancy",
+      roles: [E, A],
+      subMenu: [
+        { name: "Screening Queue", path: "/ebook/editor/screening", icon: "fas fa-filter", roles: [E, A] },
+        { name: "Review Monitoring", path: "/ebook/editor/reviews", icon: "fas fa-eye", roles: [E, A] },
+        { name: "Accepted & Handoff", path: "/ebook/editor/handoff", icon: "fas fa-handshake", roles: [E, A] },
+        { name: "Reviewer Manager", path: "/ebook/reviewer-manager", icon: "fas fa-users-cog", roles: [E, A] },
+        { name: "All Submissions", path: "/ebook/submissions", icon: "fas fa-list", roles: [E, A] },
+      ],
+    },
+    {
+      name: "Reviewer",
+      icon: "fas fa-star",
+      roles: [R, A],
+      subMenu: [
+        { name: "My Assigned Submissions", path: "/ebook/reviewer", icon: "fas fa-inbox", roles: [R, A] },
+        { name: "Pending Assignments", path: "/ebook/reviewer/pending", icon: "fas fa-clock", roles: [R, A] },
+        { name: "Accepted Assignments", path: "/ebook/reviewer/accepted", icon: "fas fa-check", roles: [R, A] },
+        { name: "Rejected Assignments", path: "/ebook/reviewer/rejected", icon: "fas fa-times", roles: [R, A] },
+        { name: "Completed Reviews", path: "/ebook/reviewer/completed", icon: "fas fa-check-double", roles: [R, A] },
+        { name: "Overdue Assignments", path: "/ebook/reviewer/overdue", icon: "fas fa-exclamation-triangle", roles: [R, A] },
+      ],
+    },
+    {
+      name: "Finance",
+      icon: "fas fa-coins",
+      roles: [F, A],
+      subMenu: [
+        { name: "Finance Dashboard", path: "/ebook/finance", icon: "fas fa-chart-line", roles: [F, A] },
+      ],
+    },
+    {
+      name: "Production",
+      icon: "fas fa-industry",
+      roles: [D, DX, A],
+      subMenu: [
+        { name: "Production Queue", path: "/ebook/production", icon: "fas fa-tasks", roles: [D, DX, A] },
+        { name: "Publication Management", path: "/ebook/management/publications", icon: "fas fa-book", roles: [D, DX, A] },
+      ],
+    },
+    {
+      name: "Administration",
+      icon: "fas fa-user-shield",
+      roles: [A],
+      subMenu: [
+        { name: "Ebook Admin", path: "/ebook/admin", icon: "fas fa-crown", roles: [A] },
+      ],
+    },
+    {
+      name: "Public Reader",
+      icon: "fas fa-book-reader",
+      roles: [A, AU, E, R, D, DX, F, PR, EPR],
+      subMenu: [
+        { name: "Public Catalog", path: "/ebook/publications", icon: "fas fa-book-open", roles: [A, AU, E, R, D, DX, F, PR, EPR] },
+      ],
+    },
+  ];
+}
 
 export default function Sidebar() {
   const user = JSON.parse(localStorage.getItem("user") || "null");
   const location = useLocation();
   const navigate = useNavigate();
   const [expandedMenus, setExpandedMenus] = useState({});
+  const [reviewerCounts, setReviewerCounts] = useState({ all: 0, pending: 0, accepted: 0, rejected: 0, completed: 0, overdue: 0 });
 
-  if (!user) return null;
+  // Always call hooks at the top level, before any conditional returns
+  const moduleId = user?.module_id;
+  const userRoleIds = user?.roles?.map((r) => r.role_id) || [];
+  const userRoleNames =
+    user?.roles
+      ?.map((r) => normalizeRoleName(r.role_name || r.name || r.code))
+      .filter(Boolean) || [];
 
-  const moduleId = user.module_id;
-  const userRoleIds = user.roles?.map((r) => r.role_id) || [];
+  const hasRole = (allowedRoles = []) =>
+    allowedRoles.some((allowed) => {
+      const raw = (allowed || "").toString();
+      if (!raw) return false;
+      return raw.includes("-") ? userRoleIds.includes(raw) : userRoleNames.includes(normalizeRoleName(raw));
+    });
 
-  const toggleMenu = (label) => {
-    setExpandedMenus((prev) => ({ ...prev, [label]: !prev[label] }));
-  };
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/");
 
-  const isActive = (path) =>
-    location.pathname === path || location.pathname.startsWith(path + "/");
+  // useEffect for fetching reviewer counts - always called
+  useEffect(() => {
+    // If no user, don't fetch
+    if (!user) return;
+    
+    let active = true;
+    const isEbookModule = user?.module_id === MODULES.EBOOK;
+    const canSeeReviewerMenu = hasRole([ROLES.EBOOK_REVIEWER, ROLES.EBOOK_ADMIN]);
 
-  /* ===============================
-     FILTER ROUTES BY ROLE
-================================ */
+    if (!isEbookModule || !canSeeReviewerMenu) return undefined;
+
+    ebookApi
+      .getReviewerDashboard()
+      .then((result) => {
+        if (!active) return;
+        setReviewerCounts(getReviewerCounts(result?.assignments || []));
+      })
+      .catch(() => {
+        if (!active) return;
+        setReviewerCounts({ all: 0, pending: 0, accepted: 0, rejected: 0, completed: 0, overdue: 0 });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [user, userRoleIds.join(","), userRoleNames.join(",")]); // Add proper dependencies
+
   const filterRoutesByRole = (routes) =>
     routes
       .map((route) => {
-        if (!route.roles.some((r) => userRoleIds.includes(r))) return null;
+        if (route.roles && !hasRole(route.roles)) return null;
 
         if (route.subMenu) {
-          const children = route.subMenu.filter((c) =>
-            c.roles ? c.roles.some((r) => userRoleIds.includes(r)) : true,
-          );
-          if (!children.length) return null;
-          return { ...route, subMenu: children };
+          let visibleChildren = route.subMenu.filter((sub) => !sub.roles || hasRole(sub.roles));
+          
+          // Apply reviewer counts to Reviewer menu items
+          if (route.name === "Reviewer") {
+            visibleChildren = visibleChildren.map((sub) => {
+              const countMap = {
+                "/ebook/reviewer": reviewerCounts.all,
+                "/ebook/reviewer/pending": reviewerCounts.pending,
+                "/ebook/reviewer/accepted": reviewerCounts.accepted,
+                "/ebook/reviewer/rejected": reviewerCounts.rejected,
+                "/ebook/reviewer/completed": reviewerCounts.completed,
+                "/ebook/reviewer/overdue": reviewerCounts.overdue,
+              };
+              return { ...sub, name: withReviewerCount(sub.name, countMap[sub.path] ?? 0) };
+            });
+          }
+          
+          if (!visibleChildren.length) return null;
+          return { ...route, subMenu: visibleChildren };
         }
         return route;
       })
       .filter(Boolean);
 
-  // MODULE ROUTES (same as before - keep your existing routes object)
+  // Module Routes (combining all from both files)
   const moduleRoutes = {
     [MODULES.SYSTEM_WIDE]: [
-      // Dashboard
       {
-        type: "single",
-        path: "/admin-dashboard",
         name: "Dashboard",
+        path: "/admin-dashboard",
         icon: "fas fa-tachometer-alt",
         roles: [ROLES.SUPER_ADMIN],
       },
-
-      // User Management
       {
         name: "User Management",
         icon: "fas fa-users",
         roles: [ROLES.SUPER_ADMIN],
         subMenu: [
-          {
-            name: "All Users",
-            path: "/users",
-            roles: [ROLES.SUPER_ADMIN],
-            icon: "fas fa-list",
-          },
-          {
-            name: "Roles",
-            path: "/roles",
-            roles: [ROLES.SUPER_ADMIN],
-            icon: "fas fa-user-tag",
-          },
-          {
-            name: "Modules",
-            path: "/modules",
-            roles: [ROLES.SUPER_ADMIN],
-            icon: "fas fa-th",
-          },
+          { name: "All Users", path: "/users", icon: "fas fa-list", roles: [ROLES.SUPER_ADMIN] },
+          { name: "Roles", path: "/roles", icon: "fas fa-user-tag", roles: [ROLES.SUPER_ADMIN] },
+          { name: "Permissions", path: "/permissions", icon: "fas fa-key", roles: [ROLES.SUPER_ADMIN] },
+          { name: "Modules", path: "/modules", icon: "fas fa-th", roles: [ROLES.SUPER_ADMIN] },
         ],
       },
-
-      // System Settings
       {
         name: "System Settings",
         icon: "fas fa-cogs",
         roles: [ROLES.SUPER_ADMIN],
         subMenu: [
-          {
-            name: "General Settings",
-            path: "/settings/general",
-            roles: [ROLES.SUPER_ADMIN],
-            icon: "fas fa-sliders-h",
-          },
-          {
-            name: "Permissions",
-            path: "/permissions",
-            roles: [ROLES.SUPER_ADMIN],
-            icon: "fas fa-key",
-          },
-          {
-            name: "Audit Logs",
-            path: "/settings/logs",
-            roles: [ROLES.SUPER_ADMIN],
-            icon: "fas fa-file-alt",
-          },
+          { name: "General Settings", path: "/settings/general", icon: "fas fa-sliders-h", roles: [ROLES.SUPER_ADMIN] },
+          { name: "Audit Logs", path: "/settings/logs", icon: "fas fa-file-alt", roles: [ROLES.SUPER_ADMIN] },
         ],
       },
-
-      // Reports
       {
         name: "Reports",
         icon: "fas fa-chart-pie",
         roles: [ROLES.SUPER_ADMIN],
         subMenu: [
-          {
-            name: "User Activity",
-            path: "/reports/user-activity",
-            roles: [ROLES.SUPER_ADMIN],
-            icon: "fas fa-user-clock",
-          },
-          {
-            name: "System Usage",
-            path: "/reports/system-usage",
-            roles: [ROLES.SUPER_ADMIN],
-            icon: "fas fa-server",
-          },
+          { name: "User Activity", path: "/reports/user-activity", icon: "fas fa-user-clock", roles: [ROLES.SUPER_ADMIN] },
+          { name: "System Usage", path: "/reports/system-usage", icon: "fas fa-server", roles: [ROLES.SUPER_ADMIN] },
         ],
       },
     ],
 
-    // ================= JOURNAL MODULE =================
     [MODULES.JOURNAL]: [
-      /* ================= DASHBOARD ================= */
       {
         name: "Dashboard",
         path: "/journal-dashboard",
         icon: "fas fa-tachometer-alt",
         roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR, ROLES.REVIEWER],
       },
-
-      /* ================= USERS & ROLES ================= */
       {
         name: "Users & Roles",
         icon: "fas fa-users",
         roles: [ROLES.JOURNAL_MANAGER],
         subMenu: [
-          {
-            name: "All Users",
-            path: "/journal/users",
-            icon: "fas fa-user",
-          },
-          {
-            name: "Add New User",
-            path: "/module/users/add",
-            icon: "fas fa-user-tag",
-          },
+          { name: "All Users", path: "/journal/users", icon: "fas fa-user" },
+          { name: "Add New User", path: "/module/users/add", icon: "fas fa-user-tag" },
         ],
       },
-
-      /* ================= JOURNALS ================= */
       {
         name: "Journals",
         icon: "fas fa-book",
         roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
         subMenu: [
-          {
-            name: "Add Journal",
-            path: "/journal/create",
-            icon: "fas fa-plus",
-          },
+          { name: "Add Journal", path: "/journal/create", icon: "fas fa-plus" },
+          { name: "Journal List", path: "/journal/list", icon: "fas fa-list" },
         ],
       },
-
-      /* ================= MANUSCRIPTS ================= */
       {
-        name: "Dashboard",
+        name: "Author Dashboard",
         path: "/journal/author-dashboard",
         icon: "fas fa-tachometer-alt",
         roles: [ROLES.JOURNAL_AUTHOR],
@@ -228,256 +496,68 @@ export default function Sidebar() {
         icon: "fas fa-file-alt",
         roles: [ROLES.JOURNAL_MANAGER, ROLES.JOURNAL_AUTHOR, ROLES.EDITOR],
         subMenu: [
-          {
-            name: "My Submissions",
-            path: "/journal/manuscripts",
-            icon: "fas fa-inbox",
-            roles: [ROLES.JOURNAL_AUTHOR],
-          },
-          {
-            name: "New Submission",
-            path: "/manuscripts/create",
-            icon: "fas fa-paper-plane",
-            roles: [ROLES.JOURNAL_AUTHOR],
-          },
-          {
-            name: "Incomplete Submissions",
-            path: "/manuscript/draft-manuscript",
-            icon: "fas fa-file",
-            roles: [ROLES.JOURNAL_AUTHOR],
-          },
-          {
-            name: "Revisions",
-            path: "/journal/manuscripts/revisions",
-            icon: "fas fa-edit",
-            roles: [ROLES.JOURNAL_AUTHOR],
-          },
+          { name: "My Submissions", path: "/journal/manuscripts", icon: "fas fa-inbox", roles: [ROLES.JOURNAL_AUTHOR] },
+          { name: "New Submission", path: "/manuscripts/create", icon: "fas fa-paper-plane", roles: [ROLES.JOURNAL_AUTHOR] },
+          { name: "Incomplete Submissions", path: "/manuscript/draft-manuscript", icon: "fas fa-file", roles: [ROLES.JOURNAL_AUTHOR] },
+          { name: "Revisions", path: "/journal/manuscripts/revisions", icon: "fas fa-edit", roles: [ROLES.JOURNAL_AUTHOR] },
         ],
       },
-      // ---EIC---
       {
         name: "Editorial Oversight",
         icon: "fas fa-user-shield",
         roles: [ROLES.JOURNAL_EIC],
         subMenu: [
-          {
-            name: "All Submissions",
-            path: "/journal/eic/submissions",
-            icon: "fas fa-folder-open",
-          },
-          {
-            name: "Publication Payments",
-            path: "/eic/payment-orders",
-            icon: "fas fa-credit-card",
-          },
-          {
-            name: "Final Decisions",
-            path: "/journal/eic/final-decisions",
-            icon: "fas fa-gavel",
-          },
-          {
-            name: "Ethics & Compliance",
-            path: "/journal/eic/ethics",
-            icon: "fas fa-balance-scale",
-          },
-          {
-            name: "Production Approval",
-            path: "/journal/eic/production",
-            icon: "fas fa-check-double",
-          },
-          {
-            name: "Issue Scheduling",
-            path: "/journal/eic/issues",
-            icon: "fas fa-calendar-alt",
-          },
-          {
-            name: "Editorial Reports",
-            path: "/journal/eic/reports",
-            icon: "fas fa-chart-line",
-          },
+          { name: "All Submissions", path: "/journal/eic/submissions", icon: "fas fa-folder-open" },
+          { name: "Publication Payments", path: "/eic/payment-orders", icon: "fas fa-credit-card" },
+          { name: "Final Decisions", path: "/journal/eic/final-decisions", icon: "fas fa-gavel" },
+          { name: "Ethics & Compliance", path: "/journal/eic/ethics", icon: "fas fa-balance-scale" },
+          { name: "Production Approval", path: "/journal/eic/production", icon: "fas fa-check-double" },
+          { name: "Issue Scheduling", path: "/journal/eic/issues", icon: "fas fa-calendar-alt" },
+          { name: "Editorial Reports", path: "/journal/eic/reports", icon: "fas fa-chart-line" },
         ],
       },
-
-      // ---Associate Editor---
       {
         name: "Manuscript Handling",
         icon: "fas fa-user-edit",
         roles: [ROLES.JOURNAL_ASSOCIATE_EDITOR],
         subMenu: [
-          {
-            name: "Submitted Manuscripts",
-            path: "/manuscript/ae/assigned-manuscripts",
-            icon: "fas fa-folder-open",
-          },
-          {
-            name: "Initial Screening",
-            path: "/manuscription/ae/screening",
-            icon: "fas fa-search",
-          },
-          {
-            name: "Review Evaluation",
-            path: "/journal/ae/review-evaluation",
-            icon: "fas fa-check-circle",
-          },
-          {
-            name: "Under Review",
-            path: "/manuscript/ae/under-review",
-            icon: "fas fa-hourglass-half",
-          },
-          {
-            name: "Recommendations to EIC",
-            path: "/journal/ae/recommendations",
-            icon: "fas fa-gavel",
-          },
-          {
-            name: "Ethics & Compliance",
-            path: "/journal/ae/ethics",
-            icon: "fas fa-balance-scale",
-          },
-          {
-            name: "Production Tracking",
-            path: "/journal/ae/production",
-            icon: "fas fa-industry",
-          },
+          { name: "Submitted Manuscripts", path: "/manuscript/ae/assigned-manuscripts", icon: "fas fa-folder-open" },
+          { name: "Initial Screening", path: "/manuscription/ae/screening", icon: "fas fa-search" },
+          { name: "Review Evaluation", path: "/journal/ae/review-evaluation", icon: "fas fa-check-circle" },
+          { name: "Under Review", path: "/manuscript/ae/under-review", icon: "fas fa-hourglass-half" },
+          { name: "Recommendations to EIC", path: "/journal/ae/recommendations", icon: "fas fa-gavel" },
+          { name: "Ethics & Compliance", path: "/journal/ae/ethics", icon: "fas fa-balance-scale" },
+          { name: "Production Tracking", path: "/journal/ae/production", icon: "fas fa-industry" },
         ],
       },
-      /* ================= REVIEWER / REFEREE ================= */
       {
         name: "Peer Review",
         icon: "fas fa-user-check",
         roles: [ROLES.JOURNAL_REFREE],
         subMenu: [
-          {
-            name: "Assigned Reviews",
-            path: "/journal/reviewer/assigned",
-            icon: "fas fa-inbox",
-          },
-          {
-            name: "Review Workspace",
-            path: "/journal/reviewer/workspace",
-            icon: "fas fa-file-alt",
-          },
-          {
-            name: "Submit Review Report",
-            path: "/journal/reviewer/submit-review",
-            icon: "fas fa-paper-plane",
-          },
-          {
-            name: "Blind Review Files",
-            path: "/journal/reviewer/files",
-            icon: "fas fa-user-secret",
-          },
-          {
-            name: "Ethics & COPE Compliance",
-            path: "/journal/reviewer/ethics",
-            icon: "fas fa-balance-scale",
-          },
-          {
-            name: "Completed Reviews",
-            path: "/journal/reviewer/completed",
-            icon: "fas fa-check-circle",
-          },
+          { name: "Assigned Reviews", path: "/journal/reviewer/assigned", icon: "fas fa-inbox" },
+          { name: "Review Workspace", path: "/journal/reviewer/workspace", icon: "fas fa-file-alt" },
+          { name: "Submit Review Report", path: "/journal/reviewer/submit-review", icon: "fas fa-paper-plane" },
+          { name: "Blind Review Files", path: "/journal/reviewer/files", icon: "fas fa-user-secret" },
+          { name: "Ethics & COPE Compliance", path: "/journal/reviewer/ethics", icon: "fas fa-balance-scale" },
+          { name: "Completed Reviews", path: "/journal/reviewer/completed", icon: "fas fa-check-circle" },
         ],
       },
-      /* ================= REVIEWS ================= */
-      {
-        name: "Reviews",
-        icon: "fas fa-clipboard-check",
-        roles: [
-          ROLES.JOURNAL_MANAGER,
-          ROLES.REVIEWER,
-          ROLES.JOURNAL_AUTHOR,
-          ROLES.EDITOR,
-        ],
-        subMenu: [
-          {
-            name: "Assigned Reviews",
-            path: "/journal/reviews/reviewer",
-            icon: "fas fa-tasks",
-            roles: [ROLES.REVIEWER],
-          },
-          {
-            name: "Submit Review",
-            path: "/journal/reviews/submit/:manuscriptId",
-            icon: "fas fa-paper-plane",
-            roles: [ROLES.REVIEWER],
-          },
-          {
-            name: "Review History",
-            path: "/journal/reviews/history",
-            icon: "fas fa-history",
-            roles: [ROLES.REVIEWER],
-          },
-          {
-            name: "Reviewer Invitations",
-            path: "/journal/reviews/invitations",
-            icon: "fas fa-user-check",
-            roles: [ROLES.REVIEWER],
-          },
-          {
-            name: "Reviewer Workload",
-            path: "/journal/reviews/workload",
-            icon: "fas fa-balance-scale",
-            roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
-          },
-        ],
-      },
-
-      /* ================= PROFILE ================= */
       {
         name: "Profile & Declarations",
         icon: "fas fa-id-card",
-        roles: [
-          ROLES.JOURNAL_AUTHOR,
-          ROLES.REVIEWER,
-          ROLES.EDITOR,
-          ROLES.JOURNAL_MANAGER,
-        ],
+        roles: [ROLES.JOURNAL_AUTHOR, ROLES.REVIEWER, ROLES.EDITOR, ROLES.JOURNAL_MANAGER],
         subMenu: [
-          {
-            name: "My Profile",
-            path: "/journal/profile",
-            icon: "fas fa-user",
-          },
-          {
-            name: "Ethics Declarations",
-            path: "/journal/declarations",
-            icon: "fas fa-shield-alt",
-          },
+          { name: "My Profile", path: "/journal/profile", icon: "fas fa-user" },
+          { name: "Ethics Declarations", path: "/journal/declarations", icon: "fas fa-shield-alt" },
         ],
       },
     ],
 
-    // ================= LIBRARY MODULE =================
-    [MODULES.LIBRARY]: [
-      {
-        name: "Dashboard",
-        path: "/library/dashboard",
-        icon: "fas fa-book",
-        roles: [ROLES.LIBRARY_MANAGER],
-      },
-      {
-        name: "User Management",
-        icon: "fas fa-users",
-        roles: [ROLES.LIBRARY_MANAGER],
-        subMenu: [
-          {
-            name: "All Users",
-            path: "/library/users",
-            roles: [ROLES.LIBRARY_MANAGER],
-            icon: "fas fa-list",
-          },
-          {
-            name: "Create User",
-            path: "/library/users/create",
-            roles: [ROLES.LIBRARY_MANAGER],
-            icon: "fas fa-user-plus",
-          },
-        ],
-      },
-    ],
+    [MODULES.LIBRARY]: buildLibraryRoutes(),
 
-    /* ================= OROMO WIKIPEDIA ================= */
+    [MODULES.EBOOK]: buildEbookRoutes(),
+
     [MODULES.ORO_WIKI]: [
       {
         name: "Manager Dashboard",
@@ -491,18 +571,10 @@ export default function Sidebar() {
         roles: [ROLES.ORO_WIKI_MANAGER],
         subMenu: [
           { name: "All Articles", path: "/wiki/articles", icon: "fas fa-list" },
-          {
-            name: "Recent Changes",
-            path: "/wiki/recent-changes",
-            icon: "fas fa-clock",
-          },
+          { name: "Recent Changes", path: "/wiki/recent-changes", icon: "fas fa-clock" },
           { name: "Popular Articles", path: "/wiki/popular", icon: "fas fa-star" },
           { name: "Random Article", path: "/wiki/random", icon: "fas fa-random" },
-          {
-            name: "Check Vandalism",
-            path: "/wiki/vandalism/check",
-            icon: "fas fa-flag",
-          },
+          { name: "Check Vandalism", path: "/wiki/vandalism/check", icon: "fas fa-flag" },
         ],
       },
       {
@@ -510,16 +582,8 @@ export default function Sidebar() {
         icon: "fas fa-folder",
         roles: [ROLES.ORO_WIKI_MANAGER],
         subMenu: [
-          {
-            name: "All Categories",
-            path: "/wiki/categories",
-            icon: "fas fa-list",
-          },
-          {
-            name: "Create Category",
-            path: "/wiki/categories/create",
-            icon: "fas fa-plus",
-          },
+          { name: "All Categories", path: "/wiki/categories", icon: "fas fa-list" },
+          { name: "Create Category", path: "/wiki/categories/create", icon: "fas fa-plus" },
         ],
       },
       {
@@ -528,11 +592,7 @@ export default function Sidebar() {
         roles: [ROLES.ORO_WIKI_MANAGER],
         subMenu: [
           { name: "All Media", path: "/wiki/media", icon: "fas fa-images" },
-          {
-            name: "Upload Media",
-            path: "/wiki/media/upload",
-            icon: "fas fa-upload",
-          },
+          { name: "Upload Media", path: "/wiki/media/upload", icon: "fas fa-upload" },
         ],
       },
       {
@@ -568,16 +628,8 @@ export default function Sidebar() {
         roles: [ROLES.ORO_WIKI_EDITOR],
         subMenu: [
           { name: "All Articles", path: "/wiki/articles", icon: "fas fa-list" },
-          {
-            name: "Create Article",
-            path: "/wiki/articles/create",
-            icon: "fas fa-plus",
-          },
-          {
-            name: "Drafts",
-            path: "/wiki/articles/drafts",
-            icon: "fas fa-edit",
-          },
+          { name: "Create Article", path: "/wiki/articles/create", icon: "fas fa-plus" },
+          { name: "Drafts", path: "/wiki/articles/drafts", icon: "fas fa-edit" },
         ],
       },
       {
@@ -586,11 +638,7 @@ export default function Sidebar() {
         roles: [ROLES.ORO_WIKI_EDITOR],
         subMenu: [
           { name: "All Media", path: "/wiki/media", icon: "fas fa-images" },
-          {
-            name: "Upload Media",
-            path: "/wiki/media/upload",
-            icon: "fas fa-upload",
-          },
+          { name: "Upload Media", path: "/wiki/media/upload", icon: "fas fa-upload" },
         ],
       },
       {
@@ -604,11 +652,7 @@ export default function Sidebar() {
         icon: "fas fa-upload",
         roles: [ROLES.ORO_WIKI_PUBLISHER],
         subMenu: [
-          {
-            name: "Publishing Queue",
-            path: "/wiki/articles/publish",
-            icon: "fas fa-upload",
-          },
+          { name: "Publishing Queue", path: "/wiki/articles/publish", icon: "fas fa-upload" },
           { name: "All Articles", path: "/wiki/articles", icon: "fas fa-list" },
         ],
       },
@@ -655,10 +699,9 @@ export default function Sidebar() {
       },
     ],
 
-    /* ================ REPOSITORY MODULE ================ */
     [MODULES.REPOSITORY]: [
       {
-        name: "Dashboard",
+        name: "Admin Dashboard",
         path: "/repository/admin/dashboard",
         icon: "fas fa-tachometer-alt",
         roles: [ROLES.REPOSITORY_ADMIN],
@@ -668,36 +711,12 @@ export default function Sidebar() {
         icon: "fas fa-inbox",
         roles: [ROLES.REPOSITORY_ADMIN],
         subMenu: [
-          {
-            name: "Pending Review",
-            path: "/repository/submissions/pending",
-            icon: "fas fa-clock",
-          },
-          {
-            name: "Under Curation",
-            path: "/repository/submissions/curation",
-            icon: "fas fa-edit",
-          },
-          {
-            name: "Ready for Approval",
-            path: "/repository/submissions/ready",
-            icon: "fas fa-check-circle",
-          },
-          {
-            name: "Approved",
-            path: "/repository/submissions/approved",
-            icon: "fas fa-check",
-          },
-          {
-            name: "Rejected",
-            path: "/repository/submissions/rejected",
-            icon: "fas fa-times",
-          },
-          {
-            name: "All Items",
-            path: "/repository/submissions/all",
-            icon: "fas fa-list",
-          },
+          { name: "Pending Review", path: "/repository/submissions/pending", icon: "fas fa-clock" },
+          { name: "Under Curation", path: "/repository/submissions/curation", icon: "fas fa-edit" },
+          { name: "Ready for Approval", path: "/repository/submissions/ready", icon: "fas fa-check-circle" },
+          { name: "Approved", path: "/repository/submissions/approved", icon: "fas fa-check" },
+          { name: "Rejected", path: "/repository/submissions/rejected", icon: "fas fa-times" },
+          { name: "All Items", path: "/repository/submissions/all", icon: "fas fa-list" },
         ],
       },
       {
@@ -705,16 +724,8 @@ export default function Sidebar() {
         icon: "fas fa-users",
         roles: [ROLES.REPOSITORY_ADMIN],
         subMenu: [
-          {
-            name: "All Users",
-            path: "/journal/users",
-            icon: "fas fa-user",
-          },
-          {
-            name: "Add New User",
-            path: "/journal/users/add",
-            icon: "fas fa-user-tag",
-          },
+          { name: "All Users", path: "/journal/users", icon: "fas fa-user" },
+          { name: "Add New User", path: "/journal/users/add", icon: "fas fa-user-tag" },
         ],
       },
       {
@@ -722,31 +733,11 @@ export default function Sidebar() {
         icon: "fas fa-cogs",
         roles: [ROLES.REPOSITORY_ADMIN],
         subMenu: [
-          {
-            name: "Repository Settings",
-            path: "/repository/settings/general",
-            icon: "fas fa-sliders-h",
-          },
-          {
-            name: "Policy Management",
-            path: "/repository/settings/policies",
-            icon: "fas fa-file-contract",
-          },
-          {
-            name: "Metadata Schemas",
-            path: "/repository/settings/metadata",
-            icon: "fas fa-database",
-          },
-          {
-            name: "Workflow Designer",
-            path: "/repository/settings/workflow",
-            icon: "fas fa-project-diagram",
-          },
-          {
-            name: "License Templates",
-            path: "/repository/settings/licenses",
-            icon: "fas fa-balance-scale",
-          },
+          { name: "Repository Settings", path: "/repository/settings/general", icon: "fas fa-sliders-h" },
+          { name: "Policy Management", path: "/repository/settings/policies", icon: "fas fa-file-contract" },
+          { name: "Metadata Schemas", path: "/repository/settings/metadata", icon: "fas fa-database" },
+          { name: "Workflow Designer", path: "/repository/settings/workflow", icon: "fas fa-project-diagram" },
+          { name: "License Templates", path: "/repository/settings/licenses", icon: "fas fa-balance-scale" },
         ],
       },
       {
@@ -754,30 +745,14 @@ export default function Sidebar() {
         icon: "fas fa-chart-bar",
         roles: [ROLES.REPOSITORY_ADMIN],
         subMenu: [
-          {
-            name: "Comprehensive Reports",
-            path: "/repository/reports/analytics",
-            icon: "fas fa-chart-line",
-          },
-          {
-            name: "Usage Statistics",
-            path: "/repository/reports/usage",
-            icon: "fas fa-chart-pie",
-          },
-          {
-            name: "Processing Times",
-            path: "/repository/reports/timelines",
-            icon: "fas fa-stopwatch",
-          },
-          {
-            name: "Data Exports",
-            path: "/repository/reports/exports",
-            icon: "fas fa-file-export",
-          },
+          { name: "Comprehensive Reports", path: "/repository/reports/analytics", icon: "fas fa-chart-line" },
+          { name: "Usage Statistics", path: "/repository/reports/usage", icon: "fas fa-chart-pie" },
+          { name: "Processing Times", path: "/repository/reports/timelines", icon: "fas fa-stopwatch" },
+          { name: "Data Exports", path: "/repository/reports/exports", icon: "fas fa-file-export" },
         ],
       },
       {
-        name: "Curation Dashboard",
+        name: "Curator Dashboard",
         path: "/repository/curator/dashboard",
         icon: "fas fa-tachometer-alt",
         roles: [ROLES.REPOSITORY_CURATOR],
@@ -787,26 +762,10 @@ export default function Sidebar() {
         icon: "fas fa-inbox",
         roles: [ROLES.REPOSITORY_CURATOR],
         subMenu: [
-          {
-            name: "New (Unreviewed)",
-            path: "/repository/curator/queue/new",
-            icon: "fas fa-exclamation-circle",
-          },
-          {
-            name: "In Progress",
-            path: "/repository/curator/queue/in-progress",
-            icon: "fas fa-spinner",
-          },
-          {
-            name: "Ready for Approval",
-            path: "/repository/curator/queue/ready",
-            icon: "fas fa-check-circle",
-          },
-          {
-            name: "Returned Items",
-            path: "/repository/curator/queue/returned",
-            icon: "fas fa-undo",
-          },
+          { name: "New (Unreviewed)", path: "/repository/curator/queue/new", icon: "fas fa-exclamation-circle" },
+          { name: "In Progress", path: "/repository/curator/queue/in-progress", icon: "fas fa-spinner" },
+          { name: "Ready for Approval", path: "/repository/curator/queue/ready", icon: "fas fa-check-circle" },
+          { name: "Returned Items", path: "/repository/curator/queue/returned", icon: "fas fa-undo" },
         ],
       },
       {
@@ -814,16 +773,8 @@ export default function Sidebar() {
         icon: "fas fa-folder-open",
         roles: [ROLES.REPOSITORY_CURATOR],
         subMenu: [
-          {
-            name: "By Author",
-            path: "/repository/collections/author",
-            icon: "fas fa-user-graduate",
-          },
-          {
-            name: "By Resource Type",
-            path: "/repository/collections/type",
-            icon: "fas fa-th-large",
-          },
+          { name: "By Author", path: "/repository/collections/author", icon: "fas fa-user-graduate" },
+          { name: "By Resource Type", path: "/repository/collections/type", icon: "fas fa-th-large" },
         ],
       },
       {
@@ -831,26 +782,10 @@ export default function Sidebar() {
         icon: "fas fa-chart-bar",
         roles: [ROLES.REPOSITORY_CURATOR],
         subMenu: [
-          {
-            name: "Submission Trends",
-            path: "/repository/reports/trends",
-            icon: "fas fa-chart-bar",
-          },
-          {
-            name: "Processing Times",
-            path: "/repository/reports/timelines",
-            icon: "fas fa-clock",
-          },
-          {
-            name: "Curator Performance",
-            path: "/repository/reports/curator-performance",
-            icon: "fas fa-user-check",
-          },
-          {
-            name: "My Analytics",
-            path: "/repository/reports/my-analytics",
-            icon: "fas fa-chart-pie",
-          },
+          { name: "Submission Trends", path: "/repository/reports/trends", icon: "fas fa-chart-bar" },
+          { name: "Processing Times", path: "/repository/reports/timelines", icon: "fas fa-clock" },
+          { name: "Curator Performance", path: "/repository/reports/curator-performance", icon: "fas fa-user-check" },
+          { name: "My Analytics", path: "/repository/reports/my-analytics", icon: "fas fa-chart-pie" },
         ],
       },
       {
@@ -864,26 +799,10 @@ export default function Sidebar() {
         icon: "fas fa-clipboard-list",
         roles: [ROLES.REPOSITORY_CONTENT_REVIEWER],
         subMenu: [
-          {
-            name: "New Assignments",
-            path: "/repository/reviewer/queue/new",
-            icon: "fas fa-exclamation-circle",
-          },
-          {
-            name: "In Progress",
-            path: "/repository/reviewer/queue/in-progress",
-            icon: "fas fa-spinner",
-          },
-          {
-            name: "Completed",
-            path: "/repository/reviewer/queue/completed",
-            icon: "fas fa-check-circle",
-          },
-          {
-            name: "Scheduled",
-            path: "/repository/reviewer/queue/scheduled",
-            icon: "fas fa-calendar-alt",
-          },
+          { name: "New Assignments", path: "/repository/reviewer/queue/new", icon: "fas fa-exclamation-circle" },
+          { name: "In Progress", path: "/repository/reviewer/queue/in-progress", icon: "fas fa-spinner" },
+          { name: "Completed", path: "/repository/reviewer/queue/completed", icon: "fas fa-check-circle" },
+          { name: "Scheduled", path: "/repository/reviewer/queue/scheduled", icon: "fas fa-calendar-alt" },
         ],
       },
       {
@@ -891,31 +810,11 @@ export default function Sidebar() {
         icon: "fas fa-tools",
         roles: [ROLES.REPOSITORY_CONTENT_REVIEWER],
         subMenu: [
-          {
-            name: "View Submission",
-            path: "/repository/reviewer/tools/view",
-            icon: "fas fa-eye",
-          },
-          {
-            name: "Review Form",
-            path: "/repository/reviewer/tools/form",
-            icon: "fas fa-file-alt",
-          },
-          {
-            name: "Similarity Check",
-            path: "/repository/reviewer/tools/similarity",
-            icon: "fas fa-search",
-          },
-          {
-            name: "Quality Assessment",
-            path: "/repository/reviewer/tools/quality",
-            icon: "fas fa-star",
-          },
-          {
-            name: "Private Notes",
-            path: "/repository/reviewer/tools/notes",
-            icon: "fas fa-sticky-note",
-          },
+          { name: "View Submission", path: "/repository/reviewer/tools/view", icon: "fas fa-eye" },
+          { name: "Review Form", path: "/repository/reviewer/tools/form", icon: "fas fa-file-alt" },
+          { name: "Similarity Check", path: "/repository/reviewer/tools/similarity", icon: "fas fa-search" },
+          { name: "Quality Assessment", path: "/repository/reviewer/tools/quality", icon: "fas fa-star" },
+          { name: "Private Notes", path: "/repository/reviewer/tools/notes", icon: "fas fa-sticky-note" },
         ],
       },
       {
@@ -929,16 +828,8 @@ export default function Sidebar() {
         icon: "fas fa-plus-circle",
         roles: [ROLES.RESEARCHER_AUTHOR],
         subMenu: [
-          {
-            name: "Repository Items",
-            path: "/repository/author/submit/list",
-            icon: "fas fa-file-upload",
-          },
-          {
-            name: "Add New",
-            path: "/repository/create",
-            icon: "fas fa-folder-plus",
-          },
+          { name: "Repository Items", path: "/repository/author/submit/list", icon: "fas fa-file-upload" },
+          { name: "Add New", path: "/repository/create", icon: "fas fa-folder-plus" },
         ],
       },
       {
@@ -946,31 +837,11 @@ export default function Sidebar() {
         icon: "fas fa-folder",
         roles: [ROLES.RESEARCHER_AUTHOR],
         subMenu: [
-          {
-            name: "Drafts",
-            path: "/repository/author/deposits/drafts",
-            icon: "fas fa-edit",
-          },
-          {
-            name: "Under Review",
-            path: "/repository/author/deposits/review",
-            icon: "fas fa-hourglass-half",
-          },
-          {
-            name: "Returned to Revision",
-            path: "/repository/author/deposits/returned",
-            icon: "fas fa-redo",
-          },
-          {
-            name: "Approved",
-            path: "/repository/author/deposits/approved",
-            icon: "fas fa-check",
-          },
-          {
-            name: "Embargoed",
-            path: "#",
-            icon: "fas fa-lock",
-          },
+          { name: "Drafts", path: "/repository/author/deposits/drafts", icon: "fas fa-edit" },
+          { name: "Under Review", path: "/repository/author/deposits/review", icon: "fas fa-hourglass-half" },
+          { name: "Returned to Revision", path: "/repository/author/deposits/returned", icon: "fas fa-redo" },
+          { name: "Approved", path: "/repository/author/deposits/approved", icon: "fas fa-check" },
+          { name: "Embargoed", path: "#", icon: "fas fa-lock" },
         ],
       },
       {
@@ -984,31 +855,11 @@ export default function Sidebar() {
         icon: "fas fa-compass",
         roles: [ROLES.REPOSITORY_PUBLIC_USER, ROLES.REPOSITORY_GUEST],
         subMenu: [
-          {
-            name: "By Collection",
-            path: "/repository/browse/collections",
-            icon: "fas fa-folder",
-          },
-          {
-            name: "By Author",
-            path: "/repository/browse/authors",
-            icon: "fas fa-user-graduate",
-          },
-          {
-            name: "By Subject",
-            path: "/repository/browse/subjects",
-            icon: "fas fa-tags",
-          },
-          {
-            name: "By Date",
-            path: "/repository/browse/date",
-            icon: "fas fa-calendar",
-          },
-          {
-            name: "By Department",
-            path: "/repository/browse/department",
-            icon: "fas fa-building",
-          },
+          { name: "By Collection", path: "/repository/browse/collections", icon: "fas fa-folder" },
+          { name: "By Author", path: "/repository/browse/authors", icon: "fas fa-user-graduate" },
+          { name: "By Subject", path: "/repository/browse/subjects", icon: "fas fa-tags" },
+          { name: "By Date", path: "/repository/browse/date", icon: "fas fa-calendar" },
+          { name: "By Department", path: "/repository/browse/department", icon: "fas fa-building" },
         ],
       },
       {
@@ -1016,26 +867,10 @@ export default function Sidebar() {
         icon: "fas fa-star",
         roles: [ROLES.REPOSITORY_PUBLIC_USER, ROLES.REPOSITORY_GUEST],
         subMenu: [
-          {
-            name: "Recent Additions",
-            path: "/repository/featured/recent",
-            icon: "fas fa-clock",
-          },
-          {
-            name: "Most Viewed",
-            path: "/repository/featured/popular",
-            icon: "fas fa-fire",
-          },
-          {
-            name: "Most Downloaded",
-            path: "/repository/featured/downloaded",
-            icon: "fas fa-download",
-          },
-          {
-            name: "Editor's Picks",
-            path: "/repository/featured/picks",
-            icon: "fas fa-award",
-          },
+          { name: "Recent Additions", path: "/repository/featured/recent", icon: "fas fa-clock" },
+          { name: "Most Viewed", path: "/repository/featured/popular", icon: "fas fa-fire" },
+          { name: "Most Downloaded", path: "/repository/featured/downloaded", icon: "fas fa-download" },
+          { name: "Editor's Picks", path: "/repository/featured/picks", icon: "fas fa-award" },
         ],
       },
       {
@@ -1043,57 +878,10 @@ export default function Sidebar() {
         icon: "fas fa-toolbox",
         roles: [ROLES.REPOSITORY_PUBLIC_USER, ROLES.REPOSITORY_GUEST],
         subMenu: [
-          {
-            name: "Citation Generator",
-            path: "/repository/tools/citation",
-            icon: "fas fa-quote-right",
-          },
-          {
-            name: "Export Citations",
-            path: "/repository/tools/export",
-            icon: "fas fa-file-export",
-          },
-          {
-            name: "Save to List",
-            path: "/repository/tools/savelist",
-            icon: "fas fa-bookmark",
-          },
-          {
-            name: "Email Alert",
-            path: "/repository/tools/alerts",
-            icon: "fas fa-envelope",
-          },
-        ],
-      },
-      {
-        name: "Reports",
-        icon: "fas fa-chart-bar",
-        roles: [ROLES.REPOSITORY_ADMIN, ROLES.REPOSITORY_CONTENT_REVIEWER],
-        subMenu: [
-          {
-            name: "Submission Trends",
-            path: "/repository/reports/trends",
-            icon: "fas fa-chart-line",
-            roles: [ROLES.REPOSITORY_ADMIN],
-          },
-          {
-            name: "Processing Times",
-            path: "/repository/reports/timelines",
-            icon: "fas fa-stopwatch",
-            roles: [ROLES.REPOSITORY_ADMIN],
-          },
-          {
-            name: "Curator Performance",
-            path: "/repository/reports/curator-performance",
-            icon: "fas fa-user-chart",
-            roles: [ROLES.REPOSITORY_ADMIN],
-          },
-          {
-            name: "My Analytics",
-            path: "/repository/reports/my-analytics",
-            icon: "fas fa-chart-pie",
-            roles: [ROLES.REPOSITORY_CURATOR],
-          },
+          { name: "Citation Generator", path: "/repository/tools/citation", icon: "fas fa-quote-right" },
+          { name: "Export Citations", path: "/repository/tools/export", icon: "fas fa-file-export" },
+          { name: "Save to List", path: "/repository/tools/savelist", icon: "fas fa-bookmark" },
+          { name: "Email Alert", path: "/repository/tools/alerts", icon: "fas fa-envelope" },
         ],
       },
     ],
@@ -1103,26 +891,15 @@ export default function Sidebar() {
         name: "Dashboard",
         path: "/research-network/dashboard",
         icon: "fas fa-network-wired",
-        roles: [
-          ROLES.RESEARCHER_NETWORK_MANAGER,
-          ROLES.RESEARCHER_NETWORK_MODERATOR,
-        ],
+        roles: [ROLES.RESEARCHER_NETWORK_MANAGER, ROLES.RESEARCHER_NETWORK_MODERATOR],
       },
       {
         name: "Users & Roles",
         icon: "fas fa-users",
         roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
         subMenu: [
-          {
-            name: "All Users",
-            path: "/journal/users",
-            icon: "fas fa-user",
-          },
-          {
-            name: "Add New User",
-            path: "/journal/users/add",
-            icon: "fas fa-user-tag",
-          },
+          { name: "All Users", path: "/journal/users", icon: "fas fa-user" },
+          { name: "Add New User", path: "/journal/users/add", icon: "fas fa-user-tag" },
         ],
       },
       {
@@ -1130,26 +907,10 @@ export default function Sidebar() {
         icon: "fas fa-flask",
         roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
         subMenu: [
-          {
-            name: "All Projects",
-            path: "/research-network/projects",
-            icon: "fas fa-list",
-          },
-          {
-            name: "Create Project",
-            path: "/research-network/projects/create",
-            icon: "fas fa-plus",
-          },
-          {
-            name: "Ongoing Projects",
-            path: "/research-network/projects/ongoing",
-            icon: "fas fa-spinner",
-          },
-          {
-            name: "Completed Projects",
-            path: "/research-network/projects/completed",
-            icon: "fas fa-check",
-          },
+          { name: "All Projects", path: "/research-network/projects", icon: "fas fa-list" },
+          { name: "Create Project", path: "/research-network/projects/create", icon: "fas fa-plus" },
+          { name: "Ongoing Projects", path: "/research-network/projects/ongoing", icon: "fas fa-spinner" },
+          { name: "Completed Projects", path: "/research-network/projects/completed", icon: "fas fa-check" },
         ],
       },
       {
@@ -1157,16 +918,8 @@ export default function Sidebar() {
         icon: "fas fa-handshake",
         roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
         subMenu: [
-          {
-            name: "All Collaborations",
-            path: "/research-network/collaborations",
-            icon: "fas fa-list",
-          },
-          {
-            name: "New Collaboration",
-            path: "/research-network/collaborations/create",
-            icon: "fas fa-plus",
-          },
+          { name: "All Collaborations", path: "/research-network/collaborations", icon: "fas fa-list" },
+          { name: "New Collaboration", path: "/research-network/collaborations/create", icon: "fas fa-plus" },
         ],
       },
       {
@@ -1174,16 +927,8 @@ export default function Sidebar() {
         icon: "fas fa-user-graduate",
         roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
         subMenu: [
-          {
-            name: "All Researchers",
-            path: "/research-network/researchers",
-            icon: "fas fa-list",
-          },
-          {
-            name: "Invite Researcher",
-            path: "/research-network/researchers/invite",
-            icon: "fas fa-user-plus",
-          },
+          { name: "All Researchers", path: "/research-network/researchers", icon: "fas fa-list" },
+          { name: "Invite Researcher", path: "/research-network/researchers/invite", icon: "fas fa-user-plus" },
         ],
       },
       {
@@ -1191,16 +936,8 @@ export default function Sidebar() {
         icon: "fas fa-hand-holding-usd",
         roles: [ROLES.RESEARCHER_NETWORK_MANAGER],
         subMenu: [
-          {
-            name: "All Funding",
-            path: "/research-network/funding",
-            icon: "fas fa-list",
-          },
-          {
-            name: "Add Funding",
-            path: "/research-network/funding/create",
-            icon: "fas fa-plus",
-          },
+          { name: "All Funding", path: "/research-network/funding", icon: "fas fa-list" },
+          { name: "Add Funding", path: "/research-network/funding/create", icon: "fas fa-plus" },
         ],
       },
       {
@@ -1218,49 +955,27 @@ export default function Sidebar() {
       {
         name: "Groups & Moderation",
         icon: "fas fa-users-cog",
-        roles: [
-          ROLES.RESEARCHER_NETWORK_MODERATOR,
-          ROLES.RESEARCHER_NETWORK_MANAGER,
-        ],
+        roles: [ROLES.RESEARCHER_NETWORK_MODERATOR, ROLES.RESEARCHER_NETWORK_MANAGER],
         subMenu: [
-          {
-            name: "Research Groups",
-            path: "/research-network/groups",
-            icon: "fas fa-layer-group",
-          },
-          {
-            name: "Membership Requests",
-            path: "/research-network/groups/requests",
-            icon: "fas fa-user-check",
-          },
-          {
-            name: "Group Discussions",
-            path: "/research-network/groups/discussions",
-            icon: "fas fa-comments",
-          },
-          {
-            name: "Reported Issues",
-            path: "/research-network/groups/reports",
-            icon: "fas fa-flag",
-          },
-          {
-            name: "Conflict Resolution",
-            path: "/research-network/groups/conflicts",
-            icon: "fas fa-balance-scale",
-          },
-          {
-            name: "Community Guidelines",
-            path: "/research-network/guidelines",
-            icon: "fas fa-book",
-          },
+          { name: "Research Groups", path: "/research-network/groups", icon: "fas fa-layer-group" },
+          { name: "Membership Requests", path: "/research-network/groups/requests", icon: "fas fa-user-check" },
+          { name: "Group Discussions", path: "/research-network/groups/discussions", icon: "fas fa-comments" },
+          { name: "Reported Issues", path: "/research-network/groups/reports", icon: "fas fa-flag" },
+          { name: "Conflict Resolution", path: "/research-network/groups/conflicts", icon: "fas fa-balance-scale" },
+          { name: "Community Guidelines", path: "/research-network/guidelines", icon: "fas fa-book" },
         ],
       },
     ],
   };
 
-  const routes = moduleRoutes[moduleId]
-    ? filterRoutesByRole(moduleRoutes[moduleId])
-    : [];
+  // Early return after all hooks have been called
+  if (!user) {
+    return null;
+  }
+
+  const routes = moduleRoutes[moduleId] ? filterRoutesByRole(moduleRoutes[moduleId]) : [];
+
+  const toggleMenu = (label) => setExpandedMenus((prev) => ({ ...prev, [label]: !prev[label] }));
 
   const handleLogout = () => {
     logout();
@@ -1269,7 +984,7 @@ export default function Sidebar() {
 
   return (
     <aside className="main-sidebar sidebar-modern elevation-4">
-      <style jsx>{`
+      <style>{`
         .sidebar-modern {
           background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
           border-right: 1px solid rgba(0, 0, 0, 0.05);
@@ -1291,7 +1006,6 @@ export default function Sidebar() {
           background: rgba(255, 255, 255, 0.9);
           border-bottom: 1px solid rgba(0, 0, 0, 0.03);
           text-decoration: none;
-          transition: all 0.3s ease;
         }
 
         .brand-text {
@@ -1325,11 +1039,6 @@ export default function Sidebar() {
           font-weight: 600;
           font-size: 0.95rem;
           text-decoration: none;
-          transition: color 0.3s ease;
-        }
-
-        .user-panel .info a:hover {
-          color: #3498db;
         }
 
         .user-panel .info small {
@@ -1361,18 +1070,9 @@ export default function Sidebar() {
           position: relative;
           overflow: hidden;
           background: transparent;
-        }
-
-        .nav-link::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 0;
-          height: 100%;
-          width: 0;
-          background: linear-gradient(90deg, rgba(52, 152, 219, 0.1), transparent);
-          transition: width 0.3s ease;
-          z-index: -1;
+          border: none;
+          width: 100%;
+          text-align: left;
         }
 
         .nav-link:hover {
@@ -1380,10 +1080,6 @@ export default function Sidebar() {
           color: #3498db;
           transform: translateX(5px);
           box-shadow: 0 4px 12px rgba(52, 152, 219, 0.1);
-        }
-
-        .nav-link:hover::before {
-          width: 100%;
         }
 
         .nav-link.active {
@@ -1402,12 +1098,10 @@ export default function Sidebar() {
           width: 24px;
           text-align: center;
           color: #7f8c8d;
-          transition: all 0.3s ease;
         }
 
         .nav-link:hover i {
           color: #3498db;
-          transform: scale(1.1);
         }
 
         .nav-link p {
@@ -1421,7 +1115,6 @@ export default function Sidebar() {
         .nav-link .right {
           font-size: 0.8rem;
           opacity: 0.7;
-          transition: transform 0.3s ease;
         }
 
         .nav-item.menu-open .nav-link .right {
@@ -1437,7 +1130,6 @@ export default function Sidebar() {
         .nav-treeview .nav-link {
           padding: 0.5rem 1rem;
           font-size: 0.85rem;
-          background: transparent;
           border-radius: 10px;
         }
 
@@ -1445,21 +1137,6 @@ export default function Sidebar() {
           font-size: 0.7rem;
           margin-right: 8px;
           color: #95a5a6;
-        }
-
-        .nav-treeview .nav-link:hover {
-          background: linear-gradient(90deg, #f8faff, #ffffff);
-          color: #3498db;
-        }
-
-        .nav-treeview .nav-link.active {
-          background: linear-gradient(135deg, #3498db20, #2980b920);
-          color: #2980b9;
-          font-weight: 600;
-        }
-
-        .nav-treeview .nav-link.active i {
-          color: #3498db;
         }
 
         .logout-btn {
@@ -1480,33 +1157,8 @@ export default function Sidebar() {
         .logout-btn .nav-link:hover {
           background: linear-gradient(135deg, #e74c3c, #c0392b);
           color: white;
-          transform: translateX(5px);
-          box-shadow: 0 6px 15px rgba(231, 76, 60, 0.3);
         }
 
-        .logout-btn .nav-link:hover i {
-          color: white;
-        }
-
-        /* Custom scrollbar */
-        .sidebar-modern::-webkit-scrollbar {
-          width: 4px;
-        }
-
-        .sidebar-modern::-webkit-scrollbar-track {
-          background: #f1f1f1;
-        }
-
-        .sidebar-modern::-webkit-scrollbar-thumb {
-          background: #cbd5e0;
-          border-radius: 4px;
-        }
-
-        .sidebar-modern::-webkit-scrollbar-thumb:hover {
-          background: #a0aec0;
-        }
-
-        /* Gradient backgrounds for menu sections */
         .nav-section-title {
           padding: 1rem 1rem 0.5rem;
           font-size: 0.7rem;
@@ -1516,7 +1168,6 @@ export default function Sidebar() {
           font-weight: 600;
         }
 
-        /* Animation for menu items */
         @keyframes slideIn {
           from {
             opacity: 0;
@@ -1531,10 +1182,6 @@ export default function Sidebar() {
         .nav-item {
           animation: slideIn 0.3s ease forwards;
         }
-
-        .nav-item:nth-child(n) {
-          animation-delay: calc(n * 0.05s);
-        }
       `}</style>
 
       <Link to="/" className="brand-link">
@@ -1542,7 +1189,6 @@ export default function Sidebar() {
       </Link>
 
       <div className="sidebar">
-        {/* User Panel */}
         <div className="user-panel">
           <div className="d-flex align-items-center">
             <div className="image me-3">
@@ -1557,7 +1203,6 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* Menu */}
         <nav className="mt-3">
           <ul className="nav nav-pills nav-sidebar flex-column">
             {routes.length > 0 && (
@@ -1580,26 +1225,25 @@ export default function Sidebar() {
               }
 
               const open = expandedMenus[route.name];
+              const hasActiveChild = route.subMenu.some((sub) => isActive(sub.path));
+              
               return (
                 <li
                   key={i}
-                  className={`nav-item has-treeview ${open ? "menu-open" : ""}`}
+                  className={`nav-item has-treeview ${open || hasActiveChild ? "menu-open" : ""}`}
                   style={{ animationDelay: `${i * 0.05}s` }}
                 >
-                  <a
-                    href="#"
-                    className={`nav-link ${open ? "active" : ""}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleMenu(route.name);
-                    }}
+                  <button
+                    className={`nav-link ${hasActiveChild ? "active" : ""}`}
+                    onClick={() => toggleMenu(route.name)}
+                    type="button"
                   >
                     <i className={route.icon} />
                     <p>
                       {route.name}
                       <i className="right fas fa-angle-left" />
                     </p>
-                  </a>
+                  </button>
                   <ul className="nav nav-treeview">
                     {route.subMenu.map((sub, idx) => (
                       <li className="nav-item" key={idx}>
@@ -1607,7 +1251,7 @@ export default function Sidebar() {
                           to={sub.path}
                           className={`nav-link ${isActive(sub.path) ? "active" : ""}`}
                         >
-                          <i className={`far fa-circle ${sub.icon}`} />
+                          <i className={sub.icon || "far fa-circle"} />
                           <p>{sub.name}</p>
                         </Link>
                       </li>
@@ -1617,12 +1261,11 @@ export default function Sidebar() {
               );
             })}
 
-            {/* Logout Button */}
             <li className="nav-item logout-btn">
               <button
                 className="nav-link w-100 text-start border-0"
                 onClick={handleLogout}
-                style={{ background: 'none', cursor: 'pointer' }}
+                type="button"
               >
                 <i className="fas fa-sign-out-alt" />
                 <p>Logout</p>
@@ -1631,7 +1274,6 @@ export default function Sidebar() {
           </ul>
         </nav>
 
-        {/* Decorative gradient line */}
         <div style={{
           height: '4px',
           background: 'linear-gradient(90deg, #3498db, #9b59b6, #e74c3c)',
