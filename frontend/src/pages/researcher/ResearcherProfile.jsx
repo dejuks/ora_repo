@@ -58,6 +58,11 @@ import {
 } from "../../api/researcher.api";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+// to dynamic use environment variable for API URL, ensure you have REACT_APP_API_URL set in your .env file
+// REACT_APP_API_URL=http://localhost:5000/api'
+  const API_URL = process.env.REACT_APP_API_URL;
+
+
 
 export default function ResearcherProfile() {
   const navigate = useNavigate();
@@ -1483,7 +1488,7 @@ const refreshConnectionData = async () => {
                     <img
                       src={
                         researcher.photo
-                          ? `http://localhost:5000${researcher.photo}`
+                          ? `${API_URL}${researcher.photo}`
                           : `https://ui-avatars.com/api/?name=${encodeURIComponent(researcher.full_name)}&background=0a66c2&color=fff&size=50`
                       }
                       alt={researcher.full_name}
@@ -1605,7 +1610,7 @@ const refreshConnectionData = async () => {
                   <img
                     src={
                       profile.photo
-                        ? `http://localhost:5000${profile.photo}`
+                        ? `${API_URL}${profile.photo}`
                         : `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.full_name)}&background=0a66c2&color=fff&size=100`
                     }
                     alt={profile.full_name}
@@ -1923,7 +1928,7 @@ const refreshConnectionData = async () => {
                                 <img
                                   src={
                                     pub.user_photo
-                                      ? `http://localhost:5000${pub.user_photo}`
+                                      ? `${API_URL}${pub.user_photo}`
                                       : `https://ui-avatars.com/api/?name=${encodeURIComponent(pub.user_name)}&background=0a66c2&color=fff&size=50`
                                   }
                                   alt={pub.user_name}
@@ -2343,7 +2348,7 @@ const refreshConnectionData = async () => {
                         <img
                           src={
                             connection.photo
-                              ? `http://localhost:5000${connection.photo}`
+                              ? `${API_URL}${connection.photo}`
                               : `https://ui-avatars.com/api/?name=${encodeURIComponent(connection.researcher_name)}&background=0a66c2&color=fff&size=45`
                           }
                           alt={connection.researcher_name}
@@ -2419,7 +2424,7 @@ const refreshConnectionData = async () => {
                             <img
                               src={
                                 researcher.photo
-                                  ? `http://localhost:5000${researcher.photo}`
+                                  ? `${API_URL}${researcher.photo}`
                                   : `https://ui-avatars.com/api/?name=${encodeURIComponent(researcher.full_name)}&background=0a66c2&color=fff&size=45`
                               }
                               alt={researcher.full_name}
@@ -2510,7 +2515,7 @@ const refreshConnectionData = async () => {
                           editProfileForm.photo
                             ? URL.createObjectURL(editProfileForm.photo)
                             : profile.photo
-                              ? `http://localhost:5000${profile.photo}`
+                              ? `${API_URL}${profile.photo}`
                               : `https://ui-avatars.com/api/?name=${encodeURIComponent(editProfileForm.full_name || profile.full_name)}&background=0a66c2&color=fff&size=100`
                         }
                         alt="Profile"
@@ -2967,7 +2972,7 @@ const refreshConnectionData = async () => {
                         <img
                           src={
                             comment.user_photo
-                              ? `http://localhost:5000${comment.user_photo}`
+                              ? `${API_URL}${comment.user_photo}`
                               : `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user_name)}&background=0a66c2&color=fff&size=35`
                           }
                           alt={comment.user_name}
@@ -3059,7 +3064,7 @@ const refreshConnectionData = async () => {
                             <img
                               src={
                                 conv.participant_photo
-                                  ? `http://localhost:5000${conv.participant_photo}`
+                                  ? `${API_URL}${conv.participant_photo}`
                                   : `https://ui-avatars.com/api/?name=${encodeURIComponent(conv.participant_name)}&background=0a66c2&color=fff&size=35`
                               }
                               alt={conv.participant_name}
@@ -3107,10 +3112,10 @@ const refreshConnectionData = async () => {
                               src={
                                 selectedConversation
                                   ? selectedConversation.participant_photo
-                                    ? `http://localhost:5000${selectedConversation.participant_photo}`
+                                    ? `${API_URL}${selectedConversation.participant_photo}`
                                     : `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedConversation.participant_name)}&background=0a66c2&color=fff&size=35`
                                   : selectedUserForMessage?.photo
-                                    ? `http://localhost:5000${selectedUserForMessage.photo}`
+                                    ? `${API_URL}${selectedUserForMessage.photo}`
                                     : `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedUserForMessage?.full_name)}&background=0a66c2&color=fff&size=35`
                               }
                               alt={
@@ -3151,7 +3156,7 @@ const refreshConnectionData = async () => {
                                   <img
                                     src={
                                       msg.sender_photo
-                                        ? `http://localhost:5000${msg.sender_photo}`
+                                        ? `${API_URL}${msg.sender_photo}`
                                         : `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.sender_name)}&background=0a66c2&color=fff&size=25`
                                     }
                                     alt={msg.sender_name}
@@ -3261,7 +3266,7 @@ const refreshConnectionData = async () => {
                     <img
                       src={
                         profile.photo
-                          ? `http://localhost:5000${profile.photo}`
+                          ? `${API_URL}${profile.photo}`
                           : `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.full_name)}&background=0a66c2&color=fff&size=35`
                       }
                       alt={profile.full_name}
@@ -3307,7 +3312,7 @@ const refreshConnectionData = async () => {
                               <img
                                 src={
                                   post.author_photo
-                                    ? `http://localhost:5000${post.author_photo}`
+                                    ? `${API_URL}${post.author_photo}`
                                     : `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author_name)}&background=0a66c2&color=fff&size=35`
                                 }
                                 alt={post.author_name}
@@ -3617,7 +3622,7 @@ const refreshConnectionData = async () => {
                       <img
                         src={
                           request.sender_photo
-                            ? `http://localhost:5000${request.sender_photo}`
+                            ? `${API_URL}${request.sender_photo}`
                             : `https://ui-avatars.com/api/?name=${encodeURIComponent(request.sender_name)}&background=0a66c2&color=fff&size=40`
                         }
                         alt={request.sender_name}
@@ -3870,7 +3875,7 @@ const refreshConnectionData = async () => {
                               <img
                                 src={
                                   researcher.photo
-                                    ? `http://localhost:5000${researcher.photo}`
+                                    ? `${API_URL}${researcher.photo}`
                                     : `https://ui-avatars.com/api/?name=${encodeURIComponent(researcher.full_name)}&background=0a66c2&color=fff&size=35`
                                 }
                                 alt={researcher.full_name}
@@ -3970,7 +3975,7 @@ const refreshConnectionData = async () => {
                             <img
                               src={
                                 researcher.photo
-                                  ? `http://localhost:5000${researcher.photo}`
+                                  ? `${API_URL}${researcher.photo}`
                                   : `https://ui-avatars.com/api/?name=${encodeURIComponent(researcher.full_name)}&background=0a66c2&color=fff&size=35`
                               }
                               alt={researcher.full_name}
