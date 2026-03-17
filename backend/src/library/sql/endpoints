@@ -1,0 +1,288 @@
+Main endpoints now covered for Digital Librarian
+
+POST /api/library/digital-submissions
+
+GET /api/library/digital-submissions
+
+GET /api/library/digital-submissions/:id
+
+POST /api/library/digital-submissions/:id/submit
+
+POST /api/library/digital-submissions/:id/review
+
+POST /api/library/digital-submissions/:id/approve
+
+POST /api/library/digital-submissions/:id/reject
+
+POST /api/library/digital-submissions/:id/publish
+
+POST /api/library/digital-submission-files/upload/:submissionId
+
+GET /api/library/digital-resources
+
+GET /api/library/digital-resources/:id
+
+GET /api/library/digital-resources/:id/access
+
+GET /api/library/digital-resources/:id/access-rules
+
+POST /api/library/digital-resources/:id/access
+
+GET /api/library/digital-resources/:id/preview
+
+GET /api/library/digital-resources/:id/download
+
+POST /api/library/digital-resource-files/upload/:resourceId
+
+POST /api/library/digital-resource-files/:id/set-current
+
+GET /api/library/digital-collections
+
+POST /api/library/digital-collections
+
+PUT /api/library/digital-collections/:id
+
+DELETE /api/library/digital-collections/:id
+
+GET /api/library/digital-collections/:id/resources
+
+POST /api/library/digital-collections/:id/resources
+
+DELETE /api/library/digital-collections/:id/resources/:resourceId
+
+GET /api/library/reports/digital-usage
+
+GET /api/library/reports/popular-resources
+
+
+
+ 
+
+Main member endpoints now covered
+
+Auth:
+
+POST /api/auth/login
+
+POST /api/auth/register
+
+GET /api/auth/profile
+
+Catalog / OPAC:
+
+GET /api/library/catalog/search
+
+GET /api/library/catalog/:id
+
+GET /api/library/catalog/:id/availability
+
+Loans:
+
+POST /api/library/loans/borrow
+
+GET /api/library/loans
+
+GET /api/library/loans/:id
+
+POST /api/library/loans/:id/renew
+
+POST /api/library/loans/:id/return
+
+Holds:
+
+POST /api/library/holds
+
+GET /api/library/holds
+
+POST /api/library/holds/:id/cancel
+
+POST /api/library/holds/:id/fulfill
+
+Circulation / member self-service:
+
+GET /api/library/circulation/summary
+
+GET /api/library/circulation/my/overview
+
+GET /api/library/circulation/member/:memberId/overview
+
+Fines:
+
+GET /api/library/fines
+
+GET /api/library/fine-payments
+
+POST /api/library/fines/:id/pay
+
+Digital access for member:
+
+GET /api/library/digital-resources/:id/preview
+
+GET /api/library/digital-resources/:id/download
+
+
+
+Main admin endpoints now covered
+
+User management:
+
+GET /api/users
+
+GET /api/users/:uuid
+
+POST /api/users
+
+PUT /api/users/:uuid
+
+DELETE /api/users/:uuid
+
+GET /api/users/:userId/roles
+
+GET /api/users/roles/all
+
+GET /api/user-roles/:uuid
+
+POST /api/user-roles/:uuid
+
+RBAC:
+
+GET /api/roles
+
+POST /api/roles
+
+PUT /api/roles/:id
+
+DELETE /api/roles/:id
+
+GET /api/permissions
+
+POST /api/permissions
+
+System settings:
+
+GET /api/system/settings
+
+PUT /api/system/settings
+
+Logs and monitoring:
+
+GET /api/library/audit-logs
+
+GET /api/library/audit-logs/security-alerts
+
+
+Main endpoints now covered for Content Uploaders
+
+POST /api/library/digital-submissions
+
+GET /api/library/digital-submissions
+
+GET /api/library/digital-submissions/:id
+
+PUT /api/library/digital-submissions/:id
+
+DELETE /api/library/digital-submissions/:id
+
+POST /api/library/digital-submissions/:id/submit
+
+POST /api/library/digital-submissions/:id/resubmit
+
+GET /api/library/digital-submissions/:id/workflow
+
+GET /api/library/digital-submissions/uploader/dashboard
+
+POST /api/library/digital-submission-files/upload/:submissionId
+
+Main endpoints now covered
+
+GET /api/publisher/packages
+
+POST /api/publisher/packages
+
+POST /api/publisher/resources
+
+
+Main endpoints now covered for Librarian
+
+GET /api/library/circulation/summary
+
+GET /api/library/circulation/member/:memberId/overview
+
+GET /api/library/circulation/my/overview
+
+POST /api/library/loans/borrow
+
+POST /api/library/loans/:id/renew
+
+POST /api/library/loans/:id/return
+
+POST /api/library/holds
+
+POST /api/library/holds/:id/cancel
+
+DELETE /api/library/holds/:id
+
+POST /api/library/fines/:id/pay
+
+POST /api/library/fines/:id/waive
+
+
+Main endpoints now covered for Library Manager
+
+GET /api/library/reports/summary
+
+GET /api/library/reports/overdue-loans
+
+GET /api/library/reports/usage
+
+GET /api/library/reports/inventory
+
+GET /api/library/reports/loans
+
+Main endpoints now covered
+
+Vendors:
+
+GET /api/library/vendors
+
+POST /api/library/vendors
+
+PUT /api/library/vendors/:id
+
+DELETE /api/library/vendors/:id
+
+Purchase Orders:
+
+GET /api/library/purchase-orders
+
+GET /api/library/purchase-orders/:id
+
+POST /api/library/purchase-orders
+
+PUT /api/library/purchase-orders/:id
+
+DELETE /api/library/purchase-orders/:id
+
+POST /api/library/purchase-orders/:id/receive
+
+Main endpoints now covered for Cataloger
+
+Catalog CRUD:
+
+GET /api/library/catalog
+
+POST /api/library/catalog
+
+PUT /api/library/catalog/:id
+
+DELETE /api/library/catalog/:id
+
+Cataloging tools:
+
+GET /api/library/catalog-tools/classification/suggest
+
+POST /api/library/catalog-tools/materials/:id/classify
+
+POST /api/library/catalog-tools/copies/:id/generate-barcode
+
+POST /api/library/catalog-tools/copies/generate-missing

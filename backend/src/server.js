@@ -45,6 +45,23 @@ import eicDecisionRoutes from "./eic/routes/eic.decision.routes.js";
 import paymentRoutes from "./eic/routes/payment.routes.js";
 import ebookAuthorRoutes from "./ebooks/routes/ebookAuthorRoutes.js";
 import publicManuscription  from "./manuscription/routes/public.manuscripts.routes.js";
+
+
+
+import userRoutes from "./routes/user.routes.js";
+import authRoutes from "./routes/auth.routes.js";
+import roleRoutes from "./routes/role.routes.js";
+import permissionRoutes from "./routes/permission.routes.js";
+import rolePermissionRoutes from "./routes/rolePermission.routes.js";
+import userRoleRoutes from "./routes/userRole.routes.js";
+import moduleRoutes from "./routes/module.routes.js";
+import libraryRoutes from "./library/routes/library.routes.js";
+import systemSettingRoutes from "./routes/systemSetting.routes.js";
+import publisherExternalRoutes from "./routes/publisher.routes.js";
+import ebookRoutes from "./ebook/routes/ebook.routes.js";
+import ebookPublicRoutes from "./ebook/routes/ebookPublic.routes.js";
+
+
 dotenv.config();
 
 const app = express();
@@ -124,6 +141,22 @@ app.use("/api/journal", journalUserRoutes);
 
 app.use("/api/eic", eicDecisionRoutes);
 app.use("/api/payments", paymentRoutes);
+
+
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/roles", roleRoutes);
+app.use("/api/permissions", permissionRoutes);
+app.use("/api/role-permissions", rolePermissionRoutes);
+app.use("/api/user-roles", userRoleRoutes);
+app.use("/api/modules", moduleRoutes);
+app.use("/api/system/settings", systemSettingRoutes);
+app.use("/api/publisher", publisherExternalRoutes);
+app.use("/api/ebook", ebookRoutes);
+app.use("/api/ebook-public", ebookPublicRoutes);
+
+/* LIBRARY */
+app.use("/api/library", libraryRoutes);
 
 /* =======================
    DEFAULT ROUTE

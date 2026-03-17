@@ -1,0 +1,22 @@
+import express from "express";
+import { authenticate } from "../../middleware/auth.middleware.js";
+import { digitalSubmissionController } from "../controllers/digitalSubmission.controller.js";
+import { validateRequest } from "../middleware/validateRequest.js";
+import { paginationRules, uuidParam } from "../validators/common.validators.js";
+import { submissionReviewRules } from "../validators/workflow.validators.js";
+
+const router = express.Router();
+router.use(authenticate);
+router.get('/', paginationRules, validateRequest, digitalSubmissionController.index);
+router.get('/uploader/dashboard', digitalSubmissionController.uploaderDashboard);
+router.get('/:id/workflow', uuidParam(), validateRequest, digitalSubmissionController.workflow);
+router.get('/:id', uuidParam(), validateRequest, digitalSubmissionController.show);
+router.post('/', digitalSubmissionController.store);
+router.post('/:id/submit', uuidParam(), validateRequest, digitalSubmissionController.submit);
+router.post('/:id/resubmit', uuidParam(), validateRequest, digitalSubmissionController.resubmit);
+router.post('/:id/review', submissionReviewRules, validateRequest, digitalSubmissionController.review);
+router.post('/:id/publish', uuidParam(), validateRequest, digitalSubmissionController.publish);
+router.put('/:id', uuidParam(), validateRequest, digitalSubmissionController.update);
+router.patch('/:id', uuidParam(), validateRequest, digitalSubmissionController.update);
+router.delete('/:id', uuidParam(), validateRequest, digitalSubmissionController.destroy);
+export default router;
