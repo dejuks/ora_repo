@@ -42,6 +42,7 @@ import ReadyToApprove from "./pages/repository/ReadyToApprove";
 import ReturnToRevision from "./pages/repository/ReturnToRevision";
 import DraftRepository from "./pages/repository/DraftRepository";
 import DepositsUnderReview from "./pages/repository/DepositsUnderReview";
+  import Ebooks from "./landing/pages/Ebooks.jsx";
 import DepositsReturned from "./pages/repository/DepositsReturned";
 import ApprovedDeposits from "./pages/repository/ApprovedDeposits";
 import RepositorySearch from "./pages/repository/RepositorySearch";
@@ -395,7 +396,8 @@ function App() {
         {/* Journal Auth Routes */}
         <Route path="/journal/auth/login" element={<JournalLoginPage />} />
         <Route path="/journal/auth/register" element={<JournalRegisterPage />} />
-
+        //Ebooks
+        <Route path="/ebooks" element={<Ebooks />} />
         {/* 404 Not Found - This should be the LAST route */}
         <Route path="*" element={<h1>404 Not Found</h1>} />
       </Routes>
