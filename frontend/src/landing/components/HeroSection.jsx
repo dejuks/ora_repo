@@ -6,7 +6,7 @@ export default function HeroSection({ title, subtitle }) {
   const slides = [
     {
       image: "/oromo-bg.jpg",
-      title: "Oromo Researcher Association",
+      title: "Oromo Research Association (ORA) ",
       subtitle: "Preserving Knowledge, Advancing Research, Celebrating Culture",
       color: "linear-gradient(135deg, rgba(15,61,46,0.9), rgba(201,162,39,0.7))"
     },
