@@ -7,6 +7,7 @@ import {
   saveReviewDraftAPI,
   getReviewDraftAPI
 } from "../../../api/reviewer.api";
+const manuscriptUrl = `${process.env.REACT_APP_API_URL}/uploads/${assignment.manuscript_file_path}`;
 
 function AssignedReviewDetails() {
   const { id } = useParams();
@@ -253,8 +254,9 @@ function AssignedReviewDetails() {
 
                   <h6 className="font-weight-bold">Manuscript File</h6>
                   {assignment.manuscript_file_path ? (
+                    // dynamic url based on environment
                     <a
-                      href={`http://localhost:5000/${assignment.manuscript_file_path}`}
+                      href={manuscriptUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn btn-outline-primary"
