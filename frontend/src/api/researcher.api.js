@@ -76,11 +76,17 @@ export const getMyProfile = async () => {
 
 export const updateMyProfile = async (profileData) => {
   try {
+    // Check if profileData is FormData
+    const isFormData = profileData instanceof FormData;
+    
     const response = await API.put(`${API_BASE}/profile`, profileData, {
       headers: {
-        ...(profileData instanceof FormData ? {} : { 'Content-Type': 'application/json' })
+        // Don't set Content-Type when using FormData - browser will set it with boundary
+        ...(isFormData ? {} : { 'Content-Type': 'application/json' })
       }
     });
+    
+    // Return the data from the response
     return response.data;
   } catch (error) {
     console.error('Error updating profile:', error);
@@ -249,16 +255,40 @@ export const getMyPublications = async () => {
 };
 
 export const createPublication = async (publicationData) => {
-  const formData = new FormData();
-  Object.entries(publicationData).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      formData.append(key, value);
+  try {
+    // If it's already FormData, use it directly
+    if (publicationData instanceof FormData) {
+      const res = await API.post(`${API_BASE}/publications/`, publicationData);
+      return res.data;
     }
-  });
-  const res = await API.post(`${API_BASE}/publications/`, formData);
-  return res.data;
+    
+    // Otherwise, create new FormData
+    const formData = new FormData();
+    
+    // Append each field properly
+    Object.entries(publicationData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        // Handle file separately
+        if (key === 'file' && value instanceof File) {
+          formData.append('file', value);
+        } else {
+          // Convert to string for other fields
+          formData.append(key, String(value));
+        }
+      }
+    });
+    
+    const res = await API.post(`${API_BASE}/publications/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Error in createPublication:', error.response?.data || error.message);
+    throw error;
+  }
 };
-
 export const updatePublication = async (publicationId, publicationData) => {
   const formData = new FormData();
   Object.entries(publicationData).forEach(([key, value]) => {
