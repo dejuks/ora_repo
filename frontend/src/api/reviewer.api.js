@@ -3,8 +3,12 @@ import axios from "axios";
 /* ==============================
    AXIOS INSTANCE
 ============================== */
+// dynamic baseURL based on environment
+
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+
 const API = axios.create({
-  baseURL: "http://localhost:5000/api/manuscripts/reviewer", // Fixed: removed /manuscripts/
+  baseURL: `${API_BASE}/manuscripts/reviewer`, // Fixed: removed /manuscripts/
 });
 
 /* 🔐 AUTO ATTACH TOKEN */
@@ -101,7 +105,7 @@ export const submitReviewAPI = async (id, reviewData) => {
 };
 
 /* ==============================
-   DRAFT MANAGEMENT
+   DRAFT MANAGEMENTSS
 ============================== */
 
 // Save review as draft
