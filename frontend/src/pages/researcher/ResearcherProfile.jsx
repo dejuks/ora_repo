@@ -1666,19 +1666,19 @@ const refreshConnectionData = async () => {
                 />
                 <div className="text-center mt-n4">
                   <img
-    alt={profile.full_name}
-    className="rounded-circle border-3 border-white shadow"
-    src={
-      profile.photo
-        ? `${API_URL}${profile.photo.replace(/^\/api/, "")}`
-        : `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.full_name)}&background=0a66c2&color=fff&size=100`
-    }
-    style={{
-      width: "100px",
-      height: "100px",
-      objectFit: "cover",
-    }}
-  />
+                    src={
+                      profile.photo
+                        ? `${API_URL}${profile.photo}`
+                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.full_name)}&background=0a66c2&color=fff&size=100`
+                    }
+                    alt={profile.full_name}
+                    className="rounded-circle border-3 border-white shadow"
+                    style={{
+                      width: "100px",
+                      height: "100px",
+                      objectFit: "cover",
+                    }}
+                  />
                   
                   {/* Membership Status Badge */}
                   {membershipBadge && (
