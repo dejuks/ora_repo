@@ -187,7 +187,63 @@ export default function ManuscriptListAE() {
       });
     }
   };
+const viewManuscriptDetails = (m) => {
+  Swal.fire({
+    title: `<strong>${m.title || "Untitled Manuscript"}</strong>`,
+    width: 700,
+    html: `
+      <div style="text-align:left">
 
+        <p><strong>Status:</strong> ${m.status || "N/A"}</p>
+        <p><strong>Submitted Date:</strong> ${
+          m.created_at ? new Date(m.created_at).toLocaleString() : "N/A"
+        }</p>
+
+        <hr/>
+
+        <p><strong>Abstract:</strong></p>
+        <div style="
+          background:#f8fafc;
+          padding:10px;
+          border-radius:6px;
+          max-height:150px;
+          overflow:auto;
+        ">
+          ${m.abstract || "No abstract provided"}
+        </div>
+
+        <hr/>
+
+        <p><strong>Keywords:</strong></p>
+        <div>
+          ${
+            m.keyword
+              ? m.keyword
+                  .split(",")
+                  .map(
+                    (k) =>
+                      `<span style="
+                        background:#e0f2fe;
+                        color:#0369a1;
+                        padding:4px 8px;
+                        margin:2px;
+                        border-radius:5px;
+                        display:inline-block;
+                        font-size:12px;
+                      ">${k.trim()}</span>`
+                  )
+                  .join("")
+              : "No keywords"
+          }
+        </div>
+
+      </div>
+    `,
+    showCloseButton: true,
+    confirmButtonText: "Close",
+    confirmButtonColor: "#0a66c2",
+  });
+};
   return (
     <MainLayout>
       <div className="container-fluid">
@@ -258,6 +314,15 @@ export default function ManuscriptListAE() {
                         )}
                       </td>
                       <td>
+                        {/* // make popups to show abstract,keywords,submitted date and others  */} 
+                        <button
+  className="btn btn-primary btn-sm me-1"
+  onClick={() => viewManuscriptDetails(m)}
+>
+  <i className="fas fa-eye me-1"></i>
+</button>
+
+                        
                         <button
                           className="btn btn-success btn-sm me-1"
                           onClick={() => moveToScreening(m)}
@@ -270,7 +335,7 @@ export default function ManuscriptListAE() {
                           onClick={() => openRejectModal(m)}
                         >
                           <i className="fas fa-times me-1"></i>
-                          Reject
+                          
                         </button>
                       </td>
                     </tr>
