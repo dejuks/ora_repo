@@ -19,7 +19,7 @@ export default function Home() {
         <ModuleCard title="Repository Management" link="/repository" />
         <ModuleCard title="Ebooks" link="/ebooks" />
         <ModuleCard title="Library Management" link="/library" />
-        <ModuleCard title="Researcher Network" link="/network" />
+        <ModuleCard title="Researcher Network" link="/researcher" />
         <ModuleCard title="Oromo Wikipedia" link="/wikipedia" />
       </div>
 

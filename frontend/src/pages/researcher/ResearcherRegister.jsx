@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { registerResearcher } from "../../api/researcher.api";
 import Navbar from "../../landing/components/Navbar";
+import { useNavigate } from "react-router-dom";
 
 export default function ResearcherRegister() {
 
@@ -17,9 +18,12 @@ export default function ResearcherRegister() {
   });
 
   const [photo, setPhoto] = useState(null);
-  const [preview, setPreview] = useState("/default-avatar.png");
+  // const [preview, setPreview] = useState("/default-avatar.png"); // Default image
+  const [preview, setPreview] = useState("/user.png");
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  // const navigate = useNavigate(); // Uncomment if you want to redirect after registration
+  const navigate = useNavigate();
 
   /* ================= CHANGE INPUT ================= */
 const handleChange = (e) => {
@@ -70,6 +74,9 @@ const handleSubmit = async (e) => {
 
     const data = await registerResearcher(formData);
     setMsg(data.message);
+    // after successful registration, you might want to redirect to login page
+    // navigate("/login");
+    navigate("/researcher/login");
 
   } catch (err) {
     setMsg(err.response?.data?.message || "Registration failed");
@@ -107,7 +114,7 @@ const handleSubmit = async (e) => {
                   }}
                 />
               </div>
-
+{/* defualt image */}
               <input
                 type="file"
                 className="form-control mb-3"

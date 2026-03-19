@@ -78,8 +78,7 @@ app.use(express.urlencoded({ extended: true }));
 /* =======================
    STATIC FILES
 ======================= */
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-
+app.use("/api/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.set("trust proxy", 1);
 
 /* =======================

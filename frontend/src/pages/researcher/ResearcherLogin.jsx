@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginResearcher } from "../../api/researcher.api";
 import Navbar from "../../landing/components/Navbar";
+import { FaEnvelope, FaLock } from "react-icons/fa";
+import "./ResearcherLogin.css"; // 👈 import CSS
 
 export default function ResearcherLogin() {
-
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -15,38 +16,18 @@ export default function ResearcherLogin() {
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
-  /* ================= INPUT CHANGE ================= */
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  /* ================= REDIRECT FUNCTION ================= */
-const handleResearcherRedirect = (user) => {
+  const handleResearcherRedirect = (user) => {
+    if (!user.profile_completed) {
+      navigate("/researcher/profile/" + user.uuid);
+    } else {
+      navigate("/researcher/dashboard");
+    }
+  };
 
-  // If profile not completed (optional future feature)
-  if (!user.profile_completed) {
-    navigate("/researcher/profile/" + user.uuid);
-    return;
-  }
-
-  // Role-based redirects (optional, scalable)
-  if (user.roles?.includes("PLATFORM_ADMIN")) {
-    navigate("/researcher/dashboard"); // or /admin later
-  } 
-  else if (user.roles?.includes("GROUP_MODERATOR")) {
-    navigate("/researcher/dashboard");
-  }
-  else if (user.roles?.includes("CONTENT_MANAGER")) {
-    navigate("/researcher/dashboard");
-  }
-  else {
-    // ✅ DEFAULT: researcher dashboard
-    navigate("/researcher/dashboard");
-  }
-};
-
-
-  /* ================= LOGIN SUBMIT ================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -55,29 +36,10 @@ const handleResearcherRedirect = (user) => {
     try {
       const res = await loginResearcher(form);
 
-      /**
-       * Expected API response:
-       * {
-       *   token,
-       *   user:{
-       *     uuid,
-       *     roles:[],
-       *     profile_completed
-       *   }
-       * }
-       */
-
-      // SAVE TOKEN
       localStorage.setItem("token", res.token);
-
-      // SAVE USER
       localStorage.setItem("user", JSON.stringify(res.user));
 
-      setMsg("Login successful!");
-
-      // 🔥 IMPORTANT — redirect user
-handleResearcherRedirect(res.user);
-
+      handleResearcherRedirect(res.user);
     } catch (err) {
       setMsg(err.response?.data?.message || "Login failed");
     }
@@ -85,90 +47,77 @@ handleResearcherRedirect(res.user);
     setLoading(false);
   };
 
-  /* ================= UI ================= */
   return (
-<>
-    <Navbar />
-    <div style={{ background: "#f3f6f8", minHeight: "100vh" }}>
-      <div className="container py-5">
-        <div className="row align-items-center">
+    <>
+      <Navbar />
 
-          {/* HERO LEFT */}
-          <div className="col-md-6 text-center mb-4">
-            <h1 className="fw-bold mb-3">Welcome Back to ResearchNet</h1>
-            <p className="text-muted mb-4">
-              Connect with academics, publish research, and collaborate globally.
+      <div className="login-page">
+        <div className="login-container">
+
+          {/* LEFT SIDE */}
+          <div className="login-left">
+            <h1>
+              Welcome back to <span>ORA Network</span>
+            </h1>
+
+            <p>
+              Connect, collaborate, and share your research with scholars worldwide.
             </p>
 
-            <img
-              src="/oromo-research-network.png"
-              alt="Research Network"
-              className="img-fluid"
-              style={{ maxHeight: "650px" }}
-            />
+            <img src="/login.jpg" alt="research" />
           </div>
 
-          {/* LOGIN CARD */}
-          <div className="col-md-6">
-            <div className="card border-0 shadow-sm p-4" style={{ borderRadius:"12px" }}>
-              <h4 className="fw-bold mb-3 text-center">
-                Sign in to ResearchNet
-              </h4>
+          {/* RIGHT SIDE */}
+          <div className="login-right">
+            <div className="login-card">
+              <h3>Sign in</h3>
 
               <form onSubmit={handleSubmit}>
 
-                <input
-                  type="email"
-                  className="form-control mb-3"
-                  placeholder="Email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  required
-                />
-
-                <input
-                  type="password"
-                  className="form-control mb-3"
-                  placeholder="Password"
-                  name="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  required
-                />
-
-                <div className="d-flex justify-content-between mb-3">
-                  <a href="/forgot-password" className="small">
-                    Forgot password?
-                  </a>
+                <div className="input-group-login">
+                  {/* <FaEnvelope className="icon" /> */}
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="Email address"
+                    value={form.email}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
 
-                <button
-                  className="btn btn-primary w-100 fw-bold py-2"
-                  disabled={loading}
-                  style={{ background:"#0a66c2", border:"none" }}
-                >
+                <div className="input-group-login">
+                  {/* <FaLock className="icon" /> */}
+                  <input
+                    type="password"
+                    name="password"
+                    placeholder="Password"
+                    value={form.password}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div className="options">
+                  <a href="/forgot-password">Forgot password?</a>
+                </div>
+
+                <button className="button-login" type="submit" disabled={loading}>
                   {loading ? "Signing in..." : "Sign In"}
                 </button>
 
               </form>
 
-              {msg && (
-                <div className="alert alert-info mt-3 text-center">
-                  {msg}
-                </div>
-              )}
+              {msg && <p className="error">{msg}</p>}
 
-              <p className="text-center text-muted mt-3 small">
-                New to ResearchNet? <a href="/researcher/register">Join now</a>
+              <p className="footer-text">
+                New to ORA? <a href="/researcher/register">Join now</a>
               </p>
-
             </div>
           </div>
 
         </div>
       </div>
-    </div>
     </>
   );
 }

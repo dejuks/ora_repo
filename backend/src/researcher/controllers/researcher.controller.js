@@ -184,6 +184,9 @@ export const getProfile = async (req, res) => {
 /* =====================================================
    UPDATE PROFILE (PRIVATE) - FIXED
 ===================================================== */
+/* =====================================================
+   UPDATE PROFILE (PRIVATE) - FIXED to return updated data
+===================================================== */
 export const updateProfile = async (req, res) => {
   const client = await pool.connect();
   
@@ -206,6 +209,8 @@ export const updateProfile = async (req, res) => {
     const photo = req.file
       ? `/uploads/users/${req.file.filename}`
       : null;
+
+    console.log("Updating profile with photo:", photo ? "New photo uploaded" : "No new photo");
 
     // Update users table
     if (full_name || phone) {
@@ -230,9 +235,23 @@ export const updateProfile = async (req, res) => {
 
     let researchInterestsArray = null;
     if (research_interests) {
-      researchInterestsArray = typeof research_interests === 'string' 
-        ? research_interests.split(",").map(i => i.trim()) 
-        : research_interests;
+      try {
+        // Handle both string and already parsed array
+        if (typeof research_interests === 'string') {
+          // Try to parse if it's JSON string
+          try {
+            researchInterestsArray = JSON.parse(research_interests);
+          } catch {
+            // If not valid JSON, split by commas
+            researchInterestsArray = research_interests.split(',').map(i => i.trim());
+          }
+        } else if (Array.isArray(research_interests)) {
+          researchInterestsArray = research_interests;
+        }
+      } catch (e) {
+        console.error("Error parsing research_interests:", e);
+        researchInterestsArray = [];
+      }
     }
 
     if (profileCheck.rows.length === 0) {
@@ -265,41 +284,113 @@ export const updateProfile = async (req, res) => {
         ]
       );
     } else {
-      // Update existing profile
-      await client.query(
-        `
-        UPDATE researcher_profiles
-        SET
-          full_name = COALESCE($1, full_name),
-          affiliation = COALESCE($2, affiliation),
-          country = COALESCE($3, country),
-          bio = COALESCE($4, bio),
-          research_interests = COALESCE($5, research_interests),
-          orcid = COALESCE($6, orcid),
-          website = COALESCE($7, website),
-          photo = COALESCE($8, photo),
-          updated_at = NOW()
-        WHERE user_id = $9
-        `,
-        [
-          full_name || null,
-          affiliation || null,
-          country || null,
-          bio || null,
-          researchInterestsArray || null,
-          orcid || null,
-          website || null,
-          photo || null,
-          userId
-        ]
-      );
+      // Build dynamic update query for profile
+      const updateFields = [];
+      const updateValues = [];
+      let paramIndex = 1;
+
+      if (full_name !== undefined) {
+        updateFields.push(`full_name = $${paramIndex}`);
+        updateValues.push(full_name || null);
+        paramIndex++;
+      }
+      if (affiliation !== undefined) {
+        updateFields.push(`affiliation = $${paramIndex}`);
+        updateValues.push(affiliation || null);
+        paramIndex++;
+      }
+      if (country !== undefined) {
+        updateFields.push(`country = $${paramIndex}`);
+        updateValues.push(country || null);
+        paramIndex++;
+      }
+      if (bio !== undefined) {
+        updateFields.push(`bio = $${paramIndex}`);
+        updateValues.push(bio || null);
+        paramIndex++;
+      }
+      if (researchInterestsArray !== null) {
+        updateFields.push(`research_interests = $${paramIndex}`);
+        updateValues.push(researchInterestsArray);
+        paramIndex++;
+      }
+      if (orcid !== undefined) {
+        updateFields.push(`orcid = $${paramIndex}`);
+        updateValues.push(orcid || null);
+        paramIndex++;
+      }
+      if (website !== undefined) {
+        updateFields.push(`website = $${paramIndex}`);
+        updateValues.push(website || null);
+        paramIndex++;
+      }
+      if (photo !== null) {
+        updateFields.push(`photo = $${paramIndex}`);
+        updateValues.push(photo);
+        paramIndex++;
+      }
+
+      updateFields.push(`updated_at = NOW()`);
+
+      if (updateFields.length > 1) {
+        const query = `
+          UPDATE researcher_profiles
+          SET ${updateFields.join(', ')}
+          WHERE user_id = $${paramIndex}
+        `;
+        
+        updateValues.push(userId);
+        
+        await client.query(query, updateValues);
+      }
     }
 
     await client.query("COMMIT");
+
+    // Fetch the updated profile to return
+    const updatedProfile = await client.query(
+      `
+      SELECT 
+        u.uuid,
+        u.email,
+        u.full_name,
+        u.phone,
+        r.affiliation,
+        r.country,
+        r.bio,
+        r.research_interests,
+        r.orcid,
+        r.website,
+        r.photo
+      FROM users u
+      LEFT JOIN researcher_profiles r ON r.user_id = u.uuid
+      WHERE u.uuid = $1
+      `,
+      [userId]
+    );
+
+    const profile = updatedProfile.rows[0];
     
-    res.json({ 
+    // Format the response
+    const responseData = {
+      uuid: profile.uuid,
+      id: profile.uuid,
+      email: profile.email,
+      full_name: profile.full_name,
+      phone: profile.phone || "",
+      affiliation: profile.affiliation || "",
+      country: profile.country || "",
+      bio: profile.bio || "",
+      research_interests: Array.isArray(profile.research_interests) ? profile.research_interests : [],
+      orcid: profile.orcid || "",
+      website: profile.website || "",
+      photo: profile.photo || null
+    };
+
+    res.json({
       success: true,
-      message: "Profile updated successfully" 
+      message: "Profile updated successfully",
+      data: responseData
     });
 
   } catch (err) {

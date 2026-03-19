@@ -60,9 +60,29 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 // to dynamic use environment variable for API URL, ensure you have REACT_APP_API_URL set in your .env file
 // REACT_APP_API_URL=http://localhost:5000/api'
-  const API_URL = process.env.REACT_APP_API_URL;
+  // In your ResearcherProfile component
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const BASE_URL = API_URL.replace('/api', ''); // This gives you 'http://localhost:5000'
 
-
+const getImageUrl = (photoPath) => {
+  if (!photoPath) return null;
+  
+  // If it's already a full URL
+  if (photoPath.startsWith('http')) {
+    return photoPath;
+  }
+  
+  // Remove any /api prefix if present in the path
+  const cleanPath = photoPath.replace('/api', '');
+  
+  // Ensure the path starts with /uploads
+  if (cleanPath.startsWith('/uploads')) {
+    return `${BASE_URL}${cleanPath}`;
+  }
+  
+  // If it's just the filename
+  return `${BASE_URL}/uploads/users/${cleanPath}`;
+};
 
 export default function ResearcherProfile() {
   const navigate = useNavigate();
@@ -203,15 +223,33 @@ const [processingConnection, setProcessingConnection] = useState(false);
     }));
   };
 
-  const handlePhotoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setEditProfileForm(prev => ({
-        ...prev,
-        photo: file
-      }));
+const handlePhotoChange = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    console.log('Photo selected:', file.name, file.type, file.size);
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
     }
-  };
+    
+    // Validate file size (e.g., max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+    
+    setEditProfileForm(prev => ({
+      ...prev,
+      photo: file
+    }));
+    
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    console.log('Preview URL created:', previewUrl);
+  }
+};
 
   const openEditProfileModal = () => {
     // Parse research interests if they're stored as JSON string
@@ -238,73 +276,86 @@ const [processingConnection, setProcessingConnection] = useState(false);
     setShowEditProfileModal(true);
   };
 
-  const handleUpdateProfile = async (e) => {
-    e.preventDefault();
-    setUploadingPhoto(true);
+const handleUpdateProfile = async (e) => {
+  e.preventDefault();
+  setUploadingPhoto(true);
+  
+  try {
+    const formData = new FormData();
     
-    try {
-      const formData = new FormData();
-      
-      formData.append('full_name', editProfileForm.full_name || '');
-      formData.append('affiliation', editProfileForm.affiliation || '');
-      formData.append('country', editProfileForm.country || '');
-      formData.append('bio', editProfileForm.bio || '');
-      
-      const interests = Array.isArray(editProfileForm.research_interests) 
-        ? editProfileForm.research_interests 
-        : [];
-      formData.append('research_interests', JSON.stringify(interests));
-      
-      formData.append('orcid', editProfileForm.orcid || '');
-      formData.append('website', editProfileForm.website || '');
-      
-      if (editProfileForm.photo instanceof File) {
-        formData.append('photo', editProfileForm.photo);
-      }
-      
-      // If requesting membership, set the status to 'pending'
-      // This assumes your backend will handle this field
-      if (editProfileForm.request_membership) {
-        formData.append('member_ship_status', 'pending');
-      }
-      
-      console.log('Sending FormData:');
-      for (let pair of formData.entries()) {
-        console.log(pair[0] + ': ' + (pair[0] === 'photo' ? '[File]' : pair[1]));
-      }
-      
-      const updatedProfile = await updateMyProfile(formData);
-      
-      console.log('Profile updated successfully:', updatedProfile);
-      
-      if (updatedProfile) {
-        setProfile(updatedProfile);
-      }
-      
-      if (editProfileForm.request_membership) {
-        alert('Your membership request has been sent to the moderators for approval.');
+    // Append text fields
+    formData.append('full_name', editProfileForm.full_name || '');
+    formData.append('affiliation', editProfileForm.affiliation || '');
+    formData.append('country', editProfileForm.country || '');
+    formData.append('bio', editProfileForm.bio || '');
+    
+    // Handle research interests - ensure it's a valid JSON string
+    const interests = Array.isArray(editProfileForm.research_interests) 
+      ? editProfileForm.research_interests 
+      : [];
+    formData.append('research_interests', JSON.stringify(interests));
+    
+    formData.append('orcid', editProfileForm.orcid || '');
+    formData.append('website', editProfileForm.website || '');
+    
+    // Handle photo upload
+    if (editProfileForm.photo && editProfileForm.photo instanceof File) {
+      console.log('Appending photo file:', editProfileForm.photo.name);
+      formData.append('photo', editProfileForm.photo);
+    }
+    
+    // Handle membership request
+    if (editProfileForm.request_membership) {
+      formData.append('member_ship_status', 'pending');
+    }
+    
+    // Log FormData contents for debugging
+    console.log('Sending FormData:');
+    for (let pair of formData.entries()) {
+      if (pair[0] === 'photo') {
+        console.log(pair[0] + ': [File] ' + (pair[1] instanceof File ? pair[1].name : 'not a file'));
       } else {
-        alert('Profile updated successfully!');
+        console.log(pair[0] + ': ' + pair[1]);
       }
-      
-      setShowEditProfileModal(false);
-      setEditMode(false);
-      
+    }
+    
+    const response = await updateMyProfile(formData);
+    
+    console.log('Profile updated successfully:', response);
+    
+    // Check if response contains data
+    if (response && response.data) {
+      setProfile(response.data);
+    } else if (response && response.success) {
+      // If response has success but no data, fetch fresh profile
       const freshProfile = await getMyProfile();
       setProfile(freshProfile);
-      
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      console.error('Error response:', error.response?.data);
-      
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error || 
-                          'Failed to update profile';
-      alert(errorMessage);
-    } finally {
-      setUploadingPhoto(false);
+    } else {
+      // If response is the profile itself
+      setProfile(response);
     }
-  };
+    
+    if (editProfileForm.request_membership) {
+      alert('Your membership request has been sent to the moderators for approval.');
+    } else {
+      alert('Profile updated successfully!');
+    }
+    
+    setShowEditProfileModal(false);
+    setEditMode(false);
+    
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    console.error('Error response:', error.response?.data);
+    
+    const errorMessage = error.response?.data?.message || 
+                        error.response?.data?.error || 
+                        'Failed to update profile';
+    alert(errorMessage);
+  } finally {
+    setUploadingPhoto(false);
+  }
+};
 
   // ===============================
   // INVITE FUNCTIONS
@@ -630,12 +681,12 @@ const handleCreatePublication = async (e) => {
   e.preventDefault();
   
   // Validate required fields
-  if (!newPublication.title.trim()) {
+  if (!newPublication.title?.trim()) {
     alert("Title is required");
     return;
   }
   
-  if (!newPublication.authors.trim()) {
+  if (!newPublication.authors?.trim()) {
     alert("Authors are required");
     return;
   }
@@ -646,7 +697,7 @@ const handleCreatePublication = async (e) => {
     formData.append('title', newPublication.title.trim());
     formData.append('authors', newPublication.authors);
     formData.append('journal', newPublication.journal || '');
-    formData.append('year', newPublication.year.toString());
+    formData.append('year', String(newPublication.year));
     formData.append('doi', newPublication.doi || '');
     formData.append('abstract', newPublication.abstract || '');
     
@@ -654,17 +705,24 @@ const handleCreatePublication = async (e) => {
       formData.append('file', newPublication.file);
     }
 
+    console.log('Sending publication data:', {
+      title: newPublication.title,
+      authors: newPublication.authors,
+      journal: newPublication.journal,
+      year: newPublication.year
+    });
+
     const result = await createPublication(formData);
     
     // Add the new publication to the list
     setPublications(prevPublications => {
       const currentPublications = Array.isArray(prevPublications) ? prevPublications : [];
-      return [result.data, ...currentPublications];
+      return [result.data || result, ...currentPublications];
     });
     
     setAllPublications(prevAllPublications => {
       const currentAllPublications = Array.isArray(prevAllPublications) ? prevAllPublications : [];
-      return [result.data, ...currentAllPublications];
+      return [result.data || result, ...currentAllPublications];
     });
     
     // Reset form
@@ -682,6 +740,7 @@ const handleCreatePublication = async (e) => {
     alert("Publication created successfully!");
   } catch (error) {
     console.error("Error creating publication:", error);
+    console.error("Error response:", error.response?.data);
     alert(error.response?.data?.message || "Failed to create publication");
   }
 };
@@ -1486,20 +1545,19 @@ const refreshConnectionData = async () => {
                     className="d-flex align-items-start p-2 border-bottom"
                   >
                     <img
-                      src={
-                        researcher.photo
-                          ? `${API_URL}${researcher.photo}`
-                          : `https://ui-avatars.com/api/?name=${encodeURIComponent(researcher.full_name)}&background=0a66c2&color=fff&size=50`
-                      }
-                      alt={researcher.full_name}
-                      className="rounded-circle me-2"
-                      style={{
-                        width: "45px",
-                        height: "45px",
-                        objectFit: "cover",
-                      }}
-                    />
-                    <div className="flex-grow-1 min-width-0">
+    alt={researcher.full_name}
+    className="rounded-circle border-3 border-white shadow"
+    src={
+      researcher.photo
+        ? `${API_URL}${researcher.photo.replace(/^\/api/, "")}`
+        : `https://ui-avatars.com/api/?name=${encodeURIComponent(researcher.full_name)}&background=0a66c2&color=fff&size=100`
+    }
+    style={{
+      width: "100px",
+      height: "100px",
+      objectFit: "cover",
+    }}
+  />              <div className="flex-grow-1 min-width-0">
                       <h6 className="mb-0 fw-semibold text-truncate">
                         {researcher.full_name}
                       </h6>
@@ -1608,19 +1666,19 @@ const refreshConnectionData = async () => {
                 />
                 <div className="text-center mt-n4">
                   <img
-                    src={
-                      profile.photo
-                        ? `${API_URL}${profile.photo}`
-                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.full_name)}&background=0a66c2&color=fff&size=100`
-                    }
-                    alt={profile.full_name}
-                    className="rounded-circle border-3 border-white shadow"
-                    style={{
-                      width: "100px",
-                      height: "100px",
-                      objectFit: "cover",
-                    }}
-                  />
+    alt={profile.full_name}
+    className="rounded-circle border-3 border-white shadow"
+    src={
+      profile.photo
+        ? `${API_URL}${profile.photo.replace(/^\/api/, "")}`
+        : `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.full_name)}&background=0a66c2&color=fff&size=100`
+    }
+    style={{
+      width: "100px",
+      height: "100px",
+      objectFit: "cover",
+    }}
+  />
                   
                   {/* Membership Status Badge */}
                   {membershipBadge && (
@@ -1808,8 +1866,9 @@ const refreshConnectionData = async () => {
               <div className="card rounded-3 shadow-sm border-0">
                 <div className="card-header bg-white d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 py-2">
                   <h4 className="fw-bold mb-0 fs-5 fs-md-4">Publications</h4>
+              {/* move to left side */}
                   <button
-                    className="btn btn-primary rounded-pill px-4 w-100 w-sm-auto"
+                    className="btn btn-primary rounded-pill px-4 "
                     onClick={() => setShowCreatePublication(true)}
                   >
                     <i className="bi bi-plus-circle me-2"></i>
