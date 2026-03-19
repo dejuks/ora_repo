@@ -81,6 +81,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.set("trust proxy", 1);
 
+
+
 /* =======================
    API ROUTES
 ======================= */
