@@ -1545,19 +1545,20 @@ const refreshConnectionData = async () => {
                     className="d-flex align-items-start p-2 border-bottom"
                   >
                     <img
-    alt={researcher.full_name}
-    className="rounded-circle border-3 border-white shadow"
-    src={
-      researcher.photo
-        ? `${API_URL}${researcher.photo.replace(/^\/api/, "")}`
-        : `https://ui-avatars.com/api/?name=${encodeURIComponent(researcher.full_name)}&background=0a66c2&color=fff&size=100`
-    }
-    style={{
-      width: "100px",
-      height: "100px",
-      objectFit: "cover",
-    }}
-  />              <div className="flex-grow-1 min-width-0">
+                      src={
+                        researcher.photo
+                          ? `${API_URL}${researcher.photo}`
+                          : `https://ui-avatars.com/api/?name=${encodeURIComponent(researcher.full_name)}&background=0a66c2&color=fff&size=50`
+                      }
+                      alt={researcher.full_name}
+                      className="rounded-circle me-2"
+                      style={{
+                        width: "45px",
+                        height: "45px",
+                        objectFit: "cover",
+                      }}
+                    />
+                    <div className="flex-grow-1 min-width-0">
                       <h6 className="mb-0 fw-semibold text-truncate">
                         {researcher.full_name}
                       </h6>
