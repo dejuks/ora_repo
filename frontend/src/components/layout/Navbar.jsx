@@ -64,6 +64,9 @@ export default function Navbar() {
             <span className="dropdown-item-text text-muted">
               {user?.email}
             </span>
+            <span className="dropdown-item-text text-muted">
+              {user?.name}
+            </span>
 
             <div className="dropdown-divider"></div>
 

@@ -982,6 +982,13 @@ export default function Sidebar() {
     navigate("/auth/login");
   };
 
+  const roleNames =
+  user?.roles?.length
+    ? user.roles.map((r) => r.role_name || r.name || r.code)
+    : user?.user_roles?.map((ur) => ur.role?.role_name || ur.role?.name) || [];
+
+const cleanedRoleNames = roleNames.filter(Boolean);
+
   return (
     <aside className="main-sidebar sidebar-modern elevation-4">
       <style>{`
@@ -1198,7 +1205,13 @@ export default function Sidebar() {
               <Link to="/profile" className="d-block">
                 {user.full_name}
               </Link>
-              <small className="text-muted">{user.module_name}</small>
+             <small className="text-muted d-block">{user.module_name}</small>
+
+{cleanedRoleNames.length > 0 && (
+  <small className="text-primary" style={{ fontSize: "0.75rem" }}>
+    {cleanedRoleNames.join(", ")}
+  </small>
+)}
             </div>
           </div>
         </div>
