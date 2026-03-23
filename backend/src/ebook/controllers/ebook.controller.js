@@ -179,3 +179,92 @@ export const ebookPublicationController = {
     res.json(row);
   }),
 };
+
+
+// Add this to your ebookSubmissionController object in ebook.controller.js
+getEditorQueue: asyncHandler(async (req, res) => {
+  const { stage, search, overdue_only } = req.query;
+  
+  let query = `
+    SELECT 
+      es.submission_id,
+      es.title,
+      es.subtitle,
+      es.abstract,
+      es.status,
+      es.created_at,
+      es.updated_at,
+      es.submitted_at,
+      es.accepted_at,
+      u.uuid AS author_id,
+      u.full_name AS author_name,
+      COUNT(DISTINCT era.assignment_id)::int AS assignment_count,
+      COUNT(DISTINCT er.review_id)::int AS review_count,
+      COUNT(DISTINCT CASE 
+        WHEN era.status = 'assigned' 
+        AND era.due_date < CURRENT_DATE 
+        THEN era.assignment_id 
+      END)::int AS overdue_assignment_count,
+      ARRAY_REMOVE(ARRAY_AGG(DISTINCT u_rev.full_name), NULL) AS reviewer_names,
+      ef.payment_status,
+      ef.requires_bpc,
+      ef.bpc_amount,
+      ef.payment_due_date,
+      ef.invoice_sent_at,
+      ef.payment_received_at,
+      ep.proof_sent_to_author,
+      ep.author_proof_approved,
+      ep.proof_sent_at,
+      ep.proof_approved_at
+    FROM ebook_submissions es
+    LEFT JOIN users u ON u.uuid = es.author_id
+    LEFT JOIN ebook_review_assignments era ON era.submission_id = es.submission_id AND era.is_active = true
+    LEFT JOIN ebook_reviews er ON er.assignment_id = era.assignment_id
+    LEFT JOIN users u_rev ON u_rev.uuid = era.reviewer_id
+    LEFT JOIN ebook_finance ef ON ef.submission_id = es.submission_id
+    LEFT JOIN ebook_production ep ON ep.submission_id = es.submission_id
+    WHERE 1=1
+  `;
+  
+  const values = [];
+  let paramCount = 1;
+  
+  // Filter by stage
+  if (stage === 'screening') {
+    query += ` AND es.status IN ('submitted')`;
+  } else if (stage === 'screened') {
+    query += ` AND es.status IN ('editor_screening')`;
+  } else if (stage === 'reviews') {
+    query += ` AND es.status IN ('under_review')`;
+  } else if (stage === 'handoff') {
+    query += ` AND es.status IN ('accepted', 'finance_cleared', 'production', 'published')`;
+  }
+  
+  // Search filter
+  if (search && search.trim()) {
+    query += ` AND (es.title ILIKE $${paramCount} OR es.abstract ILIKE $${paramCount} OR u.full_name ILIKE $${paramCount})`;
+    values.push(`%${search}%`);
+    paramCount++;
+  }
+  
+  // Overdue only filter
+  if (overdue_only === 'true') {
+    query += ` AND EXISTS (
+      SELECT 1 FROM ebook_review_assignments era2 
+      WHERE era2.submission_id = es.submission_id 
+      AND era2.status = 'assigned' 
+      AND era2.due_date < CURRENT_DATE
+    )`;
+  }
+  
+  query += `
+    GROUP BY es.submission_id, u.uuid, u.full_name, ef.payment_status, ef.requires_bpc, 
+             ef.bpc_amount, ef.payment_due_date, ef.invoice_sent_at, 
+             ef.payment_received_at, ep.proof_sent_to_author, ep.author_proof_approved,
+             ep.proof_sent_at, ep.proof_approved_at
+    ORDER BY es.updated_at DESC
+  `;
+  
+  const result = await pool.query(query, values);
+  res.json({ rows: result.rows });
+});

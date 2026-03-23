@@ -99,6 +99,8 @@ import AdminGroupDetails from "./pages/researcher/groups/AdminGroupDetails";
 import AssignedReviewDetails from "./pages/journals/reviewer/AssignedReviewDetails";
 import Home from "./landing/pages/Home";
 import Repository from "./landing/pages/Repository";
+import EbookLanding from "./landing/pages/Ebooks.jsx";
+
 import Network from "./landing/pages/Network";
 import JournalPage from "./landing/pages/JournalPage";
 import JournalDetailPage from "./landing/pages/PublicManuscriptDetailPage";
@@ -194,6 +196,7 @@ function App() {
         <Route path="/journal/author-login" element={<JournalAuthorLoginPage />} />
         <Route path="/manuscripts/contribute" element={<ManuscriptContributePage />} />
         <Route path="/repository" element={<Repository />} />
+        <Route path="/ebooks" element={<EbookLanding />} />
         <Route path="/library" element={<LibraryPage />} />
         <Route path="/network" element={<Network />} />
         <Route path="/wikipedia" element={<OromoWikipedia />} />
@@ -377,6 +380,7 @@ function App() {
         <Route path="/ebook/review-assignments/:id" element={<ProtectedRoute><EbookReviewDetailPage /></ProtectedRoute>} />
         <Route path="/ebook/reviewer-manager" element={<ProtectedRoute><EbookReviewerManagerPage /></ProtectedRoute>} />
         <Route path="/ebook/editor/screening" element={<ProtectedRoute><EbookEditorStageListPage stage="screening" /></ProtectedRoute>} />
+        <Route path="/ebook/editor/screened" element={<ProtectedRoute><EbookEditorStageListPage stage="screened" /></ProtectedRoute>} />
         <Route path="/ebook/editor/reviews" element={<ProtectedRoute><EbookEditorStageListPage stage="reviews" /></ProtectedRoute>} />
         <Route path="/ebook/editor/handoff" element={<ProtectedRoute><EbookEditorStageListPage stage="handoff" /></ProtectedRoute>} />
         <Route path="/ebook/editor-queue" element={<ProtectedRoute><EbookEditorQueuePage /></ProtectedRoute>} />

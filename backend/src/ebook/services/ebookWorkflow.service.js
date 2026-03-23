@@ -411,6 +411,8 @@ export const ebookWorkflowService = {
 
   async editorScreening(submissionId, actorId, { decision, note = null }) {
     const nextStatusMap = {
+      screened: "editor_screening",
+      mark_screened: "editor_screening",
       send_to_review: "under_review",
       request_revision: "revision_requested",
       reject: "rejected",
