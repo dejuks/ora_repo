@@ -322,7 +322,6 @@ export default function UnderReviewAE() {
                 <thead>
                   <tr>
                     <th>Title</th>
-                    <th>Assigned Reviewers</th>
                     <th>Status</th>
                     <th>Due Date</th>
                     <th>Files</th>
@@ -339,35 +338,9 @@ export default function UnderReviewAE() {
                           <br />
                           <small className="text-muted">ID: {manuscriptId}</small>
                         </td>
+                        
                         <td>
-                          {m.assigned_reviewers && m.assigned_reviewers.length > 0 ? (
-                            <div>
-                              {m.assigned_reviewers.map((reviewer, idx) => (
-                                <div key={idx} className="mb-1">
-                                  <span className="badge bg-primary p-2">
-                                    {reviewer.name}
-                                  </span>
-                                  <br />
-                                  <small className="text-muted">{reviewer.email}</small>
-                                </div>
-                              ))}
-                            </div>
-                          ) : m.assigned_reviewer ? (
-                            <div>
-                              <span className="badge bg-primary p-2 mb-1">
-                                {m.assigned_reviewer.name}
-                              </span>
-                              <br />
-                              <small className="text-muted">{m.assigned_reviewer.email}</small>
-                            </div>
-                          ) : (
-                            <span className="badge bg-warning p-2">Not Assigned</span>
-                          )}
-                        </td>
-                        <td>
-                          <span className={`badge ${getStatusBadge(m.review_status)} p-2`}>
-                            {m.review_status?.replace(/_/g, ' ') || 'Pending'}
-                          </span>
+                          <span>{m.status}</span>
                         </td>
                         <td>
                           {m.due_date ? (

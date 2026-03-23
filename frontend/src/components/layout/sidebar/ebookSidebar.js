@@ -1,0 +1,93 @@
+export function buildEbookRoutes(ROLES) {
+  const A = ROLES.EBOOK_ADMIN;
+  const AU = ROLES.EBOOK_AUTHOR;
+  const E = ROLES.EBOOK_EDITOR;
+  const R = ROLES.EBOOK_REVIEWER;
+  const D = ROLES.EBOOK_DIGITAL_CONTENT_MANAGER;
+  const DX = ROLES.EBOOK_DCM;
+  const F = ROLES.EBOOK_FINANCE_OFFICER;
+  const PR = ROLES.PUBLIC_READER;
+  const EPR = ROLES.EBOOK_PUBLIC_READER;
+
+  return [
+    {
+      name: "Dashboard",
+      path: "/ebook/dashboard",
+      icon: "fas fa-tachometer-alt",
+      roles: [A, AU, E, R, D, DX, F, PR, EPR],
+    },
+    {
+      name: "Author Workspace",
+      icon: "fas fa-user-edit",
+      roles: [AU, A],
+      subMenu: [
+        { name: "My Submissions", path: "/ebook/my-submissions", icon: "fas fa-file-alt", roles: [AU, A] },
+        { name: "My Drafts", path: "/ebook/drafts", icon: "fas fa-file-alt", roles: [AU, A] },
+        { name: "Revision Requests", path: "/ebook/my-revisions", icon: "fas fa-edit", roles: [AU, A] },
+        { name: "Payments & Waivers", path: "/ebook/my-payments", icon: "fas fa-credit-card", roles: [AU, A] },
+        { name: "Proof Approvals", path: "/ebook/my-proofs", icon: "fas fa-check-circle", roles: [AU, A] },
+        { name: "Rejected by Editor", path: "/ebook/my-rejected", icon: "fas fa-times-circle", roles: [AU, A] },
+        { name: "Create Submission", path: "/ebook/submissions/create", icon: "fas fa-plus-circle", roles: [AU, A] },
+        { name: "All Manuscripts", path: "/ebook/submissions", icon: "fas fa-list", roles: [AU, A] },
+      ],
+    },
+    {
+      name: "Editorial",
+      icon: "fas fa-pen-fancy",
+      roles: [E, A],
+      subMenu: [
+        { name: "Screening Queue", path: "/ebook/editor/screening", icon: "fas fa-filter", roles: [E, A] },
+        { name: "Review Monitoring", path: "/ebook/editor/reviews", icon: "fas fa-eye", roles: [E, A] },
+        { name: "Accepted & Handoff", path: "/ebook/editor/handoff", icon: "fas fa-handshake", roles: [E, A] },
+        { name: "Reviewer Manager", path: "/ebook/reviewer-manager", icon: "fas fa-users-cog", roles: [E, A] },
+        { name: "All Submissions", path: "/ebook/submissions", icon: "fas fa-list", roles: [E, A] },
+      ],
+    },
+    {
+      name: "Reviewer",
+      icon: "fas fa-star",
+      roles: [R, A],
+      subMenu: [
+        { name: "My Assigned Submissions", path: "/ebook/reviewer", icon: "fas fa-inbox", roles: [R, A] },
+        { name: "Pending Assignments", path: "/ebook/reviewer/pending", icon: "fas fa-clock", roles: [R, A] },
+        { name: "Accepted Assignments", path: "/ebook/reviewer/accepted", icon: "fas fa-check", roles: [R, A] },
+        { name: "Rejected Assignments", path: "/ebook/reviewer/rejected", icon: "fas fa-times", roles: [R, A] },
+        { name: "Completed Reviews", path: "/ebook/reviewer/completed", icon: "fas fa-check-double", roles: [R, A] },
+        { name: "Overdue Assignments", path: "/ebook/reviewer/overdue", icon: "fas fa-exclamation-triangle", roles: [R, A] },
+      ],
+    },
+    {
+      name: "Finance",
+      icon: "fas fa-coins",
+      roles: [F, A],
+      subMenu: [
+        { name: "Finance Dashboard", path: "/ebook/finance", icon: "fas fa-chart-line", roles: [F, A] },
+      ],
+    },
+    {
+      name: "Production",
+      icon: "fas fa-industry",
+      roles: [D, DX, A],
+      subMenu: [
+        { name: "Production Queue", path: "/ebook/production", icon: "fas fa-tasks", roles: [D, DX, A] },
+        { name: "Publication Management", path: "/ebook/management/publications", icon: "fas fa-book", roles: [D, DX, A] },
+      ],
+    },
+    {
+      name: "Administration",
+      icon: "fas fa-user-shield",
+      roles: [A],
+      subMenu: [
+        { name: "Ebook Admin", path: "/ebook/admin", icon: "fas fa-crown", roles: [A] },
+      ],
+    },
+    {
+      name: "Public Reader",
+      icon: "fas fa-book-reader",
+      roles: [A, AU, E, R, D, DX, F, PR, EPR],
+      subMenu: [
+        { name: "Public Catalog", path: "/ebook/publications", icon: "fas fa-book-open", roles: [A, AU, E, R, D, DX, F, PR, EPR] },
+      ],
+    },
+  ];
+}
