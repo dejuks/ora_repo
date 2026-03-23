@@ -1,21 +1,47 @@
-import api from "./api.js";
+import api from "./api";
 
 const unwrap = async (request) => {
-  const res = await request();
-  return res?.data ?? res;
+  try {
+    const res = await request();
+    return res?.data ?? res;
+  } catch (error) {
+    console.error("API Error:", error);
+    throw error;
+  }
 };
 
 const toFormData = (payload = {}) => {
   const formData = new FormData();
+  const excludedKeys = [
+    "file",
+    "payment_proof",
+    "receipt_file",
+    "manuscript",
+    "manuscript_file",
+    "attachments",
+  ];
+
   Object.entries(payload || {}).forEach(([key, value]) => {
-    if (["file", "payment_proof", "receipt_file", "manuscript", "manuscript_file"].includes(key)) return;
+    if (excludedKeys.includes(key)) return;
     if (value === undefined || value === null || value === "") return;
+
     if (Array.isArray(value)) {
-      formData.append(key, value.join(", "));
+      if (key === "keywords") {
+        formData.append(key, value.join(", "));
+      } else {
+        formData.append(key, JSON.stringify(value));
+      }
       return;
     }
-    formData.append(key, value);
+
+    if (typeof value === "object") {
+      formData.append(key, JSON.stringify(value));
+      return;
+    }
+
+    formData.append(key, String(value));
   });
+
   return formData;
 };
 
@@ -26,16 +52,33 @@ const ebookApi = {
   getWorkflow: (id) => unwrap(() => api.get(`/ebook/submissions/${id}/workflow`)),
 
   createSubmission: (payload) => {
+    if (payload instanceof FormData) {
+      return unwrap(() =>
+        api.post("/ebook/submissions", payload, {
+          headers: { "Content-Type": "multipart/form-data" },
+        })
+      );
+    }
+
     const hasFile = payload?.file instanceof File;
+
     if (hasFile) {
-      const formData = toFormData({ ...payload, file_role: payload?.file_role || "manuscript" });
+      const formData = toFormData(payload);
       formData.append("file", payload.file);
+
+      if (payload.file_role && !formData.has("file_role")) {
+        formData.append("file_role", payload.file_role);
+      } else if (!formData.has("file_role")) {
+        formData.append("file_role", "manuscript");
+      }
+
       return unwrap(() =>
         api.post("/ebook/submissions", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         })
       );
     }
+
     return unwrap(() => api.post("/ebook/submissions", payload));
   },
 
@@ -44,6 +87,7 @@ const ebookApi = {
   resubmitSubmission: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/resubmit`, payload)),
   screening: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/screening`, payload)),
   assignReviewer: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/assign-reviewer`, payload)),
+
   makeDecision: (id, payload) =>
     unwrap(() =>
       api.post(`/ebook/submissions/${id}/decision`, {
@@ -51,6 +95,7 @@ const ebookApi = {
         note: payload?.note || "",
       })
     ),
+
   upsertFinance: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/finance`, payload)),
   upsertProduction: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/production`, payload)),
   publishSubmission: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/publish`, payload)),
@@ -71,16 +116,19 @@ const ebookApi = {
   issueInvoice: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/issue-invoice`, payload)),
   verifyPayment: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/verify-payment`, payload)),
   rejectPayment: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/reject-payment`, payload)),
+
   submitPaymentProof: (id, payload = {}) => {
     const formData = toFormData(payload);
     if (payload?.file) formData.append("file", payload.file);
     else if (payload?.payment_proof) formData.append("payment_proof", payload.payment_proof);
+
     return unwrap(() =>
       api.post(`/ebook/submissions/${id}/payment-proof`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       })
     );
   },
+
   getInvoice: (id) => unwrap(() => api.get(`/ebook/submissions/${id}/invoice`)),
   getReceipt: (id) => unwrap(() => api.get(`/ebook/submissions/${id}/receipt`)),
   getFinanceTransactions: (id) => unwrap(() => api.get(`/ebook/submissions/${id}/finance-transactions`)),
@@ -100,24 +148,30 @@ const ebookApi = {
   getReviewAssignmentFiles: (id) => unwrap(() => api.get(`/ebook/review-assignments/${id}/files`)),
   getReviewTemplate: () => unwrap(() => api.get("/ebook/review-template")),
   respondAssignment: (id, payload) => unwrap(() => api.post(`/ebook/review-assignments/${id}/respond`, payload)),
-    submitReview: (id, payload = {}) => {
+
+  submitReview: (id, payload = {}) => {
     const hasAttachments = Array.isArray(payload?.attachments) && payload.attachments.length > 0;
+
     if (!hasAttachments) {
       const { attachments, ...rest } = payload || {};
       return unwrap(() => api.post(`/ebook/review-assignments/${id}/submit-review`, rest));
     }
+
     const formData = toFormData(payload);
     (payload.attachments || []).forEach((file) => {
       formData.append("attachments", file);
     });
+
     return unwrap(() =>
       api.post(`/ebook/review-assignments/${id}/submit-review`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       })
     );
   },
+
   updateReview: (id, payload) => unwrap(() => api.put(`/ebook/review-assignments/${id}/review`, payload)),
   requestReviewExtension: (id, payload) => unwrap(() => api.post(`/ebook/review-assignments/${id}/extension`, payload)),
+
   uploadReviewFile: (id, file) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -127,9 +181,11 @@ const ebookApi = {
       })
     );
   },
+
   getReviewerReminders: (params = {}) => unwrap(() => api.get("/ebook/reviewer-reminders", { params })),
   removeReviewAssignment: (id) => unwrap(() => api.delete(`/ebook/review-assignments/${id}`)),
-  reassignReviewer: (submissionId, payload) => unwrap(() => api.post(`/ebook/submissions/${submissionId}/reassign-reviewer`, payload)),
+  reassignReviewer: (submissionId, payload) =>
+    unwrap(() => api.post(`/ebook/submissions/${submissionId}/reassign-reviewer`, payload)),
 
   getEditorQueue: (params = {}) => unwrap(() => api.get("/ebook/editor-queue", { params })),
   approveForProduction: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/approve-production`, payload)),
@@ -139,10 +195,12 @@ const ebookApi = {
   listPublications: (params = {}) => unwrap(() => api.get("/ebook/publications", { params })),
   listPublicCatalog: (params = {}) => unwrap(() => api.get("/ebook-public/publications", { params })),
   getPublicPublication: (slug) => unwrap(() => api.get(`/ebook-public/publications/${slug}`)),
-  downloadPublicPublication: async (slug) => api.get(`/ebook-public/publications/${slug}/download`, { responseType: "blob" }),
+  downloadPublicPublication: async (slug) =>
+    api.get(`/ebook-public/publications/${slug}/download`, { responseType: "blob" }),
   getPublicCitation: (slug) => unwrap(() => api.get(`/ebook-public/publications/${slug}/citation`)),
   logPublicDownload: (slug) => unwrap(() => api.post(`/ebook-public/publications/${slug}/log-download`)),
-  getPublicSearchSuggestions: (params = {}) => unwrap(() => api.get("/ebook-public/search/suggestions", { params })),
+  getPublicSearchSuggestions: (params = {}) =>
+    unwrap(() => api.get("/ebook-public/search/suggestions", { params })),
 
   getAdminAuditLogs: (params = {}) => unwrap(() => api.get("/ebook/admin/audit-logs", { params })),
   getAdminStorage: () => unwrap(() => api.get("/ebook/admin/storage")),

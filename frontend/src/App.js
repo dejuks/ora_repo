@@ -379,6 +379,7 @@ function App() {
         <Route path="/ebook/review-assignments/:id" element={<ProtectedRoute><EbookReviewDetailPage /></ProtectedRoute>} />
         <Route path="/ebook/reviewer-manager" element={<ProtectedRoute><EbookReviewerManagerPage /></ProtectedRoute>} />
         <Route path="/ebook/editor/screening" element={<ProtectedRoute><EbookEditorStageListPage stage="screening" /></ProtectedRoute>} />
+        <Route path="/ebook/editor/screened" element={<ProtectedRoute><EbookEditorStageListPage stage="screened" /></ProtectedRoute>} />
         <Route path="/ebook/editor/reviews" element={<ProtectedRoute><EbookEditorStageListPage stage="reviews" /></ProtectedRoute>} />
         <Route path="/ebook/editor/handoff" element={<ProtectedRoute><EbookEditorStageListPage stage="handoff" /></ProtectedRoute>} />
         <Route path="/ebook/editor-queue" element={<ProtectedRoute><EbookEditorQueuePage /></ProtectedRoute>} />
