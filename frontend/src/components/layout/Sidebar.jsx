@@ -177,7 +177,6 @@ export default function Sidebar() {
   if (!user) return null;
 
   const moduleRoutes = {
-<<<<<<< HEAD
     [MODULES.SYSTEM_WIDE]: [
       {
         name: "Dashboard",
@@ -722,10 +721,8 @@ export default function Sidebar() {
         ],
       },
     ],
-=======
     [MODULES.LIBRARY]: buildLibraryRoutes(ROLES),
     [MODULES.EBOOK]: buildEbookRoutes(ROLES),
->>>>>>> 6a1495a0cfcbbdc9280d068c23e2506b5ad24692
   };
 
   const routes = moduleRoutes[moduleId]
@@ -741,19 +738,11 @@ export default function Sidebar() {
   };
 
   const roleNames =
-<<<<<<< HEAD
   user?.roles?.length
     ? user.roles.map((r) => r.role_name || r.name || r.code)
     : user?.user_roles?.map((ur) => ur.role?.role_name || ur.role?.name) || [];
 
 const cleanedRoleNames = roleNames.filter(Boolean);
-=======
-    user?.roles?.length
-      ? user.roles.map((r) => r.role_name || r.name || r.code)
-      : user?.user_roles?.map((ur) => ur.role?.role_name || ur.role?.name) || [];
-
-  const cleanedRoleNames = roleNames.filter(Boolean);
->>>>>>> 6a1495a0cfcbbdc9280d068c23e2506b5ad24692
 
   return (
     <aside className="main-sidebar sidebar-modern elevation-4">
@@ -956,7 +945,6 @@ const cleanedRoleNames = roleNames.filter(Boolean);
               <Link to="/profile" className="d-block">
                 {user.full_name}
               </Link>
-<<<<<<< HEAD
              <small className="text-muted d-block">{user.module_name}</small>
 
 {cleanedRoleNames.length > 0 && (
@@ -964,15 +952,6 @@ const cleanedRoleNames = roleNames.filter(Boolean);
     {cleanedRoleNames.join(", ")}
   </small>
 )}
-=======
-              <small className="text-muted d-block">{user.module_name}</small>
-
-              {cleanedRoleNames.length > 0 && (
-                <small className="text-primary" style={{ fontSize: "0.75rem" }}>
-                  {cleanedRoleNames.join(", ")}
-                </small>
-              )}
->>>>>>> 6a1495a0cfcbbdc9280d068c23e2506b5ad24692
             </div>
           </div>
         </div>
