@@ -156,21 +156,10 @@ export default function EbookDashboard() {
   const [stats, setStats] = useState(MOCK_STATS);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
-  // Auth modal state
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState("login"); // "login" or "register"
-  const [authForm, setAuthForm] = useState({
-    full_name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    phone: "",
-    gender: "",
-    dob: ""
-  });
-  const [authError, setAuthError] = useState("");
-  const [authLoading, setAuthLoading] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState("all");
+  const [hoveredBook, setHoveredBook] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     // Check screen size
