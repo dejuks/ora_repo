@@ -37,6 +37,7 @@ export function buildEbookRoutes(ROLES) {
       roles: [E, A],
       subMenu: [
         { name: "Screening Queue", path: "/ebook/editor/screening", icon: "fas fa-filter", roles: [E, A] },
+        { name: "Screened Submissions", path: "/ebook/editor/screened", icon: "fas fa-check-circle", roles: [E, A] },
         { name: "Review Monitoring", path: "/ebook/editor/reviews", icon: "fas fa-eye", roles: [E, A] },
         { name: "Accepted & Handoff", path: "/ebook/editor/handoff", icon: "fas fa-handshake", roles: [E, A] },
         { name: "Reviewer Manager", path: "/ebook/reviewer-manager", icon: "fas fa-users-cog", roles: [E, A] },
@@ -48,12 +49,13 @@ export function buildEbookRoutes(ROLES) {
       icon: "fas fa-star",
       roles: [R, A],
       subMenu: [
-        { name: "My Assigned Submissions", path: "/ebook/reviewer", icon: "fas fa-inbox", roles: [R, A] },
-        { name: "Pending Assignments", path: "/ebook/reviewer/pending", icon: "fas fa-clock", roles: [R, A] },
+        { name: "My Assignments", path: "/ebook/reviewer/pending", icon: "fas fa-clock", roles: [R, A] },
         { name: "Accepted Assignments", path: "/ebook/reviewer/accepted", icon: "fas fa-check", roles: [R, A] },
         { name: "Rejected Assignments", path: "/ebook/reviewer/rejected", icon: "fas fa-times", roles: [R, A] },
         { name: "Completed Reviews", path: "/ebook/reviewer/completed", icon: "fas fa-check-double", roles: [R, A] },
         { name: "Overdue Assignments", path: "/ebook/reviewer/overdue", icon: "fas fa-exclamation-triangle", roles: [R, A] },
+        { name: "All my Assigned", path: "/ebook/reviewer", icon: "fas fa-inbox", roles: [R, A] },
+
       ],
     },
     {
