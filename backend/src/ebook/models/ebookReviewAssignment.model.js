@@ -5,7 +5,7 @@ export const EbookReviewAssignmentModel = new EbookBaseModel({
   primaryKey: "assignment_id",
   allowedColumns: [
     "submission_id", "reviewer_id", "assigned_by", "status", "due_date", "invitation_note", "response_note",
-    "assigned_at", "accepted_at", "completed_at"
+    "round_no", "assigned_at", "accepted_at", "completed_at", "updated_at"
   ],
   searchableColumns: ["status", "invitation_note", "response_note"],
 });

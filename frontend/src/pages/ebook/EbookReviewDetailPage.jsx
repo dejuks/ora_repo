@@ -31,7 +31,7 @@ export default function EbookReviewDetailPage() {
     setError("");
     try {
       const [assignmentRes, filesRes, templateRes] = await Promise.all([
-        ebookApi.getReviewAssignment(id),
+        ebookApi.getReviewAssignmentDetail(id),
         ebookApi.getReviewAssignmentFiles(id),
         ebookApi.getReviewTemplate(),
       ]);

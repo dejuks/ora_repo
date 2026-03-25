@@ -1,163 +1,180 @@
 import api from "./api";
 
 const unwrap = async (request) => {
-  try {
-    const res = await request();
-    return res?.data ?? res;
-  } catch (error) {
-    console.error("API Error:", error);
-    throw error;
-  }
+  const response = await request();
+  return response?.data;
 };
 
 const toFormData = (payload = {}) => {
   const formData = new FormData();
-  const excludedKeys = [
-    "file",
-    "payment_proof",
-    "receipt_file",
-    "manuscript",
-    "manuscript_file",
-    "attachments",
-  ];
 
   Object.entries(payload || {}).forEach(([key, value]) => {
-    if (excludedKeys.includes(key)) return;
-    if (value === undefined || value === null || value === "") return;
+    if (value === undefined || value === null) return;
 
     if (Array.isArray(value)) {
-      if (key === "keywords") {
-        formData.append(key, value.join(", "));
-      } else {
-        formData.append(key, JSON.stringify(value));
-      }
+      value.forEach((item) => {
+        if (item !== undefined && item !== null) {
+          formData.append(`${key}[]`, item);
+        }
+      });
       return;
     }
 
-    if (typeof value === "object") {
-      formData.append(key, JSON.stringify(value));
-      return;
-    }
-
-    formData.append(key, String(value));
+    formData.append(key, value);
   });
 
   return formData;
 };
 
 const ebookApi = {
-  listSubmissions: (params = {}) => unwrap(() => api.get("/ebook/submissions", { params })),
-  listMySubmissions: (params = {}) => unwrap(() => api.get("/ebook/submissions-mine", { params })),
-  getSubmission: (id) => unwrap(() => api.get(`/ebook/submissions/${id}`)),
-  getWorkflow: (id) => unwrap(() => api.get(`/ebook/submissions/${id}/workflow`)),
+  
 
-  createSubmission: (payload) => {
-    if (payload instanceof FormData) {
-      return unwrap(() =>
-        api.post("/ebook/submissions", payload, {
-          headers: { "Content-Type": "multipart/form-data" },
-        })
-      );
-    }
+  getDashboard: () => unwrap(() => api.get("/ebook/dashboard")),
 
-    const hasFile = payload?.file instanceof File;
+  getAuthorDashboard: () =>
+    unwrap(() => api.get("/ebook/dashboard/author")),
 
-    if (hasFile) {
-      const formData = toFormData(payload);
-      formData.append("file", payload.file);
+  getEditorDashboard: () =>
+    unwrap(() => api.get("/ebook/dashboard/editor")),
 
-      if (payload.file_role && !formData.has("file_role")) {
-        formData.append("file_role", payload.file_role);
-      } else if (!formData.has("file_role")) {
-        formData.append("file_role", "manuscript");
-      }
+  getReviewerDashboard: () =>
+    unwrap(() => api.get("/ebook/dashboard/reviewer")),
 
-      return unwrap(() =>
-        api.post("/ebook/submissions", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        })
-      );
-    }
+  getFinanceDashboard: () =>
+    unwrap(() => api.get("/ebook/dashboard/finance")),
 
-    return unwrap(() => api.post("/ebook/submissions", payload));
-  },
+  getProductionDashboard: () =>
+    unwrap(() => api.get("/ebook/dashboard/production")),
+  /* =========================
+     Dashboard / overview
+  ========================= */
+  getDashboard: () => unwrap(() => api.get("/ebook/dashboard")),
 
-  updateSubmission: (id, payload) => unwrap(() => api.put(`/ebook/submissions/${id}`, payload)),
-  submitSubmission: (id) => unwrap(() => api.post(`/ebook/submissions/${id}/submit`)),
-  resubmitSubmission: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/resubmit`, payload)),
-  screening: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/screening`, payload)),
-  assignReviewer: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/assign-reviewer`, payload)),
+  /* =========================
+     Submission CRUD
+  ========================= */
+  listSubmissions: (params = {}) =>
+    unwrap(() => api.get("/ebook/submissions", { params })),
 
-  makeDecision: (id, payload) =>
-    unwrap(() =>
-      api.post(`/ebook/submissions/${id}/decision`, {
-        decision: String(payload?.decision || "").trim().toLowerCase().replace(/\s+/g, "_"),
-        note: payload?.note || "",
-      })
-    ),
+  listMySubmissions: (params = {}) =>
+    unwrap(() => api.get("/ebook/submissions/my", { params })),
 
-  upsertFinance: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/finance`, payload)),
-  upsertProduction: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/production`, payload)),
-  publishSubmission: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/publish`, payload)),
+  getSubmission: (id) =>
+    unwrap(() => api.get(`/ebook/submissions/${id}`)),
 
-  uploadFile: async (id, file, fileRole = "manuscript") => {
+  getWorkflow: (id) =>
+    unwrap(() => api.get(`/ebook/submissions/${id}/workflow`)),
+
+  createSubmission: (payload) =>
+    unwrap(() => api.post("/ebook/submissions", payload)),
+
+  updateSubmission: (id, payload) =>
+    unwrap(() => api.put(`/ebook/submissions/${id}`, payload)),
+
+  deleteSubmission: (id) =>
+    unwrap(() => api.delete(`/ebook/submissions/${id}`)),
+
+  saveDraft: (payload) =>
+    unwrap(() => api.post("/ebook/submissions/draft", payload)),
+
+  submitSubmission: (id) =>
+    unwrap(() => api.post(`/ebook/submissions/${id}/submit`)),
+
+  screening: (id, payload) =>
+    unwrap(() => api.post(`/ebook/submissions/${id}/screening`, payload)),
+
+  /* =========================
+     Submission files
+  ========================= */
+  uploadFile: (id, file, file_role = "manuscript") => {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("file_role", fileRole);
-    const res = await api.post(`/ebook/submissions/${id}/files/upload`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return res.data;
-  },
-
-  requestWaiver: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/request-waiver`, payload)),
-  approveWaiver: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/approve-waiver`, payload)),
-  declineWaiver: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/decline-waiver`, payload)),
-  issueInvoice: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/issue-invoice`, payload)),
-  verifyPayment: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/verify-payment`, payload)),
-  rejectPayment: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/reject-payment`, payload)),
-
-  submitPaymentProof: (id, payload = {}) => {
-    const formData = toFormData(payload);
-    if (payload?.file) formData.append("file", payload.file);
-    else if (payload?.payment_proof) formData.append("payment_proof", payload.payment_proof);
+    formData.append("file_role", file_role);
 
     return unwrap(() =>
-      api.post(`/ebook/submissions/${id}/payment-proof`, formData, {
+      api.post(`/ebook/submissions/${id}/files`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       })
     );
   },
 
-  getInvoice: (id) => unwrap(() => api.get(`/ebook/submissions/${id}/invoice`)),
-  getReceipt: (id) => unwrap(() => api.get(`/ebook/submissions/${id}/receipt`)),
-  getFinanceTransactions: (id) => unwrap(() => api.get(`/ebook/submissions/${id}/finance-transactions`)),
-  approveProof: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/approve-proof`, payload)),
-  getReviewComments: (id) => unwrap(() => api.get(`/ebook/submissions/${id}/review-comments`)),
+  listFiles: (id) =>
+    unwrap(() => api.get(`/ebook/submissions/${id}/files`)),
 
-  getAuthorDashboard: () => unwrap(() => api.get("/ebook/dashboard/author")),
-  getEditorDashboard: () => unwrap(() => api.get("/ebook/dashboard/editor")),
-  getReviewerDashboard: () => unwrap(() => api.get("/ebook/dashboard/reviewer")),
-  getFinanceDashboard: () => unwrap(() => api.get("/ebook/dashboard/finance")),
-  getProductionDashboard: () => unwrap(() => api.get("/ebook/dashboard/production")),
+  deleteFile: (id, fileId) =>
+    unwrap(() => api.delete(`/ebook/submissions/${id}/files/${fileId}`)),
 
-  getReviewerOptions: () => unwrap(() => api.get("/ebook/reviewer-options")),
-  listReviewerOptions: () => unwrap(() => api.get("/ebook/reviewer-options")),
-  listReviewAssignments: () => unwrap(() => api.get("/ebook/review-assignments")),
-  getReviewAssignment: (id) => unwrap(() => api.get(`/ebook/review-assignments/${id}/detail`)),
-  getReviewAssignmentFiles: (id) => unwrap(() => api.get(`/ebook/review-assignments/${id}/files`)),
-  getReviewTemplate: () => unwrap(() => api.get("/ebook/review-template")),
-  respondAssignment: (id, payload) => unwrap(() => api.post(`/ebook/review-assignments/${id}/respond`, payload)),
+  /* =========================
+     Editor queue / workflow
+  ========================= */
+  getEditorQueue: (params = {}) =>
+    unwrap(() => api.get("/ebook/editor-queue", { params })),
+
+  assignReviewer: (id, payload) =>
+    unwrap(() => api.post(`/ebook/submissions/${id}/assign-reviewer`, payload)),
+
+  reassignReviewer: (submissionId, payload) =>
+    unwrap(() =>
+      api.post(`/ebook/submissions/${submissionId}/reassign-reviewer`, payload)
+    ),
+
+  assignPreviousReviewersForRevision: (submissionId, payload) =>
+    unwrap(() =>
+      api.post(
+        `/ebook/submissions/${submissionId}/assign-previous-reviewers`,
+        payload
+      )
+    ),
+
+  makeDecision: (id, payload) =>
+    unwrap(() => api.post(`/ebook/submissions/${id}/decision`, payload)),
+
+  /* =========================
+     Reviewer options / assignments
+  ========================= */
+  listReviewerOptions: () =>
+    unwrap(() => api.get("/ebook/reviewer-options")),
+
+  listReviewAssignments: (params = {}) =>
+    unwrap(() => api.get("/ebook/review-assignments", { params })),
+
+  getReviewAssignment: (id) =>
+    unwrap(() => api.get(`/ebook/review-assignments/${id}/detail`)),
+
+  getReviewAssignmentFiles: (id) =>
+    unwrap(() => api.get(`/ebook/review-assignments/${id}/files`)),
+
+  removeReviewAssignment: (id) =>
+    unwrap(() => api.delete(`/ebook/review-assignments/${id}`)),
+
+  respondAssignment: (id, payload) =>
+    unwrap(() => api.post(`/ebook/review-assignments/${id}/respond`, payload)),
+
+  requestReviewExtension: (id, payload) =>
+    unwrap(() => api.post(`/ebook/review-assignments/${id}/extension`, payload)),
+
+  getReviewTemplate: () =>
+    unwrap(() => api.get("/ebook/review-template")),
 
   submitReview: (id, payload = {}) => {
-    const hasAttachments = Array.isArray(payload?.attachments) && payload.attachments.length > 0;
+    const hasAttachments =
+      Array.isArray(payload?.attachments) && payload.attachments.length > 0;
 
     if (!hasAttachments) {
       const { attachments, ...rest } = payload || {};
-      return unwrap(() => api.post(`/ebook/review-assignments/${id}/submit-review`, rest));
+      return unwrap(() =>
+        api.post(`/ebook/review-assignments/${id}/submit-review`, rest)
+      );
     }
 
-    const formData = toFormData(payload);
+    const formData = new FormData();
+    Object.entries(payload || {}).forEach(([key, value]) => {
+      if (key === "attachments") return;
+      if (value !== undefined && value !== null) {
+        formData.append(key, value);
+      }
+    });
+
     (payload.attachments || []).forEach((file) => {
       formData.append("attachments", file);
     });
@@ -169,12 +186,13 @@ const ebookApi = {
     );
   },
 
-  updateReview: (id, payload) => unwrap(() => api.put(`/ebook/review-assignments/${id}/review`, payload)),
-  requestReviewExtension: (id, payload) => unwrap(() => api.post(`/ebook/review-assignments/${id}/extension`, payload)),
+  updateReview: (id, payload) =>
+    unwrap(() => api.put(`/ebook/review-assignments/${id}/review`, payload)),
 
   uploadReviewFile: (id, file) => {
     const formData = new FormData();
     formData.append("file", file);
+
     return unwrap(() =>
       api.post(`/ebook/review-assignments/${id}/files`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -182,31 +200,81 @@ const ebookApi = {
     );
   },
 
-  getReviewerReminders: (params = {}) => unwrap(() => api.get("/ebook/reviewer-reminders", { params })),
-  removeReviewAssignment: (id) => unwrap(() => api.delete(`/ebook/review-assignments/${id}`)),
-  reassignReviewer: (submissionId, payload) =>
-    unwrap(() => api.post(`/ebook/submissions/${submissionId}/reassign-reviewer`, payload)),
+  getReviewerReminders: (params = {}) =>
+    unwrap(() => api.get("/ebook/reviewer-reminders", { params })),
 
-  getEditorQueue: (params = {}) => unwrap(() => api.get("/ebook/editor-queue", { params })),
-  approveForProduction: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/approve-production`, payload)),
-  notifyAuthor: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/notify-author`, payload)),
-  addEditorComment: (id, payload) => unwrap(() => api.post(`/ebook/submissions/${id}/editor-comment`, payload)),
+  /* =========================
+     Finance
+  ========================= */
+  listFinanceQueue: (params = {}) =>
+    unwrap(() => api.get("/ebook/finance-queue", { params })),
 
-  listPublications: (params = {}) => unwrap(() => api.get("/ebook/publications", { params })),
-  listPublicCatalog: (params = {}) => unwrap(() => api.get("/ebook-public/publications", { params })),
-  getPublicPublication: (slug) => unwrap(() => api.get(`/ebook-public/publications/${slug}`)),
-  downloadPublicPublication: async (slug) =>
-    api.get(`/ebook-public/publications/${slug}/download`, { responseType: "blob" }),
-  getPublicCitation: (slug) => unwrap(() => api.get(`/ebook-public/publications/${slug}/citation`)),
-  logPublicDownload: (slug) => unwrap(() => api.post(`/ebook-public/publications/${slug}/log-download`)),
-  getPublicSearchSuggestions: (params = {}) =>
-    unwrap(() => api.get("/ebook-public/search/suggestions", { params })),
+  getFinanceRecord: (submissionId) =>
+    unwrap(() => api.get(`/ebook/submissions/${submissionId}/finance`)),
 
-  getAdminAuditLogs: (params = {}) => unwrap(() => api.get("/ebook/admin/audit-logs", { params })),
-  getAdminStorage: () => unwrap(() => api.get("/ebook/admin/storage")),
-  getAdminHealth: () => unwrap(() => api.get("/ebook/admin/health")),
-  saveWorkflowRules: (payload) => unwrap(() => api.post("/ebook/admin/workflow-rules", payload)),
-  reindexAdmin: () => unwrap(() => api.post("/ebook/admin/reindex")),
+  recordFinanceDecision: (submissionId, payload) =>
+    unwrap(() => api.post(`/ebook/submissions/${submissionId}/finance`, payload)),
+
+  /* =========================
+     Production / DCM
+  ========================= */
+  listProductionQueue: (params = {}) =>
+    unwrap(() => api.get("/ebook/production-queue", { params })),
+
+  getProductionRecord: (submissionId) =>
+    unwrap(() => api.get(`/ebook/submissions/${submissionId}/production`)),
+
+  updateProduction: (submissionId, payload) =>
+    unwrap(() => api.post(`/ebook/submissions/${submissionId}/production`, payload)),
+
+  uploadProductionFile: (submissionId, file, file_role = "final") => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("file_role", file_role);
+
+    return unwrap(() =>
+      api.post(`/ebook/submissions/${submissionId}/production/files`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+    );
+  },
+  getReviewAssignmentDetail(id) {
+  return api.get(`/ebook/review-assignments/${id}/detail`).then((res) => res.data);
+},
+
+
+
+
+  /* =========================
+     Publications / public reader
+  ========================= */
+  listPublications: (params = {}) =>
+    unwrap(() => api.get("/ebook/publications", { params })),
+
+  getPublication: (id) =>
+    unwrap(() => api.get(`/ebook/publications/${id}`)),
+
+  publishSubmission: (submissionId, payload = {}) =>
+    unwrap(() => api.post(`/ebook/submissions/${submissionId}/publish`, payload)),
+
+  /* =========================
+     Utility / misc
+  ========================= */
+  downloadFile: async (url, filename) => {
+    const response = await api.get(url, { responseType: "blob" });
+    const blob = new Blob([response.data]);
+    const href = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = href;
+    link.download = filename || "download";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(href);
+    return true;
+  },
+
+  toFormData,
 };
 
 export default ebookApi;
