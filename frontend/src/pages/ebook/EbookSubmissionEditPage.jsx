@@ -7,6 +7,15 @@ const currentYear = new Date().getFullYear();
 const allowedExtensions = ["pdf", "doc", "docx", "epub", "zip", "txt"];
 const maxFileSize = 10 * 1024 * 1024;
 
+const CATEGORY_OPTIONS = [
+  "Science",
+  "Technology",
+  "Education",
+  "Agriculture",
+  "Health",
+  "Business",
+];
+
 function keywordList(value) {
   return String(value || "")
     .split(",")
@@ -42,27 +51,24 @@ export default function EbookSubmissionEditPage() {
     subtitle: "",
     abstract: "",
     keywords: "",
-    category: "",
     language: "English",
+    category: "",
     publication_year: currentYear,
     target_audience: "",
-    requires_bpc: false,
-    bpc_amount: 0,
   });
 
   const [existingFiles, setExistingFiles] = useState([]);
   const [replacementFile, setReplacementFile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [savingDraft, setSavingDraft] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [serverError, setServerError] = useState("");
+  const [touched, setTouched] = useState({});
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      setError("");
-      setNotice("");
+      setServerError("");
 
       try {
         const result = await ebookApi.getWorkflow(id);
@@ -75,17 +81,15 @@ export default function EbookSubmissionEditPage() {
           keywords: Array.isArray(submission?.keywords)
             ? submission.keywords.join(", ")
             : submission?.keywords || "",
-          category: submission?.category || "",
           language: submission?.language || "English",
+          category: submission?.category || "",
           publication_year: submission?.publication_year || currentYear,
           target_audience: submission?.target_audience || "",
-          requires_bpc: !!submission?.requires_bpc,
-          bpc_amount: submission?.bpc_amount || 0,
         });
 
         setExistingFiles(Array.isArray(result?.files) ? result.files : []);
       } catch (err) {
-        setError(
+        setServerError(
           err?.response?.data?.message ||
             err?.response?.data?.error ||
             err?.message ||
@@ -96,16 +100,12 @@ export default function EbookSubmissionEditPage() {
       }
     };
 
-    if (id) {
-      load();
-    }
+    if (id) load();
   }, [id]);
 
   const hasExistingManuscript = useMemo(() => {
     return existingFiles.some((file) =>
-      ["manuscript", "revision"].includes(
-        String(getFileRole(file)).toLowerCase()
-      )
+      ["manuscript", "revision"].includes(String(getFileRole(file)).toLowerCase())
     );
   }, [existingFiles]);
 
@@ -127,7 +127,7 @@ export default function EbookSubmissionEditPage() {
     }
 
     if (!keywords.length) {
-      errors.keywords = "Add at least 3 keywords.";
+      errors.keywords = "Add at least 3 keywords separated by commas.";
     } else if (keywords.length < 3) {
       errors.keywords = "Please provide at least 3 keywords for draft.";
     }
@@ -137,7 +137,7 @@ export default function EbookSubmissionEditPage() {
     }
 
     if (!hasExistingManuscript && !replacementFile) {
-      errors.file = "Please upload a manuscript file.";
+      errors.file = "Please upload the manuscript file.";
     } else if (replacementFile && replacementFile.size > maxFileSize) {
       errors.file = `File size should not exceed ${maxFileSize / 1024 / 1024}MB.`;
     } else if (replacementFile && fileExt && !allowedExtensions.includes(fileExt)) {
@@ -147,7 +147,7 @@ export default function EbookSubmissionEditPage() {
     return errors;
   }, [form, replacementFile, hasExistingManuscript]);
 
-  const submitValidations = useMemo(() => {
+  const submissionValidations = useMemo(() => {
     const errors = {};
     const keywords = keywordList(form.keywords);
     const fileExt = replacementFile?.name ? getFileExt(replacementFile.name) : "";
@@ -178,8 +178,8 @@ export default function EbookSubmissionEditPage() {
       errors.language = "Language is required.";
     }
 
-    if (!form.category.trim()) {
-      errors.category = "Category is required.";
+    if (!form.category) {
+      errors.category = "Please select a category for final submission.";
     }
 
     if (!form.publication_year) {
@@ -192,7 +192,7 @@ export default function EbookSubmissionEditPage() {
     }
 
     if (!hasExistingManuscript && !replacementFile) {
-      errors.file = "Please upload a manuscript file.";
+      errors.file = "Please upload the manuscript file.";
     } else if (replacementFile && replacementFile.size > maxFileSize) {
       errors.file = `File size should not exceed ${maxFileSize / 1024 / 1024}MB.`;
     } else if (replacementFile && fileExt && !allowedExtensions.includes(fileExt)) {
@@ -203,31 +203,30 @@ export default function EbookSubmissionEditPage() {
   }, [form, replacementFile, hasExistingManuscript]);
 
   const canSaveDraft = Object.keys(draftValidations).length === 0;
-  const canSubmit = Object.keys(submitValidations).length === 0;
+  const canSubmit = Object.keys(submissionValidations).length === 0;
 
   const setField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+    setTouched((prev) => ({ ...prev, [key]: true }));
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0] || null;
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0] || null;
     setReplacementFile(file);
+    setTouched((prev) => ({ ...prev, file: true }));
+    setServerError("");
   };
 
-  const updateOnly = async () => {
+  const updateSubmissionOnly = async () => {
     await ebookApi.updateSubmission(id, {
       title: form.title.trim(),
       subtitle: form.subtitle.trim(),
       abstract: form.abstract.trim(),
       keywords: keywordList(form.keywords),
-      category: form.category.trim(),
       language: form.language.trim(),
-      publication_year: form.publication_year
-        ? Number(form.publication_year)
-        : null,
+      category: form.category,
+      publication_year: Number(form.publication_year),
       target_audience: form.target_audience.trim(),
-      requires_bpc: !!form.requires_bpc,
-      bpc_amount: form.bpc_amount ? Number(form.bpc_amount) : 0,
     });
 
     if (replacementFile) {
@@ -235,44 +234,40 @@ export default function EbookSubmissionEditPage() {
     }
   };
 
-  const handleSaveDraft = async (e) => {
-    e.preventDefault();
-    setSavingDraft(true);
-    setError("");
-    setNotice("");
+  const saveDraft = async () => {
+    setSaving(true);
+    setServerError("");
 
     try {
-      await updateOnly();
+      await updateSubmissionOnly();
       navigate(`/ebook/submissions/${id}`, {
         state: { success: "Draft updated successfully." },
       });
     } catch (err) {
-      setError(
+      setServerError(
         err?.response?.data?.message ||
           err?.response?.data?.error ||
           err?.message ||
           "Failed to save draft."
       );
     } finally {
-      setSavingDraft(false);
+      setSaving(false);
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const submitUpdatedSubmission = async () => {
     setSubmitting(true);
-    setError("");
-    setNotice("");
+    setServerError("");
 
     try {
-      await updateOnly();
+      await updateSubmissionOnly();
       await ebookApi.submitSubmission(id);
 
       navigate(`/ebook/submissions/${id}`, {
         state: { success: "Submission updated and submitted successfully." },
       });
     } catch (err) {
-      setError(
+      setServerError(
         err?.response?.data?.message ||
           err?.response?.data?.error ||
           err?.message ||
@@ -286,11 +281,11 @@ export default function EbookSubmissionEditPage() {
   return (
     <MainLayout title="Edit eBook Submission">
       <div className="container-fluid">
-        <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
             <h1 className="h3 mb-1">Edit eBook Submission</h1>
             <p className="text-muted mb-0">
-              Update your draft, keep it as draft, or submit it.
+              Update your draft or revise details before final submission.
             </p>
           </div>
           <Link to={`/ebook/submissions/${id}`} className="btn btn-outline-secondary">
@@ -298,218 +293,223 @@ export default function EbookSubmissionEditPage() {
           </Link>
         </div>
 
-        {error ? (
+        {serverError ? (
           <div className="alert alert-danger" role="alert">
-            {error}
-          </div>
-        ) : null}
-
-        {notice ? (
-          <div className="alert alert-success" role="alert">
-            {notice}
+            {serverError}
           </div>
         ) : null}
 
         <div className="card">
-          <form>
-            <div className="card-body">
-              {loading ? (
-                <div className="text-center py-4">Loading submission...</div>
-              ) : (
-                <>
-                  <div className="row">
-                    <div className="col-md-8 mb-3">
-                      <label className="form-label">Title *</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={form.title}
-                        onChange={(e) => setField("title", e.target.value)}
-                      />
-                      {draftValidations.title ? (
-                        <small className="text-danger">{draftValidations.title}</small>
-                      ) : null}
-                    </div>
-
-                    <div className="col-md-4 mb-3">
-                      <label className="form-label">Publication Year *</label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        value={form.publication_year}
-                        onChange={(e) => setField("publication_year", e.target.value)}
-                      />
-                      {submitValidations.publication_year ? (
-                        <small className="text-danger">
-                          {submitValidations.publication_year}
-                        </small>
-                      ) : null}
-                    </div>
-
-                    <div className="col-md-12 mb-3">
-                      <label className="form-label">Subtitle</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={form.subtitle}
-                        onChange={(e) => setField("subtitle", e.target.value)}
-                      />
-                    </div>
-
-                    <div className="col-md-12 mb-3">
-                      <label className="form-label">Abstract *</label>
-                      <textarea
-                        rows="6"
-                        className="form-control"
-                        value={form.abstract}
-                        onChange={(e) => setField("abstract", e.target.value)}
-                      />
-                      <small className="text-muted d-block mt-1">
-                        {form.abstract.trim().length} characters
-                      </small>
-                      {draftValidations.abstract ? (
-                        <small className="text-danger">{draftValidations.abstract}</small>
-                      ) : null}
-                    </div>
-
-                    <div className="col-md-12 mb-3">
-                      <label className="form-label">Keywords *</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={form.keywords}
-                        onChange={(e) => setField("keywords", e.target.value)}
-                        placeholder="AI, digital library, metadata, publishing"
-                      />
-                      {draftValidations.keywords ? (
-                        <small className="text-danger">{draftValidations.keywords}</small>
-                      ) : null}
-                    </div>
-
-                    <div className="col-md-4 mb-3">
-                      <label className="form-label">Language *</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={form.language}
-                        onChange={(e) => setField("language", e.target.value)}
-                      />
-                      {draftValidations.language ? (
-                        <small className="text-danger">{draftValidations.language}</small>
-                      ) : null}
-                    </div>
-
-                    <div className="col-md-4 mb-3">
-                      <label className="form-label">Category *</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={form.category}
-                        onChange={(e) => setField("category", e.target.value)}
-                      />
-                      {submitValidations.category ? (
-                        <small className="text-danger">{submitValidations.category}</small>
-                      ) : null}
-                    </div>
-
-                    <div className="col-md-4 mb-3">
-                      <label className="form-label">Target Audience</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={form.target_audience}
-                        onChange={(e) => setField("target_audience", e.target.value)}
-                      />
-                    </div>
-
-                    <div className="col-md-4 mb-3">
-                      <div className="form-check mt-4">
-                        <input
-                          id="requires_bpc_edit"
-                          type="checkbox"
-                          className="form-check-input"
-                          checked={form.requires_bpc}
-                          onChange={(e) => setField("requires_bpc", e.target.checked)}
-                        />
-                        <label htmlFor="requires_bpc_edit" className="form-check-label">
-                          Requires BPC
-                        </label>
+          <div className="card-body">
+            {loading ? (
+              <div className="text-center py-4">Loading submission...</div>
+            ) : (
+              <>
+                <div className="row">
+                  <div className="col-md-8 mb-3">
+                    <label className="form-label">Title *</label>
+                    <input
+                      type="text"
+                      className={`form-control ${
+                        touched.title && submissionValidations.title ? "is-invalid" : ""
+                      }`}
+                      value={form.title}
+                      onChange={(e) => setField("title", e.target.value)}
+                    />
+                    {touched.title && submissionValidations.title ? (
+                      <div className="invalid-feedback">
+                        {submissionValidations.title}
                       </div>
-                    </div>
-
-                    <div className="col-md-8 mb-3">
-                      <label className="form-label">BPC Amount</label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        value={form.bpc_amount}
-                        onChange={(e) => setField("bpc_amount", e.target.value)}
-                      />
-                    </div>
-
-                    <div className="col-md-12 mb-3">
-                      <label className="form-label">Current Files</label>
-                      {existingFiles.length ? (
-                        <ul className="mb-0 pl-3">
-                          {existingFiles.map((file) => (
-                            <li key={file.file_id || file.id}>
-                              {getFileName(file)}
-                              <span className="text-muted">
-                                {" "}
-                                ({getFileRole(file)})
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <div className="text-muted">No files uploaded yet.</div>
-                      )}
-                    </div>
-
-                    <div className="col-md-12 mb-4">
-                      <label className="form-label">Upload New Revision File</label>
-                      <input
-                        type="file"
-                        className="form-control"
-                        accept=".pdf,.doc,.docx,.epub,.zip,.txt"
-                        onChange={handleFileChange}
-                      />
-                      {replacementFile ? (
-                        <small className="text-success d-block mt-2">
-                          Selected: {replacementFile.name}
-                        </small>
-                      ) : null}
-                      {draftValidations.file ? (
-                        <small className="text-danger d-block">
-                          {draftValidations.file}
-                        </small>
-                      ) : null}
-                    </div>
+                    ) : null}
                   </div>
-                </>
-              )}
-            </div>
 
-            <div className="card-footer d-flex gap-2">
-              <button
-                type="button"
-                className="btn btn-outline-primary mr-2"
-                onClick={handleSaveDraft}
-                disabled={loading || savingDraft || submitting || !canSaveDraft}
-              >
-                {savingDraft ? "Saving Draft..." : "Save Draft"}
-              </button>
+                  <div className="col-md-4 mb-3">
+                    <label className="form-label">Publication Year *</label>
+                    <input
+                      type="number"
+                      className={`form-control ${
+                        touched.publication_year && submissionValidations.publication_year
+                          ? "is-invalid"
+                          : ""
+                      }`}
+                      value={form.publication_year}
+                      onChange={(e) => setField("publication_year", e.target.value)}
+                    />
+                    {touched.publication_year && submissionValidations.publication_year ? (
+                      <div className="invalid-feedback">
+                        {submissionValidations.publication_year}
+                      </div>
+                    ) : null}
+                  </div>
 
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleSubmit}
-                disabled={loading || savingDraft || submitting || !canSubmit}
-              >
-                {submitting ? "Submitting..." : "Update & Submit"}
-              </button>
-            </div>
-          </form>
+                  <div className="col-md-12 mb-3">
+                    <label className="form-label">Subtitle</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={form.subtitle}
+                      onChange={(e) => setField("subtitle", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="col-md-12 mb-3">
+                    <label className="form-label">Abstract *</label>
+                    <textarea
+                      rows="6"
+                      className={`form-control ${
+                        touched.abstract && submissionValidations.abstract ? "is-invalid" : ""
+                      }`}
+                      value={form.abstract}
+                      onChange={(e) => setField("abstract", e.target.value)}
+                    />
+                    {touched.abstract && submissionValidations.abstract ? (
+                      <div className="invalid-feedback">
+                        {submissionValidations.abstract}
+                      </div>
+                    ) : null}
+                    <small className="text-muted">
+                      {form.abstract.trim().length} characters
+                    </small>
+                  </div>
+
+                  <div className="col-md-12 mb-3">
+                    <label className="form-label">Keywords *</label>
+                    <input
+                      type="text"
+                      className={`form-control ${
+                        touched.keywords && submissionValidations.keywords
+                          ? "is-invalid"
+                          : ""
+                      }`}
+                      value={form.keywords}
+                      onChange={(e) => setField("keywords", e.target.value)}
+                      placeholder="AI, digital library, metadata, publishing"
+                    />
+                    {touched.keywords && submissionValidations.keywords ? (
+                      <div className="invalid-feedback">
+                        {submissionValidations.keywords}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="col-md-4 mb-3">
+                    <label className="form-label">Language *</label>
+                    <input
+                      type="text"
+                      className={`form-control ${
+                        touched.language && submissionValidations.language
+                          ? "is-invalid"
+                          : ""
+                      }`}
+                      value={form.language}
+                      onChange={(e) => setField("language", e.target.value)}
+                    />
+                    {touched.language && submissionValidations.language ? (
+                      <div className="invalid-feedback">
+                        {submissionValidations.language}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="col-md-4 mb-3">
+                    <label className="form-label">Category *</label>
+                    <select
+                      className={`form-select ${
+                        touched.category && submissionValidations.category
+                          ? "is-invalid"
+                          : ""
+                      }`}
+                      value={form.category}
+                      onChange={(e) => setField("category", e.target.value)}
+                    >
+                      <option value="">Select category</option>
+                      {CATEGORY_OPTIONS.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                    {touched.category && submissionValidations.category ? (
+                      <div className="invalid-feedback">
+                        {submissionValidations.category}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="col-md-4 mb-3">
+                    <label className="form-label">Target Audience</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={form.target_audience}
+                      onChange={(e) => setField("target_audience", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="col-md-12 mb-3">
+                    <label className="form-label">Current Files</label>
+                    {existingFiles.length ? (
+                      <ul className="mb-0 pl-3">
+                        {existingFiles.map((file) => (
+                          <li key={file.file_id || file.id}>
+                            {getFileName(file)}
+                            <span className="text-muted">
+                              {" "}
+                              ({getFileRole(file)})
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="text-muted">No files uploaded yet.</div>
+                    )}
+                  </div>
+
+                  <div className="col-md-12 mb-4">
+                    <label className="form-label">Replacement / Revision File</label>
+                    <input
+                      type="file"
+                      className={`form-control ${
+                        touched.file && submissionValidations.file ? "is-invalid" : ""
+                      }`}
+                      accept=".pdf,.doc,.docx,.epub,.zip,.txt"
+                      onChange={handleFileChange}
+                    />
+                    {touched.file && submissionValidations.file ? (
+                      <div className="invalid-feedback">
+                        {submissionValidations.file}
+                      </div>
+                    ) : null}
+                    {replacementFile ? (
+                      <small className="text-success d-block mt-2">
+                        Selected: {replacementFile.name}
+                      </small>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="d-flex gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary"
+                    onClick={saveDraft}
+                    disabled={saving || submitting || !canSaveDraft}
+                  >
+                    {saving ? "Saving..." : "Save Draft"}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={submitUpdatedSubmission}
+                    disabled={saving || submitting || !canSubmit}
+                  >
+                    {submitting ? "Submitting..." : "Update & Submit"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </MainLayout>

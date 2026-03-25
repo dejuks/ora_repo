@@ -190,3 +190,14 @@ CREATE INDEX IF NOT EXISTS idx_ebook_assignments_reviewer ON ebook_review_assign
 CREATE INDEX IF NOT EXISTS idx_ebook_reviews_submission ON ebook_reviews(submission_id);
 CREATE INDEX IF NOT EXISTS idx_ebook_publications_public ON ebook_publications(is_public, published_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ebook_access_logs_pub ON ebook_access_logs(publication_id, created_at DESC);
+
+
+-- Migration helpers for existing databases
+ALTER TABLE ebook_review_assignments ADD COLUMN IF NOT EXISTS round_no INT NOT NULL DEFAULT 1;
+ALTER TABLE ebook_reviews ADD COLUMN IF NOT EXISTS round_no INT NOT NULL DEFAULT 1;
+ALTER TABLE ebook_review_assignments DROP CONSTRAINT IF EXISTS ebook_review_assignments_submission_id_reviewer_id_key;
+DO $$ BEGIN
+  ALTER TABLE ebook_review_assignments
+  ADD CONSTRAINT ebook_review_assignments_submission_reviewer_round_key
+  UNIQUE (submission_id, reviewer_id, round_no);
+EXCEPTION WHEN duplicate_table THEN NULL; WHEN duplicate_object THEN NULL; END $$;
