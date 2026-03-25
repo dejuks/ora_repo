@@ -115,14 +115,8 @@ router.post('/submissions/:id/submit', authorize('ebook.submission.submit'), ebo
 router.post('/submissions/:id/resubmit', authorize('ebook.submission.resubmit'), ebookSubmissionController.resubmit);
 router.post('/submissions/:id/screening', authorize('ebook.editor.screen'), ebookSubmissionController.screening);
 router.post('/submissions/:id/assign-reviewer', authorize('ebook.reviewer.assign'), ebookSubmissionController.assignReviewer);
-router.post('/submissions/:id/reassign-reviewer', authorize('ebook.reviewer.assign'), asyncHandler(async (req, res) => {
-  const submissionId = req.params.id;
-  const { from_assignment_id, to_reviewer_id, due_date, note } = req.body || {};
-  if (from_assignment_id) {
-    await pool.query(`UPDATE ebook_review_assignments SET status = 'declined', response_note = COALESCE($2, response_note), updated_at = NOW() WHERE assignment_id = $1`, [from_assignment_id, note || 'Reassigned by editor']);
-  }
-  res.json(await ebookWorkflowService.assignReviewer(submissionId, req.user?.uuid, { reviewer_id: to_reviewer_id, due_date, invitation_note: note || 'Reassigned by editor' }));
-}));
+router.post('/submissions/:id/reassign-reviewer', authorize('ebook.reviewer.assign'), ebookSubmissionController.reassignReviewer);
+router.post('/submissions/:id/assign-previous-reviewers', authorize('ebook.reviewer.assign'), ebookSubmissionController.assignPreviousReviewers);
 router.post('/submissions/:id/decision', authorize('ebook.decision.make'), ebookSubmissionController.editorialDecision);
 router.post('/submissions/:id/finance', authorize('ebook.finance.clear'), ebookSubmissionController.upsertFinance);
 router.post('/submissions/:id/request-waiver', authorize('ebook.submission.view'), asyncHandler(async (req, res) => {
@@ -215,13 +209,49 @@ router.get('/review-assignments/:id/detail', authorize('ebook.review.assignment.
     WHERE era.assignment_id = $1`, [req.params.id]);
   res.json(rows[0] || null);
 }));
-router.get('/review-assignments/:id/files', authorize('ebook.review.assignment.view'), asyncHandler(async (req, res) => {
-  const sub = await pool.query(`SELECT submission_id FROM ebook_review_assignments WHERE assignment_id = $1`, [req.params.id]);
-  const submissionId = sub.rows[0]?.submission_id;
-  if (!submissionId) return res.json({ rows: [] });
-  const { rows } = await pool.query(`SELECT * FROM ebook_submission_files WHERE submission_id = $1 AND is_active = TRUE ORDER BY created_at DESC`, [submissionId]);
-  res.json({ rows });
-}));
+router.get(
+  '/review-assignments/:id/files',
+  authorize('ebook.review.assignment.view'),
+  asyncHandler(async (req, res) => {
+    const sub = await pool.query(
+      `SELECT submission_id
+       FROM ebook_review_assignments
+       WHERE assignment_id = $1`,
+      [req.params.id]
+    );
+
+    const submissionId = sub.rows[0]?.submission_id;
+
+    if (!submissionId) {
+      return res.json({
+        manuscript_files: [],
+        review_attachments: [],
+      });
+    }
+
+    const { rows } = await pool.query(
+      `SELECT *
+       FROM ebook_submission_files
+       WHERE submission_id = $1
+         AND is_active = TRUE
+       ORDER BY created_at DESC`,
+      [submissionId]
+    );
+
+    const manuscript_files = rows.filter(
+      (file) => String(file.file_role || "").toLowerCase() !== "review_attachment"
+    );
+
+    const review_attachments = rows.filter(
+      (file) => String(file.file_role || "").toLowerCase() === "review_attachment"
+    );
+
+    res.json({
+      manuscript_files,
+      review_attachments,
+    });
+  })
+);
 router.post('/review-assignments/:id/respond', authorize('ebook.review.respond'), ebookReviewAssignmentController.respond);
 router.post('/review-assignments/:id/submit-review', authorize('ebook.review.submit'), ebookReviewAssignmentController.submitReview);
 router.put('/review-assignments/:id/review', authorize('ebook.review.submit'), asyncHandler(async (req, res) => {
@@ -239,8 +269,7 @@ router.post('/review-assignments/:id/files', authorize('ebook.review.submit'), u
   res.status(201).json(file);
 }));
 router.delete('/review-assignments/:id', authorize('ebook.reviewer.assign'), asyncHandler(async (req, res) => {
-  const { rows } = await pool.query(`DELETE FROM ebook_review_assignments WHERE assignment_id = $1 RETURNING *`, [req.params.id]);
-  res.json(rows[0] || { ok: true });
+  res.json(await ebookWorkflowService.removeReviewAssignment(req.params.id, req.user?.uuid, req.body?.note || null));
 }));
 router.get('/reviewer-reminders', authorize('ebook.review.assignment.view'), asyncHandler(async (req, res) => {
   let sql = `SELECT era.*, es.title, u.full_name AS reviewer_name FROM ebook_review_assignments era INNER JOIN ebook_submissions es ON es.submission_id = era.submission_id LEFT JOIN users u ON u.uuid = era.reviewer_id WHERE 1=1`;
