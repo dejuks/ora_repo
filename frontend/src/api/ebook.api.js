@@ -27,28 +27,15 @@ const toFormData = (payload = {}) => {
 };
 
 const ebookApi = {
-  
-
-  getDashboard: () => unwrap(() => api.get("/ebook/dashboard")),
-
-  getAuthorDashboard: () =>
-    unwrap(() => api.get("/ebook/dashboard/author")),
-
-  getEditorDashboard: () =>
-    unwrap(() => api.get("/ebook/dashboard/editor")),
-
-  getReviewerDashboard: () =>
-    unwrap(() => api.get("/ebook/dashboard/reviewer")),
-
-  getFinanceDashboard: () =>
-    unwrap(() => api.get("/ebook/dashboard/finance")),
-
-  getProductionDashboard: () =>
-    unwrap(() => api.get("/ebook/dashboard/production")),
   /* =========================
      Dashboard / overview
   ========================= */
   getDashboard: () => unwrap(() => api.get("/ebook/dashboard")),
+  getAuthorDashboard: () => unwrap(() => api.get("/ebook/dashboard/author")),
+  getEditorDashboard: () => unwrap(() => api.get("/ebook/dashboard/editor")),
+  getReviewerDashboard: () => unwrap(() => api.get("/ebook/dashboard/reviewer")),
+  getFinanceDashboard: () => unwrap(() => api.get("/ebook/dashboard/finance")),
+  getProductionDashboard: () => unwrap(() => api.get("/ebook/dashboard/production")),
 
   /* =========================
      Submission CRUD
@@ -203,6 +190,9 @@ const ebookApi = {
   getReviewerReminders: (params = {}) =>
     unwrap(() => api.get("/ebook/reviewer-reminders", { params })),
 
+  getReviewAssignmentDetail: (id) =>
+    unwrap(() => api.get(`/ebook/review-assignments/${id}/detail`)),
+
   /* =========================
      Finance
   ========================= */
@@ -214,6 +204,52 @@ const ebookApi = {
 
   recordFinanceDecision: (submissionId, payload) =>
     unwrap(() => api.post(`/ebook/submissions/${submissionId}/finance`, payload)),
+
+  getInvoice: (submissionId) =>
+    unwrap(() => api.get(`/ebook/submissions/${submissionId}/finance`)),
+
+  getFinanceTransactions: (submissionId) =>
+    unwrap(() => api.get(`/ebook/submissions/${submissionId}/workflow`)),
+
+  issueInvoice: (submissionId, payload = {}) =>
+    unwrap(() =>
+      api.post(`/ebook/submissions/${submissionId}/finance`, {
+        action: "issue_invoice",
+        ...payload,
+      })
+    ),
+
+  approveWaiver: (submissionId, payload = {}) =>
+    unwrap(() =>
+      api.post(`/ebook/submissions/${submissionId}/finance`, {
+        action: "approve_waiver",
+        ...payload,
+      })
+    ),
+
+  declineWaiver: (submissionId, payload = {}) =>
+    unwrap(() =>
+      api.post(`/ebook/submissions/${submissionId}/finance`, {
+        action: "decline_waiver",
+        ...payload,
+      })
+    ),
+
+  verifyPayment: (submissionId, payload = {}) =>
+    unwrap(() =>
+      api.post(`/ebook/submissions/${submissionId}/finance`, {
+        action: "verify_payment",
+        ...payload,
+      })
+    ),
+
+  rejectPayment: (submissionId, payload = {}) =>
+    unwrap(() =>
+      api.post(`/ebook/submissions/${submissionId}/finance`, {
+        action: "reject_payment",
+        ...payload,
+      })
+    ),
 
   /* =========================
      Production / DCM
@@ -238,12 +274,6 @@ const ebookApi = {
       })
     );
   },
-  getReviewAssignmentDetail(id) {
-  return api.get(`/ebook/review-assignments/${id}/detail`).then((res) => res.data);
-},
-
-
-
 
   /* =========================
      Publications / public reader

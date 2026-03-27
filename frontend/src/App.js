@@ -166,6 +166,15 @@ import EbookPublicPublicationDetailPage from "./pages/ebook/EbookPublicPublicati
 import PublicEbookAuthorRegisterPage from "./pages/ebook/PublicEbookAuthorRegisterPage.jsx";
 import EbookProductionPage from "./pages/ebook/EbookProductionPage.jsx";
 import EbookFinancePage from "./pages/ebook/EbookFinancePage.jsx";
+import EbookFinancePendingPaymentsPage from "./pages/ebook/EbookFinancePendingPaymentsPage.jsx";
+import EbookFinanceCalculateBpcPage from "./pages/ebook/EbookFinanceCalculateBpcPage.jsx";
+import EbookFinancePublishingFeesPage from "./pages/ebook/EbookFinancePublishingFeesPage.jsx";
+import EbookFinanceInvoicesPage from "./pages/ebook/EbookFinanceInvoicesPage.jsx";
+import EbookFinanceVerifyPaymentPage from "./pages/ebook/EbookFinanceVerifyPaymentPage.jsx";
+import EbookFinancePaymentHistoryPage from "./pages/ebook/EbookFinancePaymentHistoryPage.jsx";
+import EbookFinanceWaiversPage from "./pages/ebook/EbookFinanceWaiversPage.jsx";
+import EbookFinanceReportsPage from "./pages/ebook/EbookFinanceReportsPage.jsx";
+import EbookFinanceReadyForProductionPage from "./pages/ebook/EbookFinanceReadyForProductionPage.jsx";
 import EbookAdminPage from "./pages/ebook/EbookAdminPage.jsx";
 import EbookAuthorMySubmissionsPage from "./pages/ebook/EbookAuthorMySubmissionsPage.jsx";
 import EbookAuthorRevisionQueuePage from "./pages/ebook/EbookAuthorRevisionQueuePage.jsx";
@@ -180,6 +189,12 @@ import EbookEditorStageListPage from "./pages/ebook/EbookEditorStageListPage.jsx
 import EbookReviewDetailPage from "./pages/ebook/EbookReviewDetailPage.jsx";
 import EbookReviewerManagerPage from "./pages/ebook/EbookReviewerManagerPage.jsx";
 import EbookWorkflowOverviewPage from "./pages/ebook/EbookWorkflowOverviewPage.jsx";
+
+import EbookEditorScreeningPage from "./pages/ebook/EbookEditorScreeningPage.jsx";
+import EbookEditorScreenedPage from "./pages/ebook/EbookEditorScreenedPage.jsx";
+import EbookEditorReviewsPage from "./pages/ebook/EbookEditorReviewsPage.jsx";
+import EbookEditorDecisionPage from "./pages/ebook/EbookEditorDecisionPage.jsx";
+import EbookEditorHandoffPage from "./pages/ebook/EbookEditorHandoffPage.jsx";
 
 function App() {
   return (
@@ -378,13 +393,26 @@ function App() {
         <Route path="/ebook/reviewer/overdue" element={<ProtectedRoute><EbookReviewerPage filter="overdue" /></ProtectedRoute>} />
         <Route path="/ebook/review-assignments/:id" element={<ProtectedRoute><EbookReviewDetailPage /></ProtectedRoute>} />
         <Route path="/ebook/reviewer-manager" element={<ProtectedRoute><EbookReviewerManagerPage /></ProtectedRoute>} />
-        <Route path="/ebook/editor/screening" element={<ProtectedRoute><EbookEditorStageListPage stage="screening" /></ProtectedRoute>} />
-        <Route path="/ebook/editor/screened" element={<ProtectedRoute><EbookEditorStageListPage stage="screened" /></ProtectedRoute>} />
-        <Route path="/ebook/editor/reviews" element={<ProtectedRoute><EbookEditorStageListPage stage="reviews" /></ProtectedRoute>} />
-        
-        <Route path="/ebook/editor/handoff" element={<ProtectedRoute><EbookEditorStageListPage stage="handoff" /></ProtectedRoute>} />
+ 
+
+       <Route path="/ebook/editor/screening" element={ <ProtectedRoute><EbookEditorScreeningPage /> </ProtectedRoute>}/>
+       <Route path="/ebook/editor/screened" element={ <ProtectedRoute><EbookEditorScreenedPage /> </ProtectedRoute>}/>
+       <Route path="/ebook/editor/reviews" element={ <ProtectedRoute><EbookEditorReviewsPage /> </ProtectedRoute>}/>
+       <Route path="/ebook/editor/decision" element={ <ProtectedRoute><EbookEditorDecisionPage /> </ProtectedRoute>}/>
+       <Route path="/ebook/editor/handoff" element={ <ProtectedRoute><EbookEditorHandoffPage /> </ProtectedRoute>}/>
+
+
         <Route path="/ebook/editor-queue" element={<ProtectedRoute><EbookEditorQueuePage /></ProtectedRoute>} />
         <Route path="/ebook/finance" element={<ProtectedRoute><EbookFinancePage /></ProtectedRoute>} />
+        <Route path="/ebook/finance/pending-payments" element={<ProtectedRoute><EbookFinancePendingPaymentsPage /></ProtectedRoute>} />
+        <Route path="/ebook/finance/calculate-bpc" element={<ProtectedRoute><EbookFinanceCalculateBpcPage /></ProtectedRoute>} />
+        <Route path="/ebook/finance/publishing-fees" element={<ProtectedRoute><EbookFinancePublishingFeesPage /></ProtectedRoute>} />
+        <Route path="/ebook/finance/invoices" element={<ProtectedRoute><EbookFinanceInvoicesPage /></ProtectedRoute>} />
+        <Route path="/ebook/finance/verify-payment" element={<ProtectedRoute><EbookFinanceVerifyPaymentPage /></ProtectedRoute>} />
+        <Route path="/ebook/finance/payment-history" element={<ProtectedRoute><EbookFinancePaymentHistoryPage /></ProtectedRoute>} />
+        <Route path="/ebook/finance/waivers" element={<ProtectedRoute><EbookFinanceWaiversPage /></ProtectedRoute>} />
+        <Route path="/ebook/finance/reports" element={<ProtectedRoute><EbookFinanceReportsPage /></ProtectedRoute>} />
+        <Route path="/ebook/finance/ready-for-production" element={<ProtectedRoute><EbookFinanceReadyForProductionPage /></ProtectedRoute>} />
         <Route path="/ebook/production" element={<ProtectedRoute><EbookProductionPage /></ProtectedRoute>} />
         <Route path="/ebook/management/publications" element={<ProtectedRoute><EbookPublicationsPage /></ProtectedRoute>} />
         <Route path="/ebook/admin" element={<ProtectedRoute><EbookAdminPage /></ProtectedRoute>} />

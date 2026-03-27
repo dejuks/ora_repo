@@ -1,4 +1,3 @@
-
 import express from "express";
 import { authenticate } from "../../middleware/auth.middleware.js";
 import { authorize } from "../../middleware/rbac.middleware.js";
@@ -101,6 +100,7 @@ async function editorQueue(query = {}) {
 
 router.use(authenticate);
 
+// ===== Submission Routes =====
 router.get('/submissions', authorize('ebook.submission.view'), ebookSubmissionController.index);
 router.get('/submissions-mine', authorize('ebook.submission.view'), asyncHandler(async (req, res) => {
   res.json(await listMine(req.user?.uuid, req.query || {}));
@@ -119,79 +119,177 @@ router.post('/submissions/:id/reassign-reviewer', authorize('ebook.reviewer.assi
 router.post('/submissions/:id/assign-previous-reviewers', authorize('ebook.reviewer.assign'), ebookSubmissionController.assignPreviousReviewers);
 router.post('/submissions/:id/decision', authorize('ebook.decision.make'), ebookSubmissionController.editorialDecision);
 router.post('/submissions/:id/finance', authorize('ebook.finance.clear'), ebookSubmissionController.upsertFinance);
-router.post('/submissions/:id/request-waiver', authorize('ebook.submission.view'), asyncHandler(async (req, res) => {
-  res.json(await ebookWorkflowService.upsertFinance(req.params.id, req.user?.uuid, { waiver_requested: true, waiver_reason: req.body?.waiver_reason || req.body?.reason || null, payment_status: 'waiver_requested', review_note: req.body?.note || 'Waiver requested by author' }));
-}));
-router.post('/submissions/:id/approve-waiver', authorize('ebook.finance.waiver.manage'), asyncHandler(async (req, res) => {
-  res.json(await ebookWorkflowService.upsertFinance(req.params.id, req.user?.uuid, { waiver_requested: true, waiver_percentage: req.body?.waiver_percentage ?? 100, waiver_reason: req.body?.waiver_reason || req.body?.reason || null, payment_status: 'waived', review_note: req.body?.review_note || 'Waiver approved' }));
-}));
-router.post('/submissions/:id/decline-waiver', authorize('ebook.finance.waiver.manage'), asyncHandler(async (req, res) => {
-  res.json(await ebookWorkflowService.upsertFinance(req.params.id, req.user?.uuid, { waiver_requested: false, payment_status: 'pending', review_note: req.body?.review_note || 'Waiver declined' }));
-}));
-router.post('/submissions/:id/issue-invoice', authorize('ebook.finance.clear'), asyncHandler(async (req, res) => {
-  res.json(await ebookWorkflowService.upsertFinance(req.params.id, req.user?.uuid, { ...req.body, payment_status: req.body?.payment_status || 'pending', review_note: req.body?.review_note || 'Invoice prepared' }));
-}));
-router.post('/submissions/:id/verify-payment', authorize('ebook.finance.clear'), asyncHandler(async (req, res) => {
-  res.json(await ebookWorkflowService.upsertFinance(req.params.id, req.user?.uuid, { ...req.body, payment_status: 'cleared', review_note: req.body?.review_note || 'Payment verified' }));
-}));
-router.post('/submissions/:id/reject-payment', authorize('ebook.finance.clear'), asyncHandler(async (req, res) => {
-  res.json(await ebookWorkflowService.upsertFinance(req.params.id, req.user?.uuid, { ...req.body, payment_status: 'declined', review_note: req.body?.review_note || 'Payment rejected' }));
-}));
-router.post('/submissions/:id/payment-proof', authorize('ebook.submission.view'), uploadEbookFile.single('file'), asyncHandler(async (req, res) => {
-  if (req.file) {
-    await ebookWorkflowService.uploadFile(req.params.id, req.user?.uuid, req.file, 'payment_proof');
-  }
-  res.json(await ebookWorkflowService.upsertFinance(req.params.id, req.user?.uuid, { payment_reference: req.body?.payment_reference || req.body?.reference || null, amount_paid: req.body?.amount_paid ?? null, payment_status: 'paid', review_note: req.body?.note || 'Payment proof submitted by author' }));
-}));
-router.get('/submissions/:id/invoice', authorize('ebook.workflow.view'), asyncHandler(async (req, res) => {
-  const { rows } = await pool.query(`SELECT * FROM ebook_finance_clearances WHERE submission_id = $1`, [req.params.id]);
-  res.json(rows[0] || null);
-}));
-router.get('/submissions/:id/receipt', authorize('ebook.workflow.view'), asyncHandler(async (req, res) => {
-  const { rows } = await pool.query(`SELECT receipt_number, payment_status, amount_paid, currency_code, updated_at FROM ebook_finance_clearances WHERE submission_id = $1`, [req.params.id]);
-  res.json(rows[0] || null);
-}));
-router.get('/submissions/:id/finance-transactions', authorize('ebook.workflow.view'), asyncHandler(async (req, res) => {
-  const { rows } = await pool.query(`SELECT history_id, action, note, acted_at, actor_id FROM ebook_workflow_history WHERE submission_id = $1 AND action LIKE 'finance.%' ORDER BY acted_at DESC`, [req.params.id]);
-  res.json({ rows });
-}));
-router.get('/submissions/:id/review-comments', authorize('ebook.workflow.view'), asyncHandler(async (req, res) => {
-  const { rows } = await pool.query(`SELECT er.*, u.full_name AS reviewer_name FROM ebook_reviews er LEFT JOIN users u ON u.uuid = er.reviewer_id WHERE er.submission_id = $1 ORDER BY er.submitted_at DESC`, [req.params.id]);
-  res.json({ rows });
-}));
-router.post('/submissions/:id/approve-proof', authorize('ebook.workflow.view'), asyncHandler(async (req, res) => {
-  res.json(await ebookWorkflowService.upsertProduction(req.params.id, req.user?.uuid, { author_proof_approved: true, quality_note: req.body?.note || 'Proof approved by author' }));
-}));
-router.post('/submissions/:id/approve-production', authorize('ebook.decision.make'), asyncHandler(async (req, res) => {
-  res.json(await ebookWorkflowService.upsertProduction(req.params.id, req.user?.uuid, { pdf_ready: true, quality_note: req.body?.note || 'Approved for production by editor' }));
-}));
-router.post('/submissions/:id/notify-author', authorize('ebook.decision.make'), asyncHandler(async (req, res) => {
-  const { rows } = await pool.query(`INSERT INTO ebook_workflow_history (submission_id, from_status, to_status, action, note, actor_id) SELECT submission_id, status, status, 'editor.notify_author', $2, $3 FROM ebook_submissions WHERE submission_id = $1 RETURNING *`, [req.params.id, req.body?.message || 'Editorial update available.', req.user?.uuid]);
-  res.json(rows[0] || { ok: true });
-}));
-router.post('/submissions/:id/editor-comment', authorize('ebook.decision.make'), asyncHandler(async (req, res) => {
-  const { rows } = await pool.query(`INSERT INTO ebook_workflow_history (submission_id, from_status, to_status, action, note, actor_id) SELECT submission_id, status, status, 'editor.comment', $2, $3 FROM ebook_submissions WHERE submission_id = $1 RETURNING *`, [req.params.id, req.body?.note || 'Editor comment added.', req.user?.uuid]);
-  res.json(rows[0] || { ok: true });
-}));
 router.post('/submissions/:id/production', authorize('ebook.production.manage'), ebookSubmissionController.upsertProduction);
 router.post('/submissions/:id/publish', authorize('ebook.publication.release'), ebookSubmissionController.publish);
 router.post('/submissions/:id/files/upload', authorize('ebook.file.upload'), uploadEbookFile.single('file'), asyncHandler(async (req, res) => {
   res.status(201).json(await ebookWorkflowService.uploadFile(req.params.id, req.user?.uuid, req.file, req.body.file_role || 'manuscript'));
 }));
 
+// ===== File Management Routes (NEW) =====
+router.get('/submissions/:id/files', 
+  authorize('ebook.submission.view'), 
+  asyncHandler(async (req, res) => {
+    const { rows } = await pool.query(
+      `SELECT * FROM ebook_submission_files 
+       WHERE submission_id = $1 
+       AND is_active = TRUE 
+       ORDER BY created_at DESC`,
+      [req.params.id]
+    );
+    res.json({ rows });
+  })
+);
+
+router.delete('/submissions/:id/files/:fileId', 
+  authorize('ebook.file.delete'), 
+  asyncHandler(async (req, res) => {
+    const { rows } = await pool.query(
+      `UPDATE ebook_submission_files 
+       SET is_active = FALSE, deleted_at = NOW() 
+       WHERE file_id = $1 AND submission_id = $2
+       RETURNING *`,
+      [req.params.fileId, req.params.id]
+    );
+    res.json({ success: true, file: rows[0] });
+  })
+);
+
+// ===== Finance Management Routes =====
+router.get('/finance-queue', 
+  authorize('ebook.finance.view'), 
+  ebookSubmissionController.financeDashboard
+);
+
+router.get('/submissions/:id/finance', 
+  authorize('ebook.workflow.view'), 
+  asyncHandler(async (req, res) => {
+    const { rows } = await pool.query(
+      `SELECT * FROM ebook_finance_clearances WHERE submission_id = $1`,
+      [req.params.id]
+    );
+    res.json(rows[0] || null);
+  })
+);
+
+router.get('/submissions/:id/invoice', authorize('ebook.workflow.view'), asyncHandler(async (req, res) => {
+  const { rows } = await pool.query(`SELECT * FROM ebook_finance_clearances WHERE submission_id = $1`, [req.params.id]);
+  res.json(rows[0] || null);
+}));
+
+router.get('/submissions/:id/receipt', authorize('ebook.workflow.view'), asyncHandler(async (req, res) => {
+  const { rows } = await pool.query(`SELECT receipt_number, payment_status, amount_paid, currency_code, updated_at FROM ebook_finance_clearances WHERE submission_id = $1`, [req.params.id]);
+  res.json(rows[0] || null);
+}));
+
+router.get('/submissions/:id/finance-transactions', authorize('ebook.workflow.view'), asyncHandler(async (req, res) => {
+  const { rows } = await pool.query(`SELECT history_id, action, note, acted_at, actor_id FROM ebook_workflow_history WHERE submission_id = $1 AND action LIKE 'finance.%' ORDER BY acted_at DESC`, [req.params.id]);
+  res.json({ rows });
+}));
+
+router.post('/submissions/:id/request-waiver', authorize('ebook.submission.view'), asyncHandler(async (req, res) => {
+  res.json(await ebookWorkflowService.upsertFinance(req.params.id, req.user?.uuid, { waiver_requested: true, waiver_reason: req.body?.waiver_reason || req.body?.reason || null, payment_status: 'waiver_requested', review_note: req.body?.note || 'Waiver requested by author' }));
+}));
+
+router.post('/submissions/:id/approve-waiver', authorize('ebook.finance.waiver.manage'), asyncHandler(async (req, res) => {
+  res.json(await ebookWorkflowService.upsertFinance(req.params.id, req.user?.uuid, { waiver_requested: true, waiver_percentage: req.body?.waiver_percentage ?? 100, waiver_reason: req.body?.waiver_reason || req.body?.reason || null, payment_status: 'waived', review_note: req.body?.review_note || 'Waiver approved' }));
+}));
+
+router.post('/submissions/:id/decline-waiver', authorize('ebook.finance.waiver.manage'), asyncHandler(async (req, res) => {
+  res.json(await ebookWorkflowService.upsertFinance(req.params.id, req.user?.uuid, { waiver_requested: false, payment_status: 'pending', review_note: req.body?.review_note || 'Waiver declined' }));
+}));
+
+router.post('/submissions/:id/issue-invoice', authorize('ebook.finance.clear'), asyncHandler(async (req, res) => {
+  res.json(await ebookWorkflowService.upsertFinance(req.params.id, req.user?.uuid, { ...req.body, payment_status: req.body?.payment_status || 'pending', review_note: req.body?.review_note || 'Invoice prepared' }));
+}));
+
+router.post('/submissions/:id/verify-payment', authorize('ebook.finance.clear'), asyncHandler(async (req, res) => {
+  res.json(await ebookWorkflowService.upsertFinance(req.params.id, req.user?.uuid, { ...req.body, payment_status: 'cleared', review_note: req.body?.review_note || 'Payment verified' }));
+}));
+
+router.post('/submissions/:id/reject-payment', authorize('ebook.finance.clear'), asyncHandler(async (req, res) => {
+  res.json(await ebookWorkflowService.upsertFinance(req.params.id, req.user?.uuid, { ...req.body, payment_status: 'declined', review_note: req.body?.review_note || 'Payment rejected' }));
+}));
+
+router.post('/submissions/:id/payment-proof', authorize('ebook.submission.view'), uploadEbookFile.single('file'), asyncHandler(async (req, res) => {
+  if (req.file) {
+    await ebookWorkflowService.uploadFile(req.params.id, req.user?.uuid, req.file, 'payment_proof');
+  }
+  res.json(await ebookWorkflowService.upsertFinance(req.params.id, req.user?.uuid, { payment_reference: req.body?.payment_reference || req.body?.reference || null, amount_paid: req.body?.amount_paid ?? null, payment_status: 'paid', review_note: req.body?.note || 'Payment proof submitted by author' }));
+}));
+
+// ===== Production Management Routes =====
+router.get('/production-queue', 
+  authorize('ebook.production.view'), 
+  ebookSubmissionController.productionDashboard
+);
+
+router.get('/submissions/:id/production', 
+  authorize('ebook.workflow.view'), 
+  asyncHandler(async (req, res) => {
+    const { rows } = await pool.query(
+      `SELECT * FROM ebook_production WHERE submission_id = $1`,
+      [req.params.id]
+    );
+    res.json(rows[0] || null);
+  })
+);
+
+router.post('/submissions/:id/production/files', 
+  authorize('ebook.production.manage'), 
+  uploadEbookFile.single('file'), 
+  asyncHandler(async (req, res) => {
+    const file = await ebookWorkflowService.uploadFile(
+      req.params.id, 
+      req.user?.uuid, 
+      req.file, 
+      req.body.file_role || 'final'
+    );
+    res.status(201).json(file);
+  })
+);
+
+router.post('/submissions/:id/approve-proof', authorize('ebook.workflow.view'), asyncHandler(async (req, res) => {
+  res.json(await ebookWorkflowService.upsertProduction(req.params.id, req.user?.uuid, { author_proof_approved: true, quality_note: req.body?.note || 'Proof approved by author' }));
+}));
+
+router.post('/submissions/:id/approve-production', authorize('ebook.decision.make'), asyncHandler(async (req, res) => {
+  res.json(await ebookWorkflowService.upsertProduction(req.params.id, req.user?.uuid, { pdf_ready: true, quality_note: req.body?.note || 'Approved for production by editor' }));
+}));
+
+// ===== Editor Communication Routes =====
+router.post('/submissions/:id/notify-author', authorize('ebook.decision.make'), asyncHandler(async (req, res) => {
+  const { rows } = await pool.query(`INSERT INTO ebook_workflow_history (submission_id, from_status, to_status, action, note, actor_id) SELECT submission_id, status, status, 'editor.notify_author', $2, $3 FROM ebook_submissions WHERE submission_id = $1 RETURNING *`, [req.params.id, req.body?.message || 'Editorial update available.', req.user?.uuid]);
+  res.json(rows[0] || { ok: true });
+}));
+
+router.post('/submissions/:id/editor-comment', authorize('ebook.decision.make'), asyncHandler(async (req, res) => {
+  const { rows } = await pool.query(`INSERT INTO ebook_workflow_history (submission_id, from_status, to_status, action, note, actor_id) SELECT submission_id, status, status, 'editor.comment', $2, $3 FROM ebook_submissions WHERE submission_id = $1 RETURNING *`, [req.params.id, req.body?.note || 'Editor comment added.', req.user?.uuid]);
+  res.json(rows[0] || { ok: true });
+}));
+
+router.get('/submissions/:id/review-comments', authorize('ebook.workflow.view'), asyncHandler(async (req, res) => {
+  const { rows } = await pool.query(`SELECT er.*, u.full_name AS reviewer_name FROM ebook_reviews er LEFT JOIN users u ON u.uuid = er.reviewer_id WHERE er.submission_id = $1 ORDER BY er.submitted_at DESC`, [req.params.id]);
+  res.json({ rows });
+}));
+
+// ===== Dashboard Routes =====
 router.get('/dashboard/author', authorize('ebook.dashboard.author'), ebookSubmissionController.authorDashboard);
 router.get('/dashboard/editor', authorize('ebook.dashboard.editor'), ebookSubmissionController.editorDashboard);
 router.get('/dashboard/reviewer', authorize('ebook.dashboard.reviewer'), ebookSubmissionController.reviewerDashboard);
 router.get('/dashboard/finance', authorize('ebook.dashboard.finance'), ebookSubmissionController.financeDashboard);
 router.get('/dashboard/production', authorize('ebook.dashboard.production'), ebookSubmissionController.productionDashboard);
+
+// ===== Editor Queue Routes =====
 router.get('/reviewer-options', authorize('ebook.reviewer.assign'), ebookSubmissionController.reviewerOptions);
 router.get('/editor-queue', authorize('ebook.submission.view'), asyncHandler(async (req, res) => {
   res.json(await editorQueue(req.query || {}));
 }));
 
+// ===== Review Assignment Routes =====
 router.get('/review-template', authorize('ebook.review.assignment.view'), asyncHandler(async (req, res) => {
   res.json(TEMPLATE);
 }));
+
 router.get('/review-assignments', authorize('ebook.review.assignment.view'), ebookReviewAssignmentController.index);
 router.get('/review-assignments/:id', authorize('ebook.review.assignment.view'), ebookReviewAssignmentController.show);
 router.get('/review-assignments/:id/detail', authorize('ebook.review.assignment.view'), asyncHandler(async (req, res) => {
@@ -209,58 +307,58 @@ router.get('/review-assignments/:id/detail', authorize('ebook.review.assignment.
     WHERE era.assignment_id = $1`, [req.params.id]);
   res.json(rows[0] || null);
 }));
-router.get(
-  '/review-assignments/:id/files',
-  authorize('ebook.review.assignment.view'),
-  asyncHandler(async (req, res) => {
-    const sub = await pool.query(
-      `SELECT submission_id
-       FROM ebook_review_assignments
-       WHERE assignment_id = $1`,
-      [req.params.id]
-    );
 
-    const submissionId = sub.rows[0]?.submission_id;
+router.get('/review-assignments/:id/files', authorize('ebook.review.assignment.view'), asyncHandler(async (req, res) => {
+  const sub = await pool.query(
+    `SELECT submission_id
+     FROM ebook_review_assignments
+     WHERE assignment_id = $1`,
+    [req.params.id]
+  );
 
-    if (!submissionId) {
-      return res.json({
-        manuscript_files: [],
-        review_attachments: [],
-      });
-    }
+  const submissionId = sub.rows[0]?.submission_id;
 
-    const { rows } = await pool.query(
-      `SELECT *
-       FROM ebook_submission_files
-       WHERE submission_id = $1
-         AND is_active = TRUE
-       ORDER BY created_at DESC`,
-      [submissionId]
-    );
-
-    const manuscript_files = rows.filter(
-      (file) => String(file.file_role || "").toLowerCase() !== "review_attachment"
-    );
-
-    const review_attachments = rows.filter(
-      (file) => String(file.file_role || "").toLowerCase() === "review_attachment"
-    );
-
-    res.json({
-      manuscript_files,
-      review_attachments,
+  if (!submissionId) {
+    return res.json({
+      manuscript_files: [],
+      review_attachments: [],
     });
-  })
-);
+  }
+
+  const { rows } = await pool.query(
+    `SELECT *
+     FROM ebook_submission_files
+     WHERE submission_id = $1
+       AND is_active = TRUE
+     ORDER BY created_at DESC`,
+    [submissionId]
+  );
+
+  const manuscript_files = rows.filter(
+    (file) => String(file.file_role || "").toLowerCase() !== "review_attachment"
+  );
+
+  const review_attachments = rows.filter(
+    (file) => String(file.file_role || "").toLowerCase() === "review_attachment"
+  );
+
+  res.json({
+    manuscript_files,
+    review_attachments,
+  });
+}));
+
 router.post('/review-assignments/:id/respond', authorize('ebook.review.respond'), ebookReviewAssignmentController.respond);
 router.post('/review-assignments/:id/submit-review', authorize('ebook.review.submit'), ebookReviewAssignmentController.submitReview);
 router.put('/review-assignments/:id/review', authorize('ebook.review.submit'), asyncHandler(async (req, res) => {
   res.json(await ebookWorkflowService.submitReview(req.params.id, req.user?.uuid, req.body || {}));
 }));
+
 router.post('/review-assignments/:id/extension', authorize('ebook.review.respond'), asyncHandler(async (req, res) => {
   const { rows } = await pool.query(`UPDATE ebook_review_assignments SET due_date = COALESCE($2, due_date), response_note = COALESCE($3, response_note), updated_at = NOW() WHERE assignment_id = $1 RETURNING *`, [req.params.id, req.body?.due_date || null, req.body?.note || 'Extension requested']);
   res.json(rows[0] || null);
 }));
+
 router.post('/review-assignments/:id/files', authorize('ebook.review.submit'), uploadEbookFile.single('file'), asyncHandler(async (req, res) => {
   const sub = await pool.query(`SELECT submission_id FROM ebook_review_assignments WHERE assignment_id = $1`, [req.params.id]);
   const submissionId = sub.rows[0]?.submission_id;
@@ -268,9 +366,11 @@ router.post('/review-assignments/:id/files', authorize('ebook.review.submit'), u
   const file = await ebookWorkflowService.uploadFile(submissionId, req.user?.uuid, req.file, 'review_attachment');
   res.status(201).json(file);
 }));
+
 router.delete('/review-assignments/:id', authorize('ebook.reviewer.assign'), asyncHandler(async (req, res) => {
   res.json(await ebookWorkflowService.removeReviewAssignment(req.params.id, req.user?.uuid, req.body?.note || null));
 }));
+
 router.get('/reviewer-reminders', authorize('ebook.review.assignment.view'), asyncHandler(async (req, res) => {
   let sql = `SELECT era.*, es.title, u.full_name AS reviewer_name FROM ebook_review_assignments era INNER JOIN ebook_submissions es ON es.submission_id = era.submission_id LEFT JOIN users u ON u.uuid = era.reviewer_id WHERE 1=1`;
   if (String(req.query?.only_overdue) === 'true') sql += ` AND era.status IN ('assigned','accepted') AND era.due_date < CURRENT_DATE`;
@@ -279,17 +379,21 @@ router.get('/reviewer-reminders', authorize('ebook.review.assignment.view'), asy
   res.json({ rows });
 }));
 
+// ===== Publication Routes =====
 router.get('/publications', authorize('ebook.publication.view'), ebookPublicationController.index);
 router.get('/publications/:id', authorize('ebook.publication.view'), ebookPublicationController.show);
 
+// ===== Admin Routes =====
 router.get('/admin/audit-logs', authorize('ebook.settings.manage'), asyncHandler(async (req, res) => {
   const { rows } = await pool.query(`SELECT * FROM ebook_workflow_history ORDER BY acted_at DESC LIMIT $1`, [Number(req.query?.limit || 50)]);
   res.json({ rows });
 }));
+
 router.get('/admin/storage', authorize('ebook.settings.manage'), asyncHandler(async (req, res) => {
   const { rows } = await pool.query(`SELECT COUNT(*)::int AS file_count, COALESCE(SUM(file_size_bytes),0)::bigint AS total_bytes FROM ebook_submission_files WHERE is_active = TRUE`);
   res.json(rows[0] || { file_count: 0, total_bytes: 0 });
 }));
+
 router.get('/admin/health', authorize('ebook.settings.manage'), asyncHandler(async (req, res) => {
   const [submissions, files] = await Promise.all([
     pool.query(`SELECT COUNT(*)::int AS count FROM ebook_submissions`),
@@ -297,9 +401,11 @@ router.get('/admin/health', authorize('ebook.settings.manage'), asyncHandler(asy
   ]);
   res.json({ status: 'ok', submissions: submissions.rows[0]?.count || 0, files: files.rows[0]?.count || 0 });
 }));
+
 router.post('/admin/workflow-rules', authorize('ebook.settings.manage'), asyncHandler(async (req, res) => {
   res.json({ ok: true, saved: req.body || {} });
 }));
+
 router.post('/admin/reindex', authorize('ebook.settings.manage'), asyncHandler(async (req, res) => {
   res.json({ ok: true, message: 'Reindex completed.' });
 }));

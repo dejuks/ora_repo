@@ -40,13 +40,14 @@ const ROLES = {
   EBOOK_REVIEWER: "EBOOK_REVIEWER",
   EBOOK_DIGITAL_CONTENT_MANAGER: "EBOOK_DIGITAL_CONTENT_MANAGER",
   EBOOK_DCM: "EBOOK_DCM",
-  EBOOK_FINANCE_OFFICER: "EBOOK_FINANCE_OFFICER",
+  EBOOK_FINANCE: "EBOOK_FINANCE",
   PUBLIC_READER: "PUBLIC_READER",
   EBOOK_PUBLIC_READER: "EBOOK_PUBLIC_READER",
 };
 
 function normalizeRoleName(value) {
-  return (value || "").toString().trim().toUpperCase().replace(/\s+/g, "_");
+  if (!value) return "";
+  return value.toString().trim().toUpperCase().replace(/\s+/g, "_");
 }
 
 function isReviewerOverdue(row) {
@@ -89,24 +90,42 @@ export default function Sidebar() {
   });
 
   const moduleId = user?.module_id || user?.active_module_id || user?.module?.id;
+  
+  // Extract and normalize user roles
   const userRoleIds = user?.roles?.map((r) => r.role_id).filter(Boolean) || [];
-  const userRoleNames =
-    user?.roles
-      ?.map((r) => normalizeRoleName(r.role_name || r.name || r.code || r.role))
-      .filter(Boolean) || [];
+  const userRoleNames = user?.roles
+    ?.map((r) => {
+      const roleName = r.role_name || r.name || r.code || r.role;
+      return normalizeRoleName(roleName);
+    })
+    .filter(Boolean) || [];
 
-  const hasRole = (allowedRoles = []) =>
-    allowedRoles.some((allowed) => {
+  // Improved hasRole function that handles both UUIDs and string roles
+  const hasRole = (allowedRoles = []) => {
+    if (!allowedRoles || allowedRoles.length === 0) return true;
+    
+    return allowedRoles.some((allowed) => {
       const raw = (allowed || "").toString();
       if (!raw) return false;
-      return raw.includes("-")
-        ? userRoleIds.includes(raw)
-        : userRoleNames.includes(normalizeRoleName(raw));
+      
+      // Check if it's a UUID (contains hyphens and follows UUID pattern)
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw);
+      
+      if (isUUID) {
+        // Compare by UUID
+        return userRoleIds.includes(raw);
+      }
+      
+      // Compare by normalized role name
+      const normalizedAllowed = normalizeRoleName(raw);
+      return userRoleNames.includes(normalizedAllowed);
     });
+  };
 
   const isActive = (path) =>
     location.pathname === path || location.pathname.startsWith(path + "/");
 
+  // Fetch reviewer counts for reviewer role
   useEffect(() => {
     if (!user) return;
 
@@ -122,7 +141,8 @@ export default function Sidebar() {
         if (!active) return;
         setReviewerCounts(getReviewerCounts(result?.assignments || []));
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error("Failed to fetch reviewer counts:", error);
         if (!active) return;
         setReviewerCounts({
           all: 0,

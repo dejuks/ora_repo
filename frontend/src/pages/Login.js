@@ -5,14 +5,31 @@ export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
+  const normalizeRoleName = (value) => {
+    if (!value) return "";
+    return value.toString().trim().toUpperCase().replace(/\s+/g, "_");
+  };
+
   const getRoleNames = (user) => {
-    return (user.roles || [])
-      .map((r) => (r.role_name || r.name || r.code || "").toUpperCase().trim())
+    const roles = user.roles || user.user_roles || [];
+    return roles
+      .map((r) => {
+        const roleName = r.role_name || r.name || r.code || r.role;
+        return normalizeRoleName(roleName);
+      })
+      .filter(Boolean);
+  };
+
+  const getRoleIds = (user) => {
+    const roles = user.roles || user.user_roles || [];
+    return roles
+      .map((r) => r.role_id || r.id)
       .filter(Boolean);
   };
 
   const getRedirectPath = (user) => {
     const roleNames = getRoleNames(user);
+    const roleIds = getRoleIds(user);
 
     const roleDashboardMap = {
       // System
@@ -35,7 +52,8 @@ export default function Login() {
       EBOOK_REVIEWER: "/ebook/dashboard",
       EBOOK_DIGITAL_CONTENT_MANAGER: "/ebook/dashboard",
       EBOOK_DCM: "/ebook/dashboard",
-      EBOOK_FINANCE_OFFICER: "/ebook/dashboard",
+      EBOOK_FINANCE: "/ebook/dashboard",
+      
       PUBLIC_READER: "/ebook/publications",
       EBOOK_PUBLIC_READER: "/ebook/publications",
 
@@ -84,7 +102,7 @@ export default function Login() {
       "EBOOK_EDITOR",
       "EBOOK_DIGITAL_CONTENT_MANAGER",
       "EBOOK_DCM",
-      "EBOOK_FINANCE_OFFICER",
+      "EBOOK_FINANCE",
       "PUBLIC_READER",
       "EBOOK_PUBLIC_READER",
       "EBOOK_REVIEWER",
@@ -115,10 +133,21 @@ export default function Login() {
       "RESEARCHER_NETWORK_MODERATOR",
     ];
 
-    // First try to match by role
+    // First try to match by role name
     const matchedRole = rolePriority.find((role) => roleNames.includes(role));
     if (matchedRole && roleDashboardMap[matchedRole]) {
       return roleDashboardMap[matchedRole];
+    }
+
+    // Try to match by role ID (for UUID-based roles)
+    const uuidRoleMap = {
+      "bf22a62f-e672-4e88-9c28-fa1eee3e0e22": "/admin-dashboard", // SUPER_ADMIN
+    };
+
+    for (const roleId of roleIds) {
+      if (uuidRoleMap[roleId]) {
+        return uuidRoleMap[roleId];
+      }
     }
 
     // Fallback to module-based redirection
@@ -144,10 +173,19 @@ export default function Login() {
       const res = await login(form);
       const { token, user } = res.data;
 
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+      // Ensure user object has normalized role names
+      const normalizedUser = {
+        ...user,
+        roles: (user.roles || user.user_roles || []).map(r => ({
+          ...r,
+          role_name: normalizeRoleName(r.role_name || r.name || r.code || r.role)
+        }))
+      };
 
-      const redirectTo = getRedirectPath(user);
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(normalizedUser));
+
+      const redirectTo = getRedirectPath(normalizedUser);
       window.location.href = redirectTo;
     } catch (err) {
       alert(err.response?.data?.message || "Invalid email or password");
@@ -324,8 +362,6 @@ export default function Login() {
           <a href="/" className="forgot-link">
             back to home
           </a>
-          
-           
         </div>
       </div>
     </div>

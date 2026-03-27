@@ -11,7 +11,7 @@ const ROLE_TO_PANEL = {
   EBOOK_AUTHOR: "author",
   EBOOK_EDITOR: "editor",
   EBOOK_REVIEWER: "reviewer",
-  EBOOK_FINANCE_OFFICER: "finance",
+  EBOOK_FINANCE: "finance",
   EBOOK_DIGITAL_CONTENT_MANAGER: "production",
   EBOOK_DCM: "production",
   PUBLIC_READER: "reader",
