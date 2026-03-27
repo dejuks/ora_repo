@@ -1,3 +1,6 @@
-import React from 'react';
-import EbookEditorStagePage from './EbookEditorStagePage';
-export default function EbookEditorScreeningPage() { return <EbookEditorStagePage stage="screening" />; }
+import React from "react";
+import EbookEditorStageListPage from "./EbookEditorStageListPage.jsx";
+
+export default function EbookEditorScreeningPage() {
+  return <EbookEditorStageListPage stage="screening" />;
+}
