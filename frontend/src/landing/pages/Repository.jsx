@@ -412,7 +412,7 @@ export default function RepositoryPage() {
             </div>
             
             <div style={styles.contributeButtons}>
-              <Link to="/repository/author/deposit" style={styles.primaryButton}>
+              <Link to="/repository/author/create" style={styles.primaryButton}>
                 Start Contributing
                 <span style={styles.buttonArrow}>→</span>
               </Link>

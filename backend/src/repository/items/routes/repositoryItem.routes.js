@@ -1,7 +1,8 @@
-  import express from "express";
+import express from "express";
 import multer from "multer";
 import path from "path";
 import { authenticate } from "../../../middleware/auth.middleware.js";
+
 import {
   createItem,
   getItems,
@@ -23,114 +24,98 @@ import {
   searchRepositoryItems,
   getReviewerNewQueue,
   claimItem,
-  bulkClaimItems,getReviewerItemDetail,updateRevisionComment
+  bulkClaimItems,
+  getReviewerItemDetail,
+  updateRevisionComment
 } from "../controllers/repositoryItem.controller.js";
 
 const router = express.Router();
 
-// ======================
-// Multer config
-// ======================
+/* ======================
+   MULTER CONFIG
+====================== */
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(process.cwd(), "/uploads/repository/items"));
+    cb(null, path.join(process.cwd(), "uploads/repository/items"));
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const uniqueSuffix =
+      Date.now() + "-" + Math.round(Math.random() * 1e9);
+
     cb(null, uniqueSuffix + path.extname(file.originalname));
   },
 });
+
 const upload = multer({ storage });
 
-// ======================
-// AUTHOR ROUTES
-// ======================
+/* ======================
+   AUTHOR ROUTES
+====================== */
 
-// Create new item (draft or submitted)
+// CREATE
 router.post("/", authenticate, upload.single("file"), createItem);
 
-// Get all items (admin/curator)
+// GET ALL
 router.get("/", authenticate, getItems);
 
-// Get single item by UUID
+// GET ONE
 router.get("/:uuid", authenticate, getItem);
 
-// Update an item
+// UPDATE
 router.put("/:uuid", authenticate, upload.single("file"), updateItem);
 
-// Delete an item
+// DELETE
 router.delete("/:uuid", authenticate, deleteItem);
 
-// Get current author's drafts
+// AUTHOR
 router.get("/author/drafts", authenticate, getAuthorDrafts);
-
-// Submit a draft for review
 router.patch("/author/:uuid/submit", authenticate, submitDraftItem);
 
-// ======================
-// CURATOR / ADMIN ROUTES
-// ======================
+/* ======================
+   CURATOR ROUTES
+====================== */
 
-// Get new submissions for curator queue
 router.get("/curator/queue/new", authenticate, getCuratorNewQueue);
-
-// Approve an item
 router.patch("/:uuid/approve", authenticate, approveRepositoryItem);
-
-// Reject an item
 router.patch("/:uuid/reject", authenticate, rejectRepositoryItem);
-
-// Request revision
 router.patch("/:uuid/revision", authenticate, requestRevision);
-
-// Suggest metadata
 router.patch("/:uuid/suggest-metadata", authenticate, suggestMetadata);
 
-// Analyze vocabulary
 router.get("/:uuid/analyze-vocab", authenticate, analyzeVocabulary);
-
-// Check copyright similarity
 router.get("/:uuid/copyright-check", authenticate, checkCopyright);
 
-router.get("/author/deposits/review",authenticate,getAuthorDepositsUnderReview);
+/* ======================
+   AUTHOR DEPOSITS
+====================== */
 
-router.get("/author/deposits/returned",authenticate,getReturnedDeposits);
+router.get("/author/deposits/review", authenticate, getAuthorDepositsUnderReview);
+router.get("/author/deposits/returned", authenticate, getReturnedDeposits);
+router.get("/author/deposits/approved", authenticate, getApprovedDeposits);
 
-router.get("/repository/author/deposits/approved",authenticate,getApprovedDeposits);
+/* ======================
+   SEARCH
+====================== */
 
 router.get("/search", authenticate, searchRepositoryItems);
 
+/* ======================
+   REVIEWER
+====================== */
 
-/* ===============================
-   REVIEWER QUEUE
-=============================== */
-router.get("/reviewer/queue/new",authenticate,getReviewerNewQueue);
+router.get("/reviewer/queue/new", authenticate, getReviewerNewQueue);
+router.patch("/:id/claim", authenticate, claimItem);
+router.patch("/reviewer/queue/claim", authenticate, bulkClaimItems);
+router.get("/reviewer/:uuid", authenticate, getReviewerItemDetail);
 
-router.patch("/:id/claim",authenticate,claimItem);
+/* ======================
+   REVISION UPDATE
+====================== */
 
 router.patch(
-  "/reviewer/queue/claim",
+  "/:uuid/edit-revision",
   authenticate,
-  bulkClaimItems
+  upload.single("file"),
+  updateRevisionComment
 );
-
-/* Reviewer queue */
-router.get(
-  "/reviewer/queue/new",
-  authenticate,
-  getReviewerNewQueue
-);
-
-/* Reviewer detail view */
-router.get(
-  "/reviewer/:uuid",
-  authenticate,
-  getReviewerItemDetail
-);
-// Update revision comment only
-router.patch("/:uuid/edit-revision", authenticate, upload.single("file"), updateRevisionComment);
-
-
-
 
 export default router;

@@ -156,10 +156,16 @@ export default function EbookDashboard() {
   const [stats, setStats] = useState(MOCK_STATS);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedLanguage, setSelectedLanguage] = useState("all");
+  const [hoveredBook, setHoveredBook] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
-  // Auth modal state
+  // Auth modal states
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState("login"); // "login" or "register"
+  const [authMode, setAuthMode] = useState("login"); // 'login' or 'register'
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
   const [authForm, setAuthForm] = useState({
     full_name: "",
     email: "",
@@ -169,8 +175,6 @@ export default function EbookDashboard() {
     gender: "",
     dob: ""
   });
-  const [authError, setAuthError] = useState("");
-  const [authLoading, setAuthLoading] = useState(false);
 
   useEffect(() => {
     // Check screen size
@@ -223,6 +227,106 @@ export default function EbookDashboard() {
         .sort((a, b) => b.downloads - a.downloads)
         .slice(0, 4);
       setFeaturedEbooks(filtered);
+    }
+  };
+
+  const handleAuthInputChange = (e) => {
+    const { name, value } = e.target;
+    setAuthForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setAuthError(""); // Clear error when user types
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError("");
+    
+    try {
+      // API call for login
+      const response = await api.post("/auth/login", {
+        email: authForm.email,
+        password: authForm.password
+      });
+      
+      // Store token and user data
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+      
+      setShowAuthModal(false);
+      setAuthForm({
+        full_name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        phone: "",
+        gender: "",
+        dob: ""
+      });
+      
+      // Refresh page or update state
+      window.location.reload();
+    } catch (err) {
+      setAuthError(err.response?.data?.message || "Login failed. Please try again.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError("");
+    
+    // Validate passwords match
+    if (authForm.password !== authForm.confirmPassword) {
+      setAuthError("Passwords do not match");
+      setAuthLoading(false);
+      return;
+    }
+    
+    // Validate password length
+    if (authForm.password.length < 6) {
+      setAuthError("Password must be at least 6 characters");
+      setAuthLoading(false);
+      return;
+    }
+    
+    try {
+      // API call for registration
+      const response = await api.post("/auth/register", {
+        full_name: authForm.full_name,
+        email: authForm.email,
+        password: authForm.password,
+        phone: authForm.phone,
+        gender: authForm.gender,
+        dob: authForm.dob,
+        role: "author" // Assuming authors register here
+      });
+      
+      // Store token and user data
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+      
+      setShowAuthModal(false);
+      setAuthForm({
+        full_name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        phone: "",
+        gender: "",
+        dob: ""
+      });
+      
+      // Refresh page or update state
+      window.location.reload();
+    } catch (err) {
+      setAuthError(err.response?.data?.message || "Registration failed. Please try again.");
+    } finally {
+      setAuthLoading(false);
     }
   };
 
@@ -631,67 +735,67 @@ export default function EbookDashboard() {
 
       {/* Auth Modal */}
       {showAuthModal && (
-        <div style={styles.modalOverlay} onClick={() => setShowAuthModal(false)}>
-          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div style={responsiveStyles.modalOverlay} onClick={() => setShowAuthModal(false)}>
+          <div style={responsiveStyles.modal} onClick={(e) => e.stopPropagation()}>
             <button 
               onClick={() => setShowAuthModal(false)}
-              style={styles.modalClose}
+              style={responsiveStyles.modalClose}
             >
               ×
             </button>
             
-            <h2 style={styles.modalTitle}>
+            <h2 style={responsiveStyles.modalTitle}>
               {authMode === "login" ? "Welcome Back!" : "Join as Author"}
             </h2>
             
-            <p style={styles.modalSubtitle}>
+            <p style={responsiveStyles.modalSubtitle}>
               {authMode === "login" 
                 ? "Login to submit your manuscript" 
                 : "Create an account to start publishing your eBooks"}
             </p>
 
             {authError && (
-              <div style={styles.authError}>
+              <div style={responsiveStyles.authError}>
                 {authError}
               </div>
             )}
 
-            <form onSubmit={authMode === "login" ? handleLogin : handleRegister} style={styles.authForm}>
+            <form onSubmit={authMode === "login" ? handleLogin : handleRegister} style={responsiveStyles.authForm}>
               {authMode === "register" && (
                 <>
-                  <div style={styles.formGroup}>
-                    <label style={styles.formLabel}>Full Name *</label>
+                  <div style={responsiveStyles.formGroup}>
+                    <label style={responsiveStyles.formLabel}>Full Name *</label>
                     <input
                       type="text"
                       name="full_name"
                       value={authForm.full_name}
                       onChange={handleAuthInputChange}
-                      style={styles.formInput}
+                      style={responsiveStyles.formInput}
                       required
                       placeholder="Enter your full name"
                     />
                   </div>
 
-                  <div style={styles.formGroup}>
-                    <label style={styles.formLabel}>Phone (Optional)</label>
+                  <div style={responsiveStyles.formGroup}>
+                    <label style={responsiveStyles.formLabel}>Phone (Optional)</label>
                     <input
                       type="tel"
                       name="phone"
                       value={authForm.phone}
                       onChange={handleAuthInputChange}
-                      style={styles.formInput}
+                      style={responsiveStyles.formInput}
                       placeholder="Enter your phone number"
                     />
                   </div>
 
-                  <div style={styles.formRow}>
-                    <div style={{...styles.formGroup, flex: 1}}>
-                      <label style={styles.formLabel}>Gender</label>
+                  <div style={responsiveStyles.formRow}>
+                    <div style={{...responsiveStyles.formGroup, flex: 1}}>
+                      <label style={responsiveStyles.formLabel}>Gender</label>
                       <select
                         name="gender"
                         value={authForm.gender}
                         onChange={handleAuthInputChange}
-                        style={styles.formInput}
+                        style={responsiveStyles.formInput}
                       >
                         <option value="">Select</option>
                         <option value="male">Male</option>
@@ -700,41 +804,41 @@ export default function EbookDashboard() {
                       </select>
                     </div>
 
-                    <div style={{...styles.formGroup, flex: 1}}>
-                      <label style={styles.formLabel}>Date of Birth</label>
+                    <div style={{...responsiveStyles.formGroup, flex: 1}}>
+                      <label style={responsiveStyles.formLabel}>Date of Birth</label>
                       <input
                         type="date"
                         name="dob"
                         value={authForm.dob}
                         onChange={handleAuthInputChange}
-                        style={styles.formInput}
+                        style={responsiveStyles.formInput}
                       />
                     </div>
                   </div>
                 </>
               )}
 
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>Email *</label>
+              <div style={responsiveStyles.formGroup}>
+                <label style={responsiveStyles.formLabel}>Email *</label>
                 <input
                   type="email"
                   name="email"
                   value={authForm.email}
                   onChange={handleAuthInputChange}
-                  style={styles.formInput}
+                  style={responsiveStyles.formInput}
                   required
                   placeholder="Enter your email"
                 />
               </div>
 
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>Password *</label>
+              <div style={responsiveStyles.formGroup}>
+                <label style={responsiveStyles.formLabel}>Password *</label>
                 <input
                   type="password"
                   name="password"
                   value={authForm.password}
                   onChange={handleAuthInputChange}
-                  style={styles.formInput}
+                  style={responsiveStyles.formInput}
                   required
                   placeholder={authMode === "login" ? "Enter your password" : "Create a password (min. 6 characters)"}
                   minLength={authMode === "register" ? 6 : undefined}
@@ -742,14 +846,14 @@ export default function EbookDashboard() {
               </div>
 
               {authMode === "register" && (
-                <div style={styles.formGroup}>
-                  <label style={styles.formLabel}>Confirm Password *</label>
+                <div style={responsiveStyles.formGroup}>
+                  <label style={responsiveStyles.formLabel}>Confirm Password *</label>
                   <input
                     type="password"
                     name="confirmPassword"
                     value={authForm.confirmPassword}
                     onChange={handleAuthInputChange}
-                    style={styles.formInput}
+                    style={responsiveStyles.formInput}
                     required
                     placeholder="Confirm your password"
                   />
@@ -758,25 +862,25 @@ export default function EbookDashboard() {
 
               <button 
                 type="submit" 
-                style={styles.authButton}
+                style={responsiveStyles.authButton}
                 disabled={authLoading}
               >
                 {authLoading ? (
-                  <span style={styles.buttonLoader}>⏳ Processing...</span>
+                  <span style={responsiveStyles.buttonLoader}>⏳ Processing...</span>
                 ) : (
                   authMode === "login" ? "Login" : "Create Account"
                 )}
               </button>
             </form>
 
-            <div style={styles.authSwitch}>
+            <div style={responsiveStyles.authSwitch}>
               {authMode === "login" ? (
                 <p>
                   Don't have an account?{" "}
                   <button onClick={() => {
                     setAuthMode("register");
                     setAuthError("");
-                  }} style={styles.switchButton}>
+                  }} style={responsiveStyles.switchButton}>
                     Register as Author
                   </button>
                 </p>
@@ -786,15 +890,15 @@ export default function EbookDashboard() {
                   <button onClick={() => {
                     setAuthMode("login");
                     setAuthError("");
-                  }} style={styles.switchButton}>
+                  }} style={responsiveStyles.switchButton}>
                     Login here
                   </button>
                 </p>
               )}
             </div>
 
-            <div style={styles.authFooter}>
-              <p style={styles.authFooterText}>
+            <div style={responsiveStyles.authFooter}>
+              <p style={responsiveStyles.authFooterText}>
                 By continuing, you agree to our Terms of Service and Privacy Policy
               </p>
             </div>
@@ -1784,9 +1888,6 @@ const responsiveStyles = {
     fontSize: "2rem",
     cursor: "pointer",
     color: "#5a6a7a",
-    ":hover": {
-      color: "#1a2639",
-    },
   },
   modalTitle: {
     fontSize: "1.8rem",
@@ -1834,9 +1935,6 @@ const responsiveStyles = {
     fontSize: "1rem",
     transition: "border-color 0.3s ease",
     outline: "none",
-    ":focus": {
-      borderColor: "#C9A227",
-    },
   },
   authButton: {
     background: "#C9A227",
@@ -1849,14 +1947,6 @@ const responsiveStyles = {
     cursor: "pointer",
     marginTop: "10px",
     transition: "transform 0.3s ease, background 0.3s ease",
-    ":hover": {
-      background: "#b88c1f",
-      transform: "translateY(-2px)",
-    },
-    ":disabled": {
-      opacity: 0.7,
-      cursor: "not-allowed",
-    },
   },
   buttonLoader: {
     display: "inline-block",
@@ -1875,9 +1965,6 @@ const responsiveStyles = {
     cursor: "pointer",
     textDecoration: "underline",
     fontSize: "0.95rem",
-    ":hover": {
-      color: "#b88c1f",
-    },
   },
   authFooter: {
     marginTop: "20px",

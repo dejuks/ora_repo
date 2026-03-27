@@ -265,14 +265,11 @@ const modules = [
                 </div>
               ) : (
                 <div style={styles.authButtons}>
-                  <Link to="/wiki/login" style={styles.loginButton}>
+                  <Link to="/auth" style={styles.loginButton}>
                     <span>🔑</span>
                     <span>Login</span>
                   </Link>
-                  <Link to="/wiki/register" style={styles.registerButton}>
-                    <span>📝</span>
-                    <span>Register</span>
-                  </Link>
+                  
                 </div>
               )}
             </div>

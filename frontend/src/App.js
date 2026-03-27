@@ -181,6 +181,7 @@ import EbookEditorStageListPage from "./pages/ebook/EbookEditorStageListPage.jsx
 import EbookReviewDetailPage from "./pages/ebook/EbookReviewDetailPage.jsx";
 import EbookReviewerManagerPage from "./pages/ebook/EbookReviewerManagerPage.jsx";
 import EbookWorkflowOverviewPage from "./pages/ebook/EbookWorkflowOverviewPage.jsx";
+import CreateAccount from "./pages/repository/author/CreateAccount.jsx";
 
 function App() {
   return (
@@ -294,10 +295,13 @@ function App() {
         <Route path="/reviewer/assigned/:id" element={<ProtectedRoute><AssignedReviewDetails /></ProtectedRoute>} />
 
         {/* Repository Protected Routes */}
+        {/* Author account create */}
+        <Route path="/repository/author/create" element={<CreateAccount />} />
+
         <Route path="/repository/admin/dashboard" element={<ProtectedRoute><RepositoryDashboard /></ProtectedRoute>} />
-        <Route path="/repository/author/dashboard" element={<ProtectedRoute><RepositoryAuthorDashboard /></ProtectedRoute>} />
+        <Route path="/repository/author/dashboard" element={<ProtectedRoute><RepositoryDashboard /></ProtectedRoute>} />
         <Route path="/repository/author/submit/list" element={<ProtectedRoute><RepositoryList /></ProtectedRoute>} />
-        <Route path="/repository/create" element={<ProtectedRoute><RepositoryCreate /></ProtectedRoute>} />
+        <Route path="/repository/manuscript/create" element={<ProtectedRoute><RepositoryCreate /></ProtectedRoute>} />
         <Route path="/repository/show/:uuid" element={<ProtectedRoute><RepositoryShow /></ProtectedRoute>} />
         <Route path="/repository/author/show/:uuid" element={<ProtectedRoute><RepositoryShowAuthor /></ProtectedRoute>} />
         <Route path="/repository/edit/:uuid" element={<ProtectedRoute><RepositoryEdit /></ProtectedRoute>} />
@@ -306,6 +310,7 @@ function App() {
         <Route path="/repository/author/deposits/review" element={<ProtectedRoute><DepositsUnderReview /></ProtectedRoute>} />
         <Route path="/repository/author/deposits/returned" element={<ProtectedRoute><DepositsReturned /></ProtectedRoute>} />
         <Route path="/repository/author/deposits/approved" element={<ProtectedRoute><ApprovedDeposits /></ProtectedRoute>} />
+
 
         {/* Repository Curator Protected Routes */}
         <Route path="/repository/curator/dashboard" element={<ProtectedRoute><CuratorDashboard /></ProtectedRoute>} />

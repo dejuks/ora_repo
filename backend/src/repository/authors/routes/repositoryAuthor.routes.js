@@ -1,0 +1,14 @@
+import express from "express";
+import { register,getAuthors,
+  getAuthor,
+  updateAuthor,
+  deleteAuthor } from "../controllers/repositoryAuthor.controller.js";
+
+const router = express.Router();
+
+router.post("/register", register);
+router.get("/", getAuthors);
+router.get("/:id", getAuthor);
+router.put("/:id", updateAuthor);
+router.delete("/:id", deleteAuthor);
+export default router;
