@@ -52,6 +52,8 @@ import systemSettingRoutes from "./routes/systemSetting.routes.js";
 import publisherExternalRoutes from "./routes/publisher.routes.js";
 import ebookRoutes from "./ebook/routes/ebook.routes.js";
 import ebookPublicRoutes from "./ebook/routes/ebookPublic.routes.js";
+import repositoryAuthorRoutes from './repository/authors/routes/repositoryAuthor.routes.js';
+
 
 dotenv.config();
 
@@ -133,6 +135,9 @@ app.use("/api/publisher", publisherExternalRoutes);
 app.use("/api/ebook", ebookRoutes);
 app.use("/api/ebook-public", ebookPublicRoutes);
 app.use("/api/library", libraryRoutes);
+
+// Repository Authors
+app.use('/api/repository-authors', repositoryAuthorRoutes);
 
 /* =======================
    DEFAULT ROUTE

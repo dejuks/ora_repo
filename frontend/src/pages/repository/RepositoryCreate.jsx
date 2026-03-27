@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import MainLayout from "../../components/layout/MainLayout";
-import { createItem } from "../../api/repository.api";
+import { createItem } from "../../api/repository_api.js";
 
 // CKEditor
 

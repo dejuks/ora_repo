@@ -23,6 +23,11 @@ export default function Users() {
   const [userRoles, setUserRoles] = useState([]);
   const [savingRoles, setSavingRoles] = useState(false);
 
+  // ✅ ADDED: SEARCH + PAGINATION STATES
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 20;
+
   const loadUsers = async () => {
     setLoading(true);
     try {
@@ -58,6 +63,18 @@ export default function Users() {
     loadUsers();
     loadRoles();
   }, []);
+
+  // ✅ ADDED: FILTER + PAGINATION LOGIC
+  const filteredUsers = users.filter((u) =>
+    (u.full_name || "").toLowerCase().includes(search.toLowerCase()) ||
+    (u.email || "").toLowerCase().includes(search.toLowerCase()) ||
+    (u.phone || "").toLowerCase().includes(search.toLowerCase())
+  );
+
+  const indexOfLast = currentPage * usersPerPage;
+  const indexOfFirst = indexOfLast - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
   // UserForm modal
   const openCreate = () => {
@@ -134,40 +151,24 @@ export default function Users() {
   // Role modal
   const openRoleModal = async (user) => {
     setRoleModalUser(user);
-    setUserRoles([]); // Reset roles first
-    
+    setUserRoles([]);
+
     try {
       const res = await fetchUserRoles(user.uuid);
-      
-      // Handle different response structures
+
       let roles = [];
-      if (res.data?.data) {
-        roles = res.data.data;
-      } else if (Array.isArray(res.data)) {
-        roles = res.data;
-      } else if (res.data?.roles) {
-        roles = res.data.roles;
-      }
+      if (res.data?.data) roles = res.data.data;
+      else if (Array.isArray(res.data)) roles = res.data;
+      else if (res.data?.roles) roles = res.data.roles;
 
       setUserRoles(roles.map((r) => r.uuid || r.role_id || r.id));
     } catch (err) {
       console.error("Error loading user roles:", err);
-      
-      // Check if it's a 404 (endpoint not found)
-      if (err.response?.status === 404) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'API Endpoint Not Found',
-          text: 'The user roles API endpoint is not configured. Please check your backend routes.',
-          footer: 'Make sure the route "/api/user-roles/:userId" exists in your backend',
-        });
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: err.response?.data?.message || 'Failed to load user roles',
-        });
-      }
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.response?.data?.message || 'Failed to load user roles',
+      });
     }
   };
 
@@ -190,20 +191,11 @@ export default function Users() {
       setRoleModalUser(null);
     } catch (err) {
       console.error(err);
-      
-      if (err.response?.status === 404) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'API Endpoint Not Found',
-          text: 'The assign roles API endpoint is not configured.',
-        });
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: err.response?.data?.message || 'Failed to update roles',
-        });
-      }
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.response?.data?.message || 'Failed to update roles',
+      });
     } finally {
       setSavingRoles(false);
     }
@@ -213,6 +205,7 @@ export default function Users() {
     <MainLayout>
       <section className="content">
         <div className="container-fluid">
+
           {/* HEADER */}
           <div className="row mb-2 align-items-center">
             <div className="col-sm-6">
@@ -229,6 +222,21 @@ export default function Users() {
 
           {/* USERS TABLE */}
           <div className="card card-outline card-primary">
+
+            {/* ✅ SEARCH */}
+            <div className="card-header">
+              <input
+                type="text"
+                className="form-control w-25"
+                placeholder="Search users..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+
             <div className="card-body table-responsive p-0">
               <table className="table table-hover text-nowrap">
                 <thead>
@@ -246,48 +254,34 @@ export default function Users() {
                   {loading ? (
                     <tr>
                       <td colSpan="7" className="text-center">
-                        <div className="spinner-border text-primary" role="status">
-                          <span className="sr-only">Loading...</span>
-                        </div>
+                        <div className="spinner-border text-primary"></div>
                       </td>
                     </tr>
                   ) : (
                     <>
-                      {Array.isArray(users) && users.map((u, i) => (
+                      {Array.isArray(currentUsers) && currentUsers.map((u, i) => (
                         <tr key={u.uuid}>
-                          <td>{i + 1}</td>
+                          <td>{indexOfFirst + i + 1}</td>
                           <td>{u.full_name}</td>
                           <td>{u.email}</td>
                           <td>{u.phone}</td>
                           <td>{u.gender}</td>
                           <td>{u.dob?.slice(0, 10)}</td>
                           <td>
-                            <button
-                              className="btn btn-sm btn-warning mr-1"
-                              onClick={() => openEdit(u)}
-                              title="Edit User"
-                            >
+                            <button className="btn btn-sm btn-warning mr-1" onClick={() => openEdit(u)}>
                               <i className="fas fa-edit"></i>
                             </button>
-                            <button
-                              className="btn btn-sm btn-info mr-1"
-                              onClick={() => openRoleModal(u)}
-                              title="Assign Roles"
-                            >
+                            <button className="btn btn-sm btn-info mr-1" onClick={() => openRoleModal(u)}>
                               <i className="fas fa-user-tag"></i>
                             </button>
-                            <button
-                              className="btn btn-sm btn-danger"
-                              onClick={() => removeUser(u.uuid)}
-                              title="Delete User"
-                            >
+                            <button className="btn btn-sm btn-danger" onClick={() => removeUser(u.uuid)}>
                               <i className="fas fa-trash"></i>
                             </button>
                           </td>
                         </tr>
                       ))}
 
-                      {(!users || users.length === 0) && !loading && (
+                      {currentUsers.length === 0 && !loading && (
                         <tr>
                           <td colSpan="7" className="text-center text-muted">
                             No users found
@@ -299,9 +293,36 @@ export default function Users() {
                 </tbody>
               </table>
             </div>
+
+            {/* ✅ PAGINATION */}
+            <div className="card-footer d-flex justify-content-center">
+              <ul className="pagination mb-0">
+                <li className={`page-item ${currentPage === 1 && "disabled"}`}>
+                  <button className="page-link" onClick={() => setCurrentPage(currentPage - 1)}>
+                    Prev
+                  </button>
+                </li>
+
+                {[...Array(totalPages)].map((_, i) => (
+                  <li key={i} className={`page-item ${currentPage === i + 1 && "active"}`}>
+                    <button className="page-link" onClick={() => setCurrentPage(i + 1)}>
+                      {i + 1}
+                    </button>
+                  </li>
+                ))}
+
+                <li className={`page-item ${currentPage === totalPages && "disabled"}`}>
+                  <button className="page-link" onClick={() => setCurrentPage(currentPage + 1)}>
+                    Next
+                  </button>
+                </li>
+              </ul>
+            </div>
+
           </div>
 
-          {/* USER FORM MODAL */}
+          {/* KEEP ALL YOUR MODALS BELOW (UNCHANGED) */}
+                    {/* USER FORM MODAL */}
           {showModal && (
             <>
               <div
@@ -333,7 +354,10 @@ export default function Users() {
           {/* ROLE ASSIGNMENT MODAL */}
           {roleModalUser && (
             <>
-              <div className="modal fade show" style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}>
+              <div
+                className="modal fade show"
+                style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}
+              >
                 <div className="modal-dialog">
                   <div className="modal-content">
                     <div className="modal-header">
@@ -353,7 +377,10 @@ export default function Users() {
                       {allRoles.length === 0 ? (
                         <p className="text-muted text-center">No roles available</p>
                       ) : (
-                        <ul className="list-unstyled mb-0" style={{ maxHeight: 300, overflowY: "auto" }}>
+                        <ul
+                          className="list-unstyled mb-0"
+                          style={{ maxHeight: 300, overflowY: "auto" }}
+                        >
                           {allRoles.map((r) => (
                             <li key={r.uuid} className="mb-2">
                               <div className="form-check">
@@ -365,10 +392,15 @@ export default function Users() {
                                   onChange={() => toggleRole(r.uuid)}
                                   disabled={savingRoles}
                                 />
-                                <label className="form-check-label" htmlFor={`role-${r.uuid}`}>
+                                <label
+                                  className="form-check-label"
+                                  htmlFor={`role-${r.uuid}`}
+                                >
                                   <strong>{r.name}</strong>
                                   {r.description && (
-                                    <small className="d-block text-muted">{r.description}</small>
+                                    <small className="d-block text-muted">
+                                      {r.description}
+                                    </small>
                                   )}
                                 </label>
                               </div>
@@ -393,7 +425,11 @@ export default function Users() {
                       >
                         {savingRoles ? (
                           <>
-                            <span className="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>
+                            <span
+                              className="spinner-border spinner-border-sm mr-2"
+                              role="status"
+                              aria-hidden="true"
+                            ></span>
                             Saving...
                           </>
                         ) : (

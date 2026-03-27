@@ -1,4 +1,5 @@
 import { RepositoryItem } from "../models/repositoryItem.model.js";
+import { validate as isUUID } from "uuid";
 
 import path from "path";
 import fs from "fs";
@@ -71,9 +72,25 @@ export const getItems = async (_, res) => {
 };
 
 export const getItem = async (req, res) => {
-  const result = await RepositoryItem.findById(req.params.uuid);
-  if (!result.rows.length) return res.status(404).json({ message: "Not found" });
-  res.json(result.rows[0]);
+  try {
+    const { uuid } = req.params;
+
+    // ✅ PREVENT CRASH
+    if (!isUUID(uuid)) {
+      return res.status(400).json({ message: "Invalid UUID" });
+    }
+
+    const result = await RepositoryItem.findById(uuid);
+
+    if (!result.rows.length) {
+      return res.status(404).json({ message: "Not found" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
 };
 
 export const updateItem = async (req, res) => {
