@@ -9,7 +9,7 @@ import {
   rejectItem,
   requestRevision
 } from "../../api/repository.api";
-
+//. url form 
 const API = "http://localhost:5000/api/repository-items";
 
 function RepositoryShowAuthor() {
@@ -24,7 +24,7 @@ function RepositoryShowAuthor() {
   const [vocabResults, setVocabResults] = useState(null);
   const [similarityScore, setSimilarityScore] = useState(null);
 
-  const FILE_BASE_URL = "http://localhost:5000";
+  const FILE_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
   const getFileUrl = (path) => {
     if (!path) return null;
@@ -180,7 +180,7 @@ function RepositoryShowAuthor() {
         <div className="container-fluid">
           <div className="row">
             {/* LEFT COLUMN — METADATA */}
-            <div className="col-md-4">
+            <div className="col-md-12">
               <div className="card card-outline card-primary">
                 <div className="card-header">
                   <h3 className="card-title">
@@ -195,11 +195,7 @@ function RepositoryShowAuthor() {
                       <tr><th>Language</th><td>{item.language}</td></tr>
                       <tr><th>Status</th>
                         <td>
-                          <span className={`badge ${
-                            item.status === "published" ? "badge-success" :
-                            item.status === "rejected" ? "badge-danger" :
-                            item.status === "revision" ? "badge-warning" : "badge-secondary"
-                          }`}>{item.status}</span>
+                         <span>{item.status}</span>
                         </td>
                       </tr>
                       <tr><th>Access</th><td>{item.access_level}</td></tr>
@@ -239,7 +235,7 @@ function RepositoryShowAuthor() {
             </div>
 
             {/* RIGHT COLUMN — DOCUMENT PREVIEW */}
-            <div className="col-md-8">
+            <div className="col-md-12">
               <div className="card card-outline card-danger">
                 <div className="card-header"><h3><i className="fas fa-file-pdf"></i> Document</h3></div>
                 <div className="card-body p-0">

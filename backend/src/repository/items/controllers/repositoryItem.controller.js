@@ -1,5 +1,6 @@
 import { RepositoryItem } from "../models/repositoryItem.model.js";
 import { validate as isUUID } from "uuid";
+import pool from "../../../config/db.js";
 
 import path from "path";
 import fs from "fs";
@@ -7,17 +8,7 @@ import fs from "fs";
 import natural from "natural";
 import sw from "stopword";
 import stringSimilarity from "string-similarity";
-import multer from "multer";
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/uploads/repository/items");
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + "-" + file.originalname;
-    cb(null, uniqueName);
-  }
-});
-export const upload = multer({ storage });
+
 
 
 /* ===============================
@@ -25,6 +16,8 @@ export const upload = multer({ storage });
 =============================== */
 export const createItem = async (req, res) => {
   try {
+    console.log("REQ.FILE:", req.file); // 🔥 DEBUG
+
     const duplicate = await RepositoryItem.findDuplicate({
       title: req.body.title,
       doi: req.body.doi,
@@ -38,9 +31,12 @@ export const createItem = async (req, res) => {
       });
     }
 
-    const filePath = req.file
-      ? `/uploads/repository/items/${req.file.filename}`
-      : null;
+    // ✅ FIXED PATH
+    let filePath = null;
+
+    if (req.file) {
+      filePath = `/uploads/repository/items/${req.file.filename}`;
+    }
 
     const data = {
       title: req.body.title,
@@ -50,12 +46,15 @@ export const createItem = async (req, res) => {
       doi: req.body.doi ?? null,
       handle: req.body.handle ?? null,
       access_level: req.body.access_level,
-      status: "draft",
+      status: req.body.status || "draft",
       embargo_until: req.body.embargo_until || null,
       file_path: filePath,
     };
 
+    console.log("FINAL FILE PATH:", filePath); // 🔥 DEBUG
+
     const result = await RepositoryItem.create(data, req.user.uuid);
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error("Create item error:", err);
@@ -111,6 +110,25 @@ export const updateItem = async (req, res) => {
   });
 
   res.json(result.rows[0]);
+};
+
+/* ===============================
+   AUTHOR - MY ITEMS
+=============================== */
+export const getMyItems = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM repository_items 
+       WHERE submitter_id = $1 
+       ORDER BY created_at DESC`,
+      [req.user.uuid]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Get my items error:", error);
+    res.status(500).json({ message: "Failed to fetch user items" });
+  }
 };
 
 export const deleteItem = async (req, res) => {
@@ -333,6 +351,49 @@ export const checkCopyright = async (req, res) => {
   res.json({ similarity_score: max });
 };
 
+/* ===============================
+   DASHBOARD STATS
+=============================== */
+export const getDashboardStats = async (req, res) => {
+  try {
+    const userId = req.user.uuid;
+
+    const statsResult = await pool.query(`
+      SELECT
+        COUNT(*) AS total,
+        COUNT(*) FILTER (WHERE status = 'draft') AS draft,
+        COUNT(*) FILTER (WHERE status = 'submitted') AS submitted,
+        COUNT(*) FILTER (WHERE status = 'under_review') AS under_review,
+        COUNT(*) FILTER (WHERE status = 'approved') AS approved,
+        COUNT(*) FILTER (WHERE status = 'rejected') AS rejected,
+        COUNT(*) FILTER (WHERE status = 'revision_required') AS revision_required
+      FROM repository_items
+      WHERE submitter_id = $1
+    `, [userId]);
+
+    // OPTIONAL: trends (mock or real)
+    const trendsResult = await pool.query(`
+      SELECT 
+        TO_CHAR(created_at, 'Mon') as month,
+        COUNT(*) FILTER (WHERE status = 'submitted') AS submitted,
+        COUNT(*) FILTER (WHERE status = 'approved') AS approved,
+        COUNT(*) FILTER (WHERE status = 'rejected') AS rejected
+      FROM repository_items
+      WHERE submitter_id = $1
+      GROUP BY month
+      ORDER BY MIN(created_at)
+    `, [userId]);
+
+    res.json({
+      stats: statsResult.rows[0],
+      trends: trendsResult.rows
+    });
+
+  } catch (error) {
+    console.error("Dashboard stats error:", error);
+    res.status(500).json({ message: "Failed to load dashboard stats" });
+  }
+};
 
 
 export const updateRevisionComment = async (req, res) => {

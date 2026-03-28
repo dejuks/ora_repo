@@ -47,6 +47,7 @@ const ROLES = {
   REPOSITORY_AUTHOR: "REPOSITORY_AUTHOR",
 };
 
+
 function normalizeRoleName(value) {
   if (!value) return "";
   return value.toString().trim().toUpperCase().replace(/\s+/g, "_");
@@ -93,6 +94,24 @@ export default function Sidebar() {
 
   const moduleId = user?.module_id || user?.active_module_id || user?.module?.id;
   
+  useEffect(() => {
+  const handleClick = (e) => {
+    if (window.innerWidth <= 768) {
+      const sidebar = document.querySelector(".main-sidebar");
+
+      if (
+        sidebar &&
+        !sidebar.contains(e.target) &&
+        !e.target.closest(".nav-link")
+      ) {
+        document.body.classList.remove("sidebar-open");
+      }
+    }
+  };
+
+  document.addEventListener("click", handleClick);
+  return () => document.removeEventListener("click", handleClick);
+}, []);
   // Extract and normalize user roles
   const userRoleIds = user?.roles?.map((r) => r.role_id).filter(Boolean) || [];
   const userRoleNames = user?.roles
@@ -857,7 +876,28 @@ const cleanedRoleNames = roleNames.filter(Boolean);
 
   return (
     <aside className="main-sidebar sidebar-modern elevation-4">
-      <style>{`
+      
+      <style>{` 
+      /* Mobile behavior */
+@media (max-width: 768px) {
+  .sidebar-modern {
+    transform: translateX(-100%);
+    position: fixed;
+  }
+
+  body.sidebar-open .sidebar-modern {
+    transform: translateX(0);
+  }
+
+  /* Overlay background */
+  body.sidebar-open::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 1020;
+  }
+}
         .sidebar-modern {
           background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
           border-right: 1px solid rgba(0, 0, 0, 0.05);

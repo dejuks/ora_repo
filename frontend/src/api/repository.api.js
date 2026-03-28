@@ -28,6 +28,10 @@ export const createItem = (data) =>
 export const getItems = () =>
   API.get("/repository-items");
 
+export const getMyItems = () =>
+  API.get("/repository-items/author/my-items");
+export const getDashboardStats = () =>
+  API.get("/repository-items/author/dashboard");
 // GET SINGLE
 export const getItem = (uuid) =>
   API.get(`/repository-items/${uuid}`);
