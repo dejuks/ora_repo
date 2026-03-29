@@ -1,0 +1,31 @@
+/* FORCE FIX FOR ADMINLTE INPUT BUG */
+
+select.form-control,
+input.form-control,
+textarea.form-control {
+  color: #000 !important;
+  background-color: #fff !important;
+  -webkit-text-fill-color: #000 !important;
+  opacity: 1 !important;
+}
+
+/* Fix dropdown arrow + text */
+select.form-control {
+  appearance: auto !important;
+}
+
+/* Fix options */
+select.form-control option {
+  color: #000 !important;
+  background-color: #fff !important;
+}
+
+/* VERY IMPORTANT (AdminLTE bug fix) */
+.form-control {
+  -webkit-text-fill-color: #000 !important;
+}
+
+/* Remove any transparent text */
+* {
+  text-shadow: none !important;
+}

@@ -103,6 +103,32 @@ class RepositoryAuthor {
         const result = await pool.query(query, [orcidId]);
         return result.rows[0] || null;
     }
+     // ✅ Update access + status
+  static async updateAccess(data) {
+    const {
+      manuscript_id,
+      access_level,
+      license,
+      embargo_until,
+      notes,
+    } = data;
+
+    const res = await pool.query(
+      `UPDATE repository_items
+       SET 
+         access_level = $1,
+         license = $2,
+         embargo_until = $3,
+         notes = $4,
+         status = 'submitted', -- auto move status
+         updated_at = NOW()
+       WHERE id = $5
+       RETURNING *`,
+      [access_level, license, embargo_until || null, notes, manuscript_id]
+    );
+
+    return res.rows[0];
+  }
 
     // Get all authors with pagination + filters
     static async findAll(page = 1, limit = 10, filters = {}) {

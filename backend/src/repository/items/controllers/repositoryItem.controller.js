@@ -358,6 +358,7 @@ export const getDashboardStats = async (req, res) => {
   try {
     const userId = req.user.uuid;
 
+    // ✅ STATS
     const statsResult = await pool.query(`
       SELECT
         COUNT(*) AS total,
@@ -371,19 +372,20 @@ export const getDashboardStats = async (req, res) => {
       WHERE submitter_id = $1
     `, [userId]);
 
-    // OPTIONAL: trends (mock or real)
+    // ✅ MONTHLY TRENDS
     const trendsResult = await pool.query(`
       SELECT 
-        TO_CHAR(created_at, 'Mon') as month,
+        TO_CHAR(created_at, 'Mon') AS month,
         COUNT(*) FILTER (WHERE status = 'submitted') AS submitted,
         COUNT(*) FILTER (WHERE status = 'approved') AS approved,
         COUNT(*) FILTER (WHERE status = 'rejected') AS rejected
       FROM repository_items
       WHERE submitter_id = $1
-      GROUP BY month
-      ORDER BY MIN(created_at)
+      GROUP BY month, DATE_TRUNC('month', created_at)
+      ORDER BY DATE_TRUNC('month', created_at)
     `, [userId]);
 
+    // ✅ FINAL RESPONSE FORMAT (IMPORTANT)
     res.json({
       stats: statsResult.rows[0],
       trends: trendsResult.rows
@@ -449,5 +451,54 @@ export const updateRevisionComment = async (req, res) => {
   } catch (error) {
     console.error("Update revision with file error:", error);
     res.status(500).json({ message: "Failed to update revision", error: error.message });
+  }
+};
+
+export const updateAccess = async (req, res) => {
+  try {
+    const {
+      manuscript_id,
+      access_level,
+      license,
+      embargo_until,
+      allow_download,
+      notes
+    } = req.body;
+
+    if (!manuscript_id) {
+      return res.status(400).json({ message: "Manuscript ID required" });
+    }
+
+    const result = await pool.query(
+      `UPDATE repository_items
+       SET 
+         access_level = $1,
+         license = $2,
+         embargo_until = $3,
+         allow_download = $4,
+         notes = $5,
+         updated_at = NOW()
+       WHERE id = $6 AND submitter_id = $7
+       RETURNING *`,
+      [
+        access_level,
+        license,
+        embargo_until || null,
+        allow_download,
+        notes,
+        manuscript_id,
+        req.user.uuid
+      ]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+
+    res.json(result.rows[0]);
+
+  } catch (error) {
+    console.error("Update access error:", error);
+    res.status(500).json({ message: "Failed to update access" });
   }
 };

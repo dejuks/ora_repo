@@ -538,24 +538,9 @@ export default function Sidebar() {
       icon: "fas fa-file-upload",
     },
     {
-      name: "Metadata Entry",
-      path: "/repository/author/submit/metadata",
-      icon: "fas fa-database",
-    },
-    {
-      name: "Authors & References",
-      path: "/repository/author/submit/authors",
-      icon: "fas fa-users",
-    },
-    {
       name: "Access & License",
       path: "/repository/author/submit/access",
       icon: "fas fa-lock-open",
-    },
-    {
-      name: "Preview & Submit",
-      path: "/repository/author/submit/review",
-      icon: "fas fa-eye",
     },
   ],
 },

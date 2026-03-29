@@ -27,13 +27,12 @@ export default function RepositoryDashboard() {
   const trends = data?.trends || [];
 
 const cards = [
-  { title: "Total", value: Number(stats.total), icon: <FaFileUpload />, color: "blue" },
-  { title: "Submitted", value: Number(stats.submitted), icon: <FaSync />, color: "yellow" },
-  { title: "Approved", value: Number(stats.approved), icon: <FaCheckCircle />, color: "green" },
-  { title: "Rejected", value: Number(stats.rejected), icon: <FaTimesCircle />, color: "red" },
-  { title: "Draft", value: Number(stats.draft), icon: <FaClock />, color: "purple" },
+  { title: "Total", value: Number(stats.total || 0), icon: <FaFileUpload />, color: "blue" },
+  { title: "Submitted", value: Number(stats.submitted || 0), icon: <FaSync />, color: "yellow" },
+  { title: "Approved", value: Number(stats.approved || 0), icon: <FaCheckCircle />, color: "green" },
+  { title: "Rejected", value: Number(stats.rejected || 0), icon: <FaTimesCircle />, color: "red" },
+  { title: "Draft", value: Number(stats.draft || 0), icon: <FaClock />, color: "purple" },
 ];
-
   return (
     <MainLayout>
       <div className="container mt-4">

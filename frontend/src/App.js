@@ -197,6 +197,7 @@ import EbookEditorScreenedPage from "./pages/ebook/EbookEditorScreenedPage.jsx";
 import EbookEditorReviewsPage from "./pages/ebook/EbookEditorReviewsPage.jsx";
 import EbookEditorDecisionPage from "./pages/ebook/EbookEditorDecisionPage.jsx";
 import EbookEditorHandoffPage from "./pages/ebook/EbookEditorHandoffPage.jsx";
+import AccessLicense from "./pages/repository/author/AccessLicense.jsx";
 
 function App() {
   return (
@@ -326,7 +327,10 @@ function App() {
         <Route path="/repository/author/deposits/returned" element={<ProtectedRoute><DepositsReturned /></ProtectedRoute>} />
         <Route path="/repository/author/deposits/approved" element={<ProtectedRoute><ApprovedDeposits /></ProtectedRoute>} />
 
-
+<Route
+  path="/repository/author/submit/access"
+  element={<AccessLicense />}
+/>
         {/* Repository Curator Protected Routes */}
         <Route path="/repository/curator/dashboard" element={<ProtectedRoute><CuratorDashboard /></ProtectedRoute>} />
         <Route path="/repository/curator/queue/new" element={<ProtectedRoute><CuratorRepositoryList /></ProtectedRoute>} />

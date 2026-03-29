@@ -27,7 +27,7 @@ import {
   claimItem,
   bulkClaimItems,
   getReviewerItemDetail,
-  updateRevisionComment,getMyItems,getDashboardStats
+  updateRevisionComment,getMyItems,getDashboardStats,updateAccess
 } from "../controllers/repositoryItem.controller.js";
 
 const router = express.Router();
@@ -145,6 +145,8 @@ router.patch(
   updateRevisionComment
 );
 router.get("/author/my-items", authenticate, getMyItems);
+
+router.put("/update-access", authenticate, updateAccess);
 /* ======================
    BASIC CRUD (LAST)
 ====================== */
