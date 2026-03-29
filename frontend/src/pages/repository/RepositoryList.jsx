@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import Swal from "sweetalert2";
-import { getItems, deleteItem, updateItem } from "../../api/repository.api";
+import { getMyItems, deleteItem, updateItem } from "../../api/repository.api";
 import MainLayout from "../../components/layout/MainLayout";
 import { Modal } from "bootstrap";
 import { Link } from "react-router-dom";
@@ -16,10 +16,10 @@ export default function RepositoryList() {
   const viewModalInstance = useRef(null);
   const editModalInstance = useRef(null);
 
-  const fetchItems = async () => {
-    const res = await getItems();
-    setItems(res.data);
-  };
+const fetchItems = async () => {
+  const res = await getMyItems();
+  setItems(res.data);
+};
 
   useEffect(() => {
     fetchItems();
@@ -143,15 +143,7 @@ export default function RepositoryList() {
                       <td>{item.item_type}</td>
                       <td>{item.language}</td>
                       <td>
-                        <span
-                          className={`badge ${
-                            item.status === "published"
-                              ? "badge-success"
-                              : "badge-warning"
-                          }`}
-                        >
-                          {item.status}
-                        </span>
+                        {item.status}
                       </td>
                       <td>
                         {item.rejection_reason && (

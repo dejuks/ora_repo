@@ -42,6 +42,8 @@ export const register = async (req, res) => {
       [userId, country, phone, academicAffiliation, department, researchInterest]
     );
 
+    
+
     // ✅ 3. INSERT USER ROLE
     await client.query(
       `INSERT INTO user_roles (user_id, role_id)
@@ -155,5 +157,59 @@ export const deleteAuthor = async (req, res) => {
     res.json({ message: "Deleted successfully" });
   } catch (err) {
     res.status(500).json(err);
+  }
+};
+
+export const updateAccess = async (req, res) => {
+  const {
+    manuscript_id,
+    access_level,
+    license,
+    embargoDate,
+    notes
+  } = req.body;
+
+  const client = await pool.connect();
+
+  try {
+    if (!manuscript_id) {
+      return res.status(400).json({ message: "Manuscript ID is required" });
+    }
+
+    await client.query("BEGIN");
+
+    const result = await client.query(
+      `UPDATE repository_items
+       SET 
+         access_level = $1,
+         license = $2,
+         embargo_until = $3,
+         notes = $4,
+         status = 'submitted',
+         updated_at = NOW()
+       WHERE id = $5
+       RETURNING *`,
+      [
+        access_level,
+        license,
+        embargoDate || null,
+        notes,
+        manuscript_id
+      ]
+    );
+
+    await client.query("COMMIT");
+
+    res.json({
+      message: "Access & status updated successfully",
+      data: result.rows[1],
+    });
+
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error(err);
+    res.status(500).json({ message: "Failed to update access", error: err });
+  } finally {
+    client.release();
   }
 };

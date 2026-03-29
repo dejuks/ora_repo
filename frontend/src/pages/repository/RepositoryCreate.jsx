@@ -74,7 +74,7 @@ export default function RepositoryCreate() {
         showConfirmButton: false
       });
 
-      navigate("/repository");
+      navigate("/repository/author/submit/list");
 
     } catch (error) {
       console.error(error);

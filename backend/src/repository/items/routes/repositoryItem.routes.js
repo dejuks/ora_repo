@@ -1,6 +1,7 @@
 import express from "express";
 import multer from "multer";
 import path from "path";
+import fs from "fs";
 import { authenticate } from "../../../middleware/auth.middleware.js";
 
 import {
@@ -9,6 +10,7 @@ import {
   getItem,
   updateItem,
   deleteItem,
+  submitDraftItem,
   getCuratorNewQueue,
   approveRepositoryItem,
   rejectRepositoryItem,
@@ -17,7 +19,6 @@ import {
   analyzeVocabulary,
   checkCopyright,
   getAuthorDrafts,
-  submitDraftItem,
   getAuthorDepositsUnderReview,
   getReturnedDeposits,
   getApprovedDeposits,
@@ -26,96 +27,144 @@ import {
   claimItem,
   bulkClaimItems,
   getReviewerItemDetail,
-  updateRevisionComment
+  updateRevisionComment,getMyItems,getDashboardStats,updateAccess
 } from "../controllers/repositoryItem.controller.js";
 
 const router = express.Router();
+
+/* ======================
+   ENSURE UPLOAD FOLDER EXISTS
+====================== */
+const uploadDir = path.join(process.cwd(), "uploads/repository/items");
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 /* ======================
    MULTER CONFIG
 ====================== */
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(process.cwd(), "uploads/repository/items"));
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix =
-      Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const uniqueName =
+      Date.now() +
+      "-" +
+      Math.round(Math.random() * 1e9) +
+      path.extname(file.originalname);
 
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    cb(null, uniqueName);
   },
 });
 
-const upload = multer({ storage });
+/* ======================
+   FILE FILTER
+====================== */
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = [
+    "application/pdf",
+    "image/png",
+    "image/jpeg",
+    "image/jpg"
+  ];
+
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only PDF, PNG, JPG allowed"), false);
+  }
+};
 
 /* ======================
-   AUTHOR ROUTES
+   MULTER INSTANCE
+====================== */
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+});
+
+/* ======================
+   MULTER ERROR HANDLER
+====================== */
+const uploadMiddleware = (req, res, next) => {
+  const handler = upload.single("file");
+
+  handler(req, res, function (err) {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({ message: err.message });
+    } else if (err) {
+      return res.status(400).json({ message: err.message });
+    }
+    next();
+  });
+};
+
+/* ======================
+   ROUTES ORDER (IMPORTANT)
 ====================== */
 
-// CREATE
-router.post("/", authenticate, upload.single("file"), createItem);
-
-// GET ALL
-router.get("/", authenticate, getItems);
-
-// GET ONE
-router.get("/:uuid", authenticate, getItem);
-
-// UPDATE
-router.put("/:uuid", authenticate, upload.single("file"), updateItem);
-
-// DELETE
-router.delete("/:uuid", authenticate, deleteItem);
-
-// AUTHOR
+/* ---------- AUTHOR ---------- */
 router.get("/author/drafts", authenticate, getAuthorDrafts);
 router.patch("/author/:uuid/submit", authenticate, submitDraftItem);
-
-/* ======================
-   CURATOR ROUTES
-====================== */
-
-router.get("/curator/queue/new", authenticate, getCuratorNewQueue);
-router.patch("/:uuid/approve", authenticate, approveRepositoryItem);
-router.patch("/:uuid/reject", authenticate, rejectRepositoryItem);
-router.patch("/:uuid/revision", authenticate, requestRevision);
-router.patch("/:uuid/suggest-metadata", authenticate, suggestMetadata);
-
-router.get("/:uuid/analyze-vocab", authenticate, analyzeVocabulary);
-router.get("/:uuid/copyright-check", authenticate, checkCopyright);
-
-/* ======================
-   AUTHOR DEPOSITS
-====================== */
 
 router.get("/author/deposits/review", authenticate, getAuthorDepositsUnderReview);
 router.get("/author/deposits/returned", authenticate, getReturnedDeposits);
 router.get("/author/deposits/approved", authenticate, getApprovedDeposits);
 
-/* ======================
-   SEARCH
-====================== */
+/* ---------- CURATOR ---------- */
+router.get("/curator/queue/new", authenticate, getCuratorNewQueue);
 
-router.get("/search", authenticate, searchRepositoryItems);
+router.patch("/:uuid/approve", authenticate, approveRepositoryItem);
+router.patch("/:uuid/reject", authenticate, rejectRepositoryItem);
+router.patch("/:uuid/revision", authenticate, requestRevision);
+router.patch("/:uuid/suggest-metadata", authenticate, suggestMetadata);
 
-/* ======================
-   REVIEWER
-====================== */
-
+/* ---------- REVIEWER ---------- */
 router.get("/reviewer/queue/new", authenticate, getReviewerNewQueue);
-router.patch("/:id/claim", authenticate, claimItem);
+
+router.patch("/reviewer/:uuid/claim", authenticate, claimItem);
 router.patch("/reviewer/queue/claim", authenticate, bulkClaimItems);
+
 router.get("/reviewer/:uuid", authenticate, getReviewerItemDetail);
 
-/* ======================
-   REVISION UPDATE
-====================== */
+/* ---------- SEARCH ---------- */
+router.get("/search", authenticate, searchRepositoryItems);
 
+/* ---------- NLP ---------- */
+router.get("/:uuid/analyze-vocab", authenticate, analyzeVocabulary);
+router.get("/:uuid/copyright-check", authenticate, checkCopyright);
+
+/* ---------- REVISION UPDATE ---------- */
 router.patch(
   "/:uuid/edit-revision",
   authenticate,
-  upload.single("file"),
+  uploadMiddleware,
   updateRevisionComment
 );
+router.get("/author/my-items", authenticate, getMyItems);
+
+router.put("/update-access", authenticate, updateAccess);
+/* ======================
+   BASIC CRUD (LAST)
+====================== */
+
+// CREATE
+router.post("/", authenticate, uploadMiddleware, createItem);
+
+router.get("/author/dashboard", authenticate, getDashboardStats);
+// GET ALL
+router.get("/", authenticate, getItems);
+
+// GET ONE (KEEP LAST)
+router.get("/:uuid", authenticate, getItem);
+
+// UPDATE
+router.put("/:uuid", authenticate, uploadMiddleware, updateItem);
+
+// DELETE
+router.delete("/:uuid", authenticate, deleteItem);
 
 export default router;

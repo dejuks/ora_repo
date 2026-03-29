@@ -17,17 +17,27 @@ API.interceptors.request.use((config) => {
 /* ===============================
    MAIN RESOURCE: repository-items
 ================================ */
-
 // CREATE
 export const createItem = (data) =>
   API.post("/repository-items", data, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-
 // GET ALL
 export const getItems = () =>
   API.get("/repository-items");
 
+export const getRepositoryItems = async () => {
+  return await API.get("/repository/items"); 
+};
+
+// UPDATE ACCESS
+export const updateAccess = (data) =>
+  API.put("/repository-items/update-access", data);
+
+export const getMyItems = () =>
+  API.get("/repository-items/author/my-items");
+export const getDashboardStats = () =>
+  API.get("/repository-items/author/dashboard");
 // GET SINGLE
 export const getItem = (uuid) =>
   API.get(`/repository-items/${uuid}`);
@@ -97,6 +107,11 @@ export const getReviewerNewQueue = () =>
 export const claimItemForReview = (uuid) =>
   API.patch(`/repository-items/${uuid}/claim`);
 
+
+
+export const getMyRepositoryItems = async () => {
+  return await API.get("/repository/my-items"); // adjust endpoint
+};
 export const bulkClaimItems = (ids) =>
   API.patch("/repository-items/reviewer/queue/claim", { ids });
 
