@@ -69,6 +69,7 @@ export default function ManuscriptEdit() {
     }
     return String(value);
   };
+
   // Calculate validation progress
   useEffect(() => {
     // Ensure values are strings
