@@ -12,24 +12,49 @@ const __dirname = path.dirname(__filename);
    MULTER CONFIGURATION FOR FILE UPLOADS
 ================================= */
 // Ensure upload directory exists
+/* ===============================
+   CREATE UPLOAD DIRECTORY
+================================= */
 const uploadDir = path.join(__dirname, '../../uploads/manuscripts');
+
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+/* ===============================
+   STORAGE CONFIGURATION
+================================= */
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
   },
-  file_name: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+
+  // ✅ FIXED: filename (NOT file_name)
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+
     const ext = path.extname(file.originalname);
-    cb(null, `manuscript-${uniqueSuffix}${ext}`);
+
+    // Clean filename (remove spaces, lowercase)
+    const baseName = path
+      .basename(file.originalname, ext)
+      .replace(/\s+/g, '-')
+      .toLowerCase();
+
+    cb(null, `${baseName}-${uniqueSuffix}${ext}`);
   }
 });
 
+/* ===============================
+   FILE FILTER (ONLY PDF + DOC)
+================================= */
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+  const allowedTypes = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ];
+
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
@@ -37,12 +62,27 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
+/* ===============================
+   MULTER EXPORT (IMPORTANT)
+================================= */
 export const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
-}).array('files', 5); // Max 5 files
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB
+  }
+}).array('newFiles', 5); // ✅ MUST match frontend
 
+/* ===============================
+   OPTIONAL DEBUG MIDDLEWARE
+================================= */
+export const debugUpload = (req, res, next) => {
+  console.log("BODY:", req.body);
+  console.log("FILES:", req.files);
+  next();
+};
+
+// cd
 /* ===============================
    GET ALL Manuscripts (current user only)
 ================================= */

@@ -45,6 +45,9 @@ const ROLES = {
   EBOOK_PUBLIC_READER: "EBOOK_PUBLIC_READER",
   // =====Repository====
   REPOSITORY_AUTHOR: "REPOSITORY_AUTHOR",
+
+  // Journal Authors
+  JOURNAL_AUTHOR:"JOURNAL_AUTHOR",
 };
 
 
