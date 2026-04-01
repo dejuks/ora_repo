@@ -1,13 +1,13 @@
 export function buildEbookRoutes(ROLES) {
-  const A = ROLES.EBOOK_ADMIN;
-  const AU = ROLES.EBOOK_AUTHOR;
-  const E = ROLES.EBOOK_EDITOR;
-  const R = ROLES.EBOOK_REVIEWER;
-  const D = ROLES.EBOOK_DIGITAL_CONTENT_MANAGER;
-  const DX = ROLES.EBOOK_DCM;
-  const F = ROLES.EBOOK_FINANCE;
-  const PR = ROLES.PUBLIC_READER;
-  const EPR = ROLES.EBOOK_PUBLIC_READER;
+  const A = ROLES?.EBOOK_ADMIN;
+  const AU = ROLES?.EBOOK_AUTHOR;
+  const E = ROLES?.EBOOK_EDITOR;
+  const R = ROLES?.EBOOK_REVIEWER;
+  const D = ROLES?.EBOOK_DIGITAL_CONTENT_MANAGER;
+  const DX = ROLES?.EBOOK_DCM;
+  const F = ROLES?.EBOOK_FINANCE;
+  const PR = ROLES?.PUBLIC_READER;
+  const EPR = ROLES?.EBOOK_PUBLIC_READER;
 
   return [
     {

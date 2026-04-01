@@ -2,9 +2,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { logout } from "../../utils/auth.js";
 import ebookApi from "../../api/ebook.api";
-// import { buildEbookRoutes } from "./sidebar/ebookSidebar.js";
-// import { buildLibraryRoutes } from "./sidebar/librarySidebar.js";
-
+import { buildEbookRoutes } from "./sidebar/ebookSidebar.js";
+import { buildLibraryRoutes } from "./sidebar/librarySidebar.js";
+import { buildJournalRoutes } from "./sidebar/journalSidebar";
 /* ===============================
    MODULE UUIDS
 ================================ */
@@ -48,6 +48,13 @@ const ROLES = {
 
   // Journal Authors
   JOURNAL_AUTHOR:"JOURNAL_AUTHOR",
+  JOURNAL_EIC:"JOURNAL_EIC",
+  JOURNAL_MANAGER:"JOURNAL_MANAGER",
+  JOURNAL_EDITOR:"JOURNAL_EDITOR",
+  JOURNAL_REVIEWER:"JOURNAL_REVIEWER",
+  JOURNAL_ASSOCIATE_EDITOR:"JOURNAL_ASSOCIATE_EDITOR",
+
+
 };
 
 
@@ -259,103 +266,11 @@ export default function Sidebar() {
       },
     ],
 
-    [MODULES.JOURNAL]: [
-      {
-        name: "Dashboard",
-        path: "/journal-dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR, ROLES.REVIEWER],
-      },
-      {
-        name: "Users & Roles",
-        icon: "fas fa-users",
-        roles: [ROLES.JOURNAL_MANAGER],
-        subMenu: [
-          { name: "All Users", path: "/journal/users", icon: "fas fa-user" },
-          { name: "Add New User", path: "/module/users/add", icon: "fas fa-user-tag" },
-        ],
-      },
-      {
-        name: "Journals",
-        icon: "fas fa-book",
-        roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
-        subMenu: [
-          { name: "Add Journal", path: "/journal/create", icon: "fas fa-plus" },
-          { name: "Journal List", path: "/journal/list", icon: "fas fa-list" },
-        ],
-      },
-      {
-        name: "Author Dashboard",
-        path: "/journal/author-dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [ROLES.JOURNAL_AUTHOR],
-      },
-      {
-        name: "Submissions",
-        icon: "fas fa-file-alt",
-        roles: [ROLES.JOURNAL_MANAGER, ROLES.JOURNAL_AUTHOR, ROLES.EDITOR],
-        subMenu: [
-          { name: "My Submissions", path: "/journal/manuscripts", icon: "fas fa-inbox", roles: [ROLES.JOURNAL_AUTHOR] },
-          { name: "New Submission", path: "/manuscripts/create", icon: "fas fa-paper-plane", roles: [ROLES.JOURNAL_AUTHOR] },
-          { name: "Incomplete Submissions", path: "/manuscript/draft-manuscript", icon: "fas fa-file", roles: [ROLES.JOURNAL_AUTHOR] },
-          { name: "Revisions", path: "/journal/manuscripts/revisions", icon: "fas fa-edit", roles: [ROLES.JOURNAL_AUTHOR] },
-        ],
-      },
-      {
-        name: "Editorial Oversight",
-        icon: "fas fa-user-shield",
-        roles: [ROLES.JOURNAL_EIC],
-        subMenu: [
-          { name: "All Submissions", path: "/journal/eic/submissions", icon: "fas fa-folder-open" },
-          { name: "Publication Payments", path: "/eic/payment-orders", icon: "fas fa-credit-card" },
-          // { name: "Final Decisions", path: "/journal/eic/final-decisions", icon: "fas fa-gavel" },
-          // { name: "Ethics & Compliance", path: "/journal/eic/ethics", icon: "fas fa-balance-scale" },
-          // { name: "Production Approval", path: "/journal/eic/production", icon: "fas fa-check-double" },
-          // { name: "Issue Scheduling", path: "/journal/eic/issues", icon: "fas fa-calendar-alt" },
-          // { name: "Editorial Reports", path: "/journal/eic/reports", icon: "fas fa-chart-line" },
-        ],
-      },
-      {
-        name: "Manuscript Handling",
-        icon: "fas fa-user-edit",
-        roles: [ROLES.JOURNAL_ASSOCIATE_EDITOR],
-        subMenu: [
-          { name: "Submitted Manuscripts", path: "/manuscript/ae/assigned-manuscripts", icon: "fas fa-folder-open" },
-          { name: "Initial Screening", path: "/manuscription/ae/screening", icon: "fas fa-search" },
-          // { name: "Review Evaluation", path: "/journal/ae/review-evaluation", icon: "fas fa-check-circle" },
-          { name: "Under Review", path: "/manuscript/ae/under-review", icon: "fas fa-hourglass-half" },
-          // { name: "Recommendations to EIC", path: "/journal/ae/recommendations", icon: "fas fa-gavel" },
-          // { name: "Ethics & Compliance", path: "/journal/ae/ethics", icon: "fas fa-balance-scale" },
-          // { name: "Production Tracking", path: "/journal/ae/production", icon: "fas fa-industry" },
-        ],
-      },
-      {
-        name: "Peer Review",
-        icon: "fas fa-user-check",
-        roles: [ROLES.JOURNAL_REFREE],
-        subMenu: [
-          { name: "Assigned Reviews", path: "/journal/reviewer/assigned", icon: "fas fa-inbox" },
-          // { name: "Review Workspace", path: "/journal/reviewer/workspace", icon: "fas fa-file-alt" },
-          // { name: "Submit Review Report", path: "/journal/reviewer/submit-review", icon: "fas fa-paper-plane" },
-          // { name: "Blind Review Files", path: "/journal/reviewer/files", icon: "fas fa-user-secret" },
-          // { name: "Ethics & COPE Compliance", path: "/journal/reviewer/ethics", icon: "fas fa-balance-scale" },
-          // { name: "Completed Reviews", path: "/journal/reviewer/completed", icon: "fas fa-check-circle" },
-        ],
-      },
-      {
-        name: "Profile & Declarations",
-        icon: "fas fa-id-card",
-        roles: [ROLES.JOURNAL_AUTHOR, ROLES.REVIEWER, ROLES.EDITOR, ROLES.JOURNAL_MANAGER],
-        subMenu: [
-          { name: "My Profile", path: "/journal/profile", icon: "fas fa-user" },
-          { name: "Ethics Declarations", path: "/journal/declarations", icon: "fas fa-shield-alt" },
-        ],
-      },
-    ],
+   [MODULES.JOURNAL]: buildJournalRoutes(ROLES),
 
-    // [MODULES.LIBRARY]: buildLibraryRoutes(),
+    [MODULES.LIBRARY]: buildLibraryRoutes(),
 
-    // [MODULES.EBOOK]: buildEbookRoutes(),
+    [MODULES.EBOOK]: buildEbookRoutes(),
 
     [MODULES.ORO_WIKI]: [
       {
@@ -839,8 +754,8 @@ export default function Sidebar() {
         ],
       },
     ],
-    // [MODULES.LIBRARY]: buildLibraryRoutes(ROLES),
-    // [MODULES.EBOOK]: buildEbookRoutes(ROLES),
+    [MODULES.LIBRARY]: buildLibraryRoutes(ROLES),
+    [MODULES.EBOOK]: buildEbookRoutes(ROLES),
   };
 
   const routes = moduleRoutes[moduleId]

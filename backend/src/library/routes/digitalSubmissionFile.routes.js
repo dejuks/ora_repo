@@ -6,7 +6,7 @@ import { paginationRules, uuidParam } from "../validators/common.validators.js";
 import { digitalSubmissionFileController } from "../controllers/digitalSubmissionFile.controller.js";
 
 const router = express.Router();
-router.use(authenticate);
+// router.use(authenticate);
 router.get('/', paginationRules, validateRequest, digitalSubmissionFileController.index);
 router.get('/:id', uuidParam(), validateRequest, digitalSubmissionFileController.show);
 router.post('/', digitalSubmissionFileController.store);

@@ -254,25 +254,15 @@ export default function EbookSubmissionsPage() {
                           </td>
                           
                           <td className="align-middle">
-                            <span
-                              className={`badge ${getStatusColor(row.status)}`}
-                              style={{
-                                minWidth: 110,
-                                display: "inline-block",
-                                textAlign: "center",
-                                padding: "0.5rem 0.5rem",
-                                fontSize: "0.85rem",
-                                fontWeight: "500",
-                                borderRadius: "20px"
-                              }}
-                            >
+                            <span>
                               {getStatusLabel(row.status)}
+                            
                             </span>
                           </td>
                           
                           <td className="align-middle">
-                            <span className="badge bg-light text-dark px-3 py-2">
-                              {row.publication_year || new Date().getFullYear()}
+                            <span>
+                              {row.publication_year || '—' }
                             </span>
                           </td>
                           

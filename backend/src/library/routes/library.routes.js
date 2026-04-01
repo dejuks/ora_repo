@@ -63,8 +63,8 @@ const router = express.Router();
 // Public OPAC access
 router.use('/catalog', catalogRoutes);
 
-router.use(authenticate);
-router.use(resolveLibraryPermission);
+// router.use(authenticate);
+// router.use(resolveLibraryPermission);
 
 router.use('/branches', libraryBranchRoutes);
 router.use('/locations', libraryLocationRoutes);

@@ -5,7 +5,7 @@ import { validateRequest } from "../middleware/validateRequest.js";
 import { paginationRules, uuidParam } from "../validators/common.validators.js";
 
 const router = express.Router();
-router.use(authenticate);
+// router.use(authenticate);
 router.get('/', paginationRules, validateRequest, acquisitionRequestController.index);
 router.get('/:id', uuidParam(), validateRequest, acquisitionRequestController.show);
 router.post('/', acquisitionRequestController.store);
