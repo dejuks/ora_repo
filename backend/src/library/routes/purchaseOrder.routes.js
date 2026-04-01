@@ -5,7 +5,7 @@ import { paginationRules, uuidParam } from "../validators/common.validators.js";
 import { purchaseOrderController } from "../controllers/purchaseOrder.controller.js";
 
 const router = express.Router();
-router.use(authenticate);
+// router.use(authenticate);
 
 router.get('/', paginationRules, validateRequest, purchaseOrderController.index);
 router.post('/', purchaseOrderController.store);

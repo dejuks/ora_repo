@@ -6,7 +6,7 @@ import { paginationRules, uuidParam } from "../validators/common.validators.js";
 import { finePaymentRules, fineWaiverRules } from "../validators/workflow.validators.js";
 
 const router = express.Router();
-router.use(authenticate);
+// router.use(authenticate);
 router.get('/', paginationRules, validateRequest, fineController.index);
 router.get('/:id', uuidParam(), validateRequest, fineController.show);
 router.post('/', fineController.store);

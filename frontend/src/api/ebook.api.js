@@ -43,8 +43,8 @@ const ebookApi = {
   listSubmissions: (params = {}) =>
     unwrap(() => api.get("/ebook/submissions", { params })),
 
-  listMySubmissions: (params = {}) =>
-    unwrap(() => api.get("/ebook/submissions/my", { params })),
+ listMySubmissions: (uuid, params = {}) =>
+  unwrap(() => api.get(`/ebook/submissions-mine/${uuid}`, { params })),
 
   getSubmission: (id) =>
     unwrap(() => api.get(`/ebook/submissions/${id}`)),

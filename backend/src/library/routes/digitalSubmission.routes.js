@@ -6,7 +6,7 @@ import { paginationRules, uuidParam } from "../validators/common.validators.js";
 import { submissionReviewRules } from "../validators/workflow.validators.js";
 
 const router = express.Router();
-router.use(authenticate);
+// router.use(authenticate);
 router.get('/', paginationRules, validateRequest, digitalSubmissionController.index);
 router.get('/uploader/dashboard', digitalSubmissionController.uploaderDashboard);
 router.get('/:id/workflow', uuidParam(), validateRequest, digitalSubmissionController.workflow);

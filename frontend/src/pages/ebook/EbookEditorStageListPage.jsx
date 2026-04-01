@@ -133,7 +133,7 @@ function ScreeningModal({
                       <tr>
                         <th>Current Status</th>
                         <td>
-                          <StatusBadge value={source.status} />
+                          <span value={source.status} ></span>
                         </td>
                       </tr>
                       <tr>

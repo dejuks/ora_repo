@@ -1,3 +1,4 @@
+// services/ebookWorkflow.service.js
 import path from "path";
 import pool from "../../config/db.js";
 import { sha256File } from "../utils/fileChecksum.js";
@@ -1790,4 +1791,530 @@ export const ebookWorkflowService = {
       ]
     );
   },
+
+  // ==================== PUBLIC METHODS ====================
+
+  async getTrendingEbooks({ limit = 10 } = {}) {
+    const { rows } = await pool.query(
+      `SELECT ep.*, es.title, es.subtitle, es.abstract, es.language, es.category,
+              u.full_name AS author_name, es.downloads, es.rating
+       FROM ebook_publications ep
+       INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
+       LEFT JOIN users u ON u.uuid = es.author_id
+       WHERE ep.is_public = TRUE
+         AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
+       ORDER BY es.rating DESC
+       LIMIT $1`,
+      [limit]
+    );
+    return rows;
+  },
+
+  async getNewReleases({ limit = 10 } = {}) {
+    const { rows } = await pool.query(
+      `SELECT ep.*, es.title, es.subtitle, es.abstract, es.language, es.category,
+              u.full_name AS author_name
+       FROM ebook_publications ep
+       INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
+       LEFT JOIN users u ON u.uuid = es.author_id
+       WHERE ep.is_public = TRUE
+         AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
+       ORDER BY ep.published_at DESC
+       LIMIT $1`,
+      [limit]
+    );
+    return rows;
+  },
+
+  async getFeaturedEbooks({ limit = 6 } = {}) {
+    const { rows } = await pool.query(
+      `SELECT ep.*, es.title, es.subtitle, es.abstract, es.language, es.category,
+              u.full_name AS author_name
+       FROM ebook_publications ep
+       INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
+       LEFT JOIN users u ON u.uuid = es.author_id
+       WHERE ep.is_public = TRUE
+         AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
+         AND ep.is_featured = TRUE
+       ORDER BY ep.featured_order ASC, ep.published_at DESC
+       LIMIT $1`,
+      [limit]
+    );
+    return rows;
+  },
+
+  async getPublicationBySlug(slug) {
+    const { rows } = await pool.query(
+      `SELECT ep.*, es.title, es.subtitle, es.abstract, es.keywords, es.language, 
+              es.category, es.publication_year, es.downloads, es.rating,
+              u.full_name AS author_name, u.uuid AS author_id,
+              epd.pdf_ready, epd.epub_ready, epd.isbn, epd.doi
+       FROM ebook_publications ep
+       INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
+       LEFT JOIN users u ON u.uuid = es.author_id
+       LEFT JOIN ebook_production epd ON epd.submission_id = es.submission_id
+       WHERE ep.slug = $1
+         AND ep.is_public = TRUE
+         AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)`,
+      [slug]
+    );
+    return rows[0] || null;
+  },
+
+  async getPublicationById(id) {
+    const { rows } = await pool.query(
+      `SELECT ep.*, es.title, es.subtitle, es.abstract, es.keywords, es.language, 
+              es.category, es.publication_year, es.downloads, es.rating,
+              u.full_name AS author_name, u.uuid AS author_id,
+              epd.pdf_ready, epd.epub_ready, epd.isbn, epd.doi
+       FROM ebook_publications ep
+       INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
+       LEFT JOIN users u ON u.uuid = es.author_id
+       LEFT JOIN ebook_production epd ON epd.submission_id = es.submission_id
+       WHERE ep.publication_id = $1
+         AND ep.is_public = TRUE
+         AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)`,
+      [id]
+    );
+    return rows[0] || null;
+  },
+
+  async getEbookFile(publicationId, format) {
+    const { rows } = await pool.query(
+      `SELECT ef.*, ep.publication_id
+       FROM ebook_publication_files ef
+       INNER JOIN ebook_publications ep ON ep.publication_id = ef.publication_id
+       WHERE ef.publication_id = $1
+         AND ef.file_format = $2
+         AND ef.is_active = TRUE
+         AND ep.is_public = TRUE`,
+      [publicationId, format]
+    );
+    return rows[0] || null;
+  },
+
+  async getSimilarPublications(publicationId, { limit = 5 } = {}) {
+    const publication = await this.getPublicationById(publicationId);
+    if (!publication) return [];
+
+    const { rows } = await pool.query(
+      `SELECT ep.*, es.title, es.subtitle, es.abstract, es.language,
+              u.full_name AS author_name,es.downloads
+       FROM ebook_publications ep
+       INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
+       LEFT JOIN users u ON u.uuid = es.author_id
+       WHERE ep.is_public = TRUE
+         AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
+         AND ep.publication_id != $1
+         AND es.category = $2
+       ORDER BY es.downloads DESC
+       LIMIT $3`,
+      [publicationId, publication.category, limit]
+    );
+    return rows;
+  },
+
+  async getAllCategories() {
+    const { rows } = await pool.query(
+      `SELECT c.*, COUNT(es.submission_id)::int as ebook_count
+       FROM categories c
+       LEFT JOIN ebook_submissions es ON es.category = c.name 
+         AND es.status = 'published'
+       LEFT JOIN ebook_publications ep ON ep.submission_id = es.submission_id
+         AND ep.is_public = TRUE
+       GROUP BY c.id, c.name,  c.color
+       ORDER BY ebook_count DESC`
+    );
+    return rows;
+  },
+
+  async getPublicationsByCategory(slug, { limit = 20, page = 1 } = {}) {
+    const offset = (page - 1) * limit;
+
+    const { rows } = await pool.query(
+      `SELECT ep.*, es.title, es.subtitle, es.abstract, es.language,
+              u.full_name AS author_name
+       FROM ebook_publications ep
+       INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
+       LEFT JOIN users u ON u.uuid = es.author_id
+       WHERE ep.is_public = TRUE
+         AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
+         AND es.category = $1
+       ORDER BY ep.published_at DESC
+       LIMIT $2 OFFSET $3`,
+      [slug, limit, offset]
+    );
+
+    const countRes = await pool.query(
+      `SELECT COUNT(*)::int as total
+       FROM ebook_publications ep
+       INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
+       WHERE ep.is_public = TRUE
+         AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
+         AND es.category = $1`,
+      [slug]
+    );
+
+    return {
+      rows,
+      total: countRes.rows[0]?.total || 0,
+      page,
+      limit
+    };
+  },
+
+  async getAllAuthors({ limit = 20, page = 1, sort = 'downloads' } = {}) {
+    const offset = (page - 1) * limit;
+
+    const { rows } = await pool.query(
+      `SELECT u.uuid as id, u.full_name, u.email, u.bio, u.avatar,es.downloads
+              COUNT(DISTINCT es.submission_id)::int as publication_count,
+              COALESCE(SUM(es.downloads), 0) as total_downloads,
+              COALESCE(AVG(es.rating), 0) as avg_rating
+       FROM users u
+       LEFT JOIN ebook_submissions es ON es.author_id = u.uuid 
+         AND es.status = 'published'
+       WHERE u.role = 'author'
+       GROUP BY u.uuid, u.full_name, u.email, u.bio, u.avatar
+       ORDER BY ${sort === 'downloads' ? 'total_downloads' : 'publication_count'} DESC
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+
+    const countRes = await pool.query(
+      `SELECT COUNT(*)::int as total
+       FROM users
+       WHERE role = 'author'`
+    );
+
+    return {
+      rows,
+      total: countRes.rows[0]?.total || 0,
+      page,
+      limit
+    };
+  },
+
+  async getTopAuthors({ limit = 10, sortBy = 'downloads' } = {}) {
+    const { rows } = await pool.query(
+      `SELECT u.uuid as id, u.full_name,
+              COUNT(DISTINCT es.submission_id)::int as publication_count,
+              COALESCE(SUM(es.downloads), 0) as total_downloads,
+              COALESCE(AVG(es.rating), 0) as avg_rating
+       FROM users u
+       LEFT JOIN ebook_submissions es ON es.author_id = u.uuid 
+         AND es.status = 'published'
+       WHERE u.role = 'author'
+       GROUP BY u.uuid, u.full_name
+       ORDER BY ${sortBy === 'downloads' ? 'total_downloads' : 'publication_count'} DESC
+       LIMIT $1`,
+      [limit]
+    );
+    return rows;
+  },
+
+  async getAuthorDetails(authorId) {
+    const { rows } = await pool.query(
+      `SELECT u.uuid as id, u.full_name, u.email, u.bio, u.avatar,
+              COUNT(DISTINCT es.submission_id)::int as publication_count,
+              COALESCE(SUM(es.downloads), 0) as total_downloads,
+              COALESCE(AVG(es.rating), 0) as avg_rating
+       FROM users u
+       LEFT JOIN ebook_submissions es ON es.author_id = u.uuid 
+         AND es.status = 'published'
+       WHERE u.uuid = $1
+         AND u.role = 'author'
+       GROUP BY u.uuid, u.full_name, u.email, u.bio, u.avatar`,
+      [authorId]
+    );
+    return rows[0] || null;
+  },
+
+  async getPublicationsByAuthor(authorId, { limit = 20, page = 1 } = {}) {
+    const offset = (page - 1) * limit;
+
+    const { rows } = await pool.query(
+      `SELECT ep.*, es.title, es.subtitle, es.abstract, es.language, es.category,
+              u.full_name AS author_name
+       FROM ebook_publications ep
+       INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
+       LEFT JOIN users u ON u.uuid = es.author_id
+       WHERE ep.is_public = TRUE
+         AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
+         AND es.author_id = $1
+       ORDER BY ep.published_at DESC
+       LIMIT $2 OFFSET $3`,
+      [authorId, limit, offset]
+    );
+
+    const countRes = await pool.query(
+      `SELECT COUNT(*)::int as total
+       FROM ebook_publications ep
+       INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
+       WHERE ep.is_public = TRUE
+         AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
+         AND es.author_id = $1`,
+      [authorId]
+    );
+
+    return {
+      rows,
+      total: countRes.rows[0]?.total || 0,
+      page,
+      limit
+    };
+  },
+
+  async searchPublications(query, { limit = 20, page = 1, category, language } = {}) {
+    const offset = (page - 1) * limit;
+    const values = [`%${query}%`];
+    let whereClause = `(es.title ILIKE $1 OR es.subtitle ILIKE $1 OR es.abstract ILIKE $1)`;
+    let idx = 2;
+
+    if (category) {
+      whereClause += ` AND es.category = $${idx}`;
+      values.push(category);
+      idx++;
+    }
+
+    if (language) {
+      whereClause += ` AND es.language = $${idx}`;
+      values.push(language);
+      idx++;
+    }
+
+    values.push(limit, offset);
+
+    const { rows } = await pool.query(
+      `SELECT ep.*, es.title, es.subtitle, es.abstract, es.language, es.category,
+              u.full_name AS author_name
+       FROM ebook_publications ep
+       INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
+       LEFT JOIN users u ON u.uuid = es.author_id
+       WHERE ep.is_public = TRUE
+         AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
+         AND ${whereClause}
+       ORDER BY ep.published_at DESC
+       LIMIT $${idx} OFFSET $${idx + 1}`,
+      values
+    );
+
+    const countValues = values.slice(0, -2);
+    const countRes = await pool.query(
+      `SELECT COUNT(*)::int as total
+       FROM ebook_publications ep
+       INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
+       WHERE ep.is_public = TRUE
+         AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
+         AND ${whereClause}`,
+      countValues
+    );
+
+    return {
+      rows,
+      total: countRes.rows[0]?.total || 0,
+      page,
+      limit,
+      query
+    };
+  },
+
+  async getPopularTags({ limit = 20 } = {}) {
+    const { rows } = await pool.query(
+      `SELECT t.*, COUNT(pt.publication_id)::int as usage_count
+       FROM tags t
+       LEFT JOIN publication_tags pt ON pt.tag_id = t.id
+       LEFT JOIN ebook_publications ep ON ep.publication_id = pt.publication_id
+         AND ep.is_public = TRUE
+       GROUP BY t.id
+       ORDER BY usage_count DESC
+       LIMIT $1`,
+      [limit]
+    );
+    return rows;
+  },
+
+  async getPublicationsByTag(tag, { limit = 20, page = 1 } = {}) {
+    const offset = (page - 1) * limit;
+
+    const { rows } = await pool.query(
+      `SELECT ep.*, es.title, es.subtitle, es.abstract, es.language, es.category,
+              u.full_name AS author_name
+       FROM ebook_publications ep
+       INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
+       INNER JOIN publication_tags pt ON pt.publication_id = ep.publication_id
+       INNER JOIN tags t ON t.id = pt.tag_id
+       LEFT JOIN users u ON u.uuid = es.author_id
+       WHERE ep.is_public = TRUE
+         AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
+         AND t.name = $1
+       ORDER BY ep.published_at DESC
+       LIMIT $2 OFFSET $3`,
+      [tag, limit, offset]
+    );
+
+    const countRes = await pool.query(
+      `SELECT COUNT(*)::int as total
+       FROM ebook_publications ep
+       INNER JOIN publication_tags pt ON pt.publication_id = ep.publication_id
+       INNER JOIN tags t ON t.id = pt.tag_id
+       WHERE ep.is_public = TRUE
+         AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
+         AND t.name = $1`,
+      [tag]
+    );
+
+    return {
+      rows,
+      total: countRes.rows[0]?.total || 0,
+      page,
+      limit,
+      tag
+    };
+  },
+
+ async getPublicStats() {
+  try {
+    const [totalEbooks, totalDownloads, totalAuthors, languagesRes] = await Promise.all([
+      pool.query(
+        `SELECT COUNT(*)::int as count
+         FROM ebook_publications ep
+         WHERE ep.is_public = TRUE
+           AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)`
+      ),
+      pool.query(
+        `SELECT COALESCE(SUM(ep.downloads), 0)::int as total
+         FROM ebook_publications ep
+         WHERE ep.is_public = TRUE
+           AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)`
+      ),
+      pool.query(
+        `SELECT COUNT(DISTINCT es.author_id)::int as count
+         FROM ebook_publications ep
+         INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
+         WHERE ep.is_public = TRUE
+           AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)`
+      ),
+      pool.query(
+        `SELECT COUNT(DISTINCT es.language)::int as count
+         FROM ebook_publications ep
+         INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
+         WHERE ep.is_public = TRUE
+           AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
+           AND es.language IS NOT NULL`
+      )
+    ]);
+
+    return {
+      totalEbooks: totalEbooks.rows[0]?.count || 0,
+      totalDownloads: totalDownloads.rows[0]?.total || 0,
+      totalAuthors: totalAuthors.rows[0]?.count || 0,
+      languages: languagesRes.rows[0]?.count || 0
+    };
+  } catch (error) {
+    console.error('Error in getPublicStats:', error);
+    // Return default values on error
+    return {
+      totalEbooks: 0,
+      totalDownloads: 0,
+      totalAuthors: 0,
+      languages: 0
+    };
+  }
+},
+
+  async getLanguageStats() {
+    const { rows } = await pool.query(
+      `SELECT es.language, COUNT(*)::int as count
+       FROM ebook_publications ep
+       INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
+       WHERE ep.is_public = TRUE
+         AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
+         AND es.language IS NOT NULL
+       GROUP BY es.language
+       ORDER BY count DESC`
+    );
+    return rows;
+  },
+
+  async getPublicationTimeline() {
+    const { rows } = await pool.query(
+      `SELECT EXTRACT(YEAR FROM ep.published_at)::int as year, 
+              COUNT(*)::int as count
+       FROM ebook_publications ep
+       WHERE ep.is_public = TRUE
+         AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
+         AND ep.published_at IS NOT NULL
+       GROUP BY year
+       ORDER BY year DESC`
+    );
+    return rows;
+  },
+
+  async getRecentActivity({ limit = 20 } = {}) {
+    const { rows } = await pool.query(
+      `SELECT eal.*, ep.slug, es.title
+       FROM ebook_access_logs eal
+       INNER JOIN ebook_publications ep ON ep.publication_id = eal.publication_id
+       INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
+       ORDER BY eal.created_at DESC
+       LIMIT $1`,
+      [limit]
+    );
+    return rows;
+  },
+
+  async getReadingStats() {
+    const { rows } = await pool.query(
+      `SELECT DATE(created_at) as date, COUNT(*)::int as download_count
+       FROM ebook_access_logs
+       WHERE event_type = 'download'
+         AND created_at >= CURRENT_DATE - INTERVAL '30 days'
+       GROUP BY DATE(created_at)
+       ORDER BY date DESC`
+    );
+    return rows;
+  },
+
+  async getShareMetadata(publicationId) {
+    const publication = await this.getPublicationById(publicationId);
+    if (!publication) return null;
+
+    return {
+      title: publication.title,
+      description: publication.abstract || publication.subtitle || `${publication.title} by ${publication.author_name}`,
+      image: publication.cover_image_path || null,
+      url: `${process.env.FRONTEND_URL || 'https://yourdomain.com'}/ebooks/${publication.slug}`,
+      author: publication.author_name
+    };
+  },
+
+  async subscribeNewsletter(email, { preferences = {}, source, ip_address } = {}) {
+    const existing = await pool.query(
+      `SELECT * FROM newsletter_subscribers WHERE email = $1`,
+      [email]
+    );
+
+    if (existing.rows[0]) {
+      if (existing.rows[0].unsubscribed_at) {
+        await pool.query(
+          `UPDATE newsletter_subscribers
+           SET unsubscribed_at = NULL,
+               preferences = $2,
+               updated_at = NOW()
+           WHERE email = $1`,
+          [email, JSON.stringify(preferences)]
+        );
+      }
+      return { success: true, message: 'Already subscribed' };
+    }
+
+    await pool.query(
+      `INSERT INTO newsletter_subscribers (email, preferences, source, ip_address, subscribed_at)
+       VALUES ($1, $2, $3, $4, NOW())`,
+      [email, JSON.stringify(preferences), source, ip_address]
+    );
+
+    return { success: true, message: 'Subscribed successfully' };
+  }
 };

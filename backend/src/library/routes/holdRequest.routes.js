@@ -6,7 +6,7 @@ import { paginationRules, uuidParam } from "../validators/common.validators.js";
 import { holdCreateRules, holdCancelRules, holdFulfillRules } from "../validators/workflow.validators.js";
 
 const router = express.Router();
-router.use(authenticate);
+// router.use(authenticate);
 router.get('/', paginationRules, validateRequest, holdRequestController.index);
 router.get('/:id', uuidParam(), validateRequest, holdRequestController.show);
 router.post('/', holdCreateRules, validateRequest, holdRequestController.createHold);

@@ -6,7 +6,7 @@ import { paginationRules, uuidParam } from "../validators/common.validators.js";
 import { digitalResourceFileController } from "../controllers/digitalResourceFile.controller.js";
 
 const router = express.Router();
-router.use(authenticate);
+// router.use(authenticate);
 router.get('/', paginationRules, validateRequest, digitalResourceFileController.index);
 router.get('/:id', uuidParam(), validateRequest, digitalResourceFileController.show);
 router.get('/:id/download', uuidParam(), validateRequest, digitalResourceFileController.download);

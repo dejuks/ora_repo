@@ -5,7 +5,7 @@ import { validateRequest } from "../middleware/validateRequest.js";
 import { paginationRules, uuidParam } from "../validators/common.validators.js";
 
 const router = express.Router();
-router.use(authenticate);
+// router.use(authenticate);
 
 router.get('/', paginationRules, validateRequest, digitalCollectionController.index);
 router.get('/:id', uuidParam(), validateRequest, digitalCollectionController.show);

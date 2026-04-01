@@ -5,7 +5,7 @@ import { validateRequest } from "../middleware/validateRequest.js";
 import { paginationRules, uuidParam } from "../validators/common.validators.js";
 
 const router = express.Router();
-router.use(authenticate);
+// router.use(authenticate);
 router.get('/', paginationRules, validateRequest, digitalResourceController.index);
 router.get('/:id', uuidParam(), validateRequest, digitalResourceController.show);
 router.get('/:id/access', uuidParam(), validateRequest, digitalResourceController.access);
