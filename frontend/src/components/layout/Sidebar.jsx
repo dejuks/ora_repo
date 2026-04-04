@@ -5,6 +5,8 @@ import ebookApi from "../../api/ebook.api";
 import { buildEbookRoutes } from "./sidebar/ebookSidebar.js";
 import { buildLibraryRoutes } from "./sidebar/librarySidebar.js";
 import { buildJournalRoutes } from "./sidebar/journalSidebar";
+import { buildWikiRoutes } from "./sidebar/wikiSidebar";
+
 /* ===============================
    MODULE UUIDS
 ================================ */
@@ -53,6 +55,16 @@ const ROLES = {
   JOURNAL_EDITOR:"JOURNAL_EDITOR",
   JOURNAL_REVIEWER:"JOURNAL_REVIEWER",
   JOURNAL_ASSOCIATE_EDITOR:"JOURNAL_ASSOCIATE_EDITOR",
+
+  // WIKI ROLES
+  ORO_WIKI_MANAGER: "ORO_WIKI_MANAGER",
+  ORO_WIKI_EDITOR: "ORO_WIKI_EDITOR",
+  ORO_WIKI_REVIEWER: "ORO_WIKI_REVIEWER",
+  ORO_WIKI_PUBLISHER: "ORO_WIKI_PUBLISHER",
+  ORO_WIKI_BUREAUCRAT: "ORO_WIKI_BUREAUCRAT",
+  ORO_WIKI_OVERSIGHTER: "ORO_WIKI_OVERSIGHTER",
+  ORO_WIKI_AUTHOR: "ORO_WIKI_AUTHOR",
+  ORO_WIKI_ADMINISTRATOR: "ORO_WIKI_ADMINISTRATOR",
 
 
 };
@@ -272,146 +284,7 @@ export default function Sidebar() {
 
     [MODULES.EBOOK]: buildEbookRoutes(),
 
-    [MODULES.ORO_WIKI]: [
-      {
-        name: "Manager Dashboard",
-        path: "/wiki/dashboard",
-        icon: "fas fa-globe",
-        roles: [ROLES.ORO_WIKI_MANAGER],
-      },
-      {
-        name: "Content Management",
-        icon: "fas fa-file-alt",
-        roles: [ROLES.ORO_WIKI_MANAGER],
-        subMenu: [
-          { name: "All Articles", path: "/wiki/articles", icon: "fas fa-list" },
-          { name: "Recent Changes", path: "/wiki/recent-changes", icon: "fas fa-clock" },
-          { name: "Popular Articles", path: "/wiki/popular", icon: "fas fa-star" },
-          { name: "Random Article", path: "/wiki/random", icon: "fas fa-random" },
-          { name: "Check Vandalism", path: "/wiki/vandalism/check", icon: "fas fa-flag" },
-        ],
-      },
-      {
-        name: "Categories",
-        icon: "fas fa-folder",
-        roles: [ROLES.ORO_WIKI_MANAGER],
-        subMenu: [
-          { name: "All Categories", path: "/wiki/categories", icon: "fas fa-list" },
-          { name: "Create Category", path: "/wiki/categories/create", icon: "fas fa-plus" },
-        ],
-      },
-      {
-        name: "Media Library",
-        icon: "fas fa-photo-video",
-        roles: [ROLES.ORO_WIKI_MANAGER],
-        subMenu: [
-          { name: "All Media", path: "/wiki/media", icon: "fas fa-images" },
-          { name: "Upload Media", path: "/wiki/media/upload", icon: "fas fa-upload" },
-        ],
-      },
-      {
-        name: "Users & Roles",
-        icon: "fas fa-users",
-        roles: [ROLES.ORO_WIKI_MANAGER],
-        subMenu: [
-          { name: "All Users", path: "/wiki/users", icon: "fas fa-user" },
-          { name: "Roles", path: "/wiki/roles", icon: "fas fa-user-tag" },
-        ],
-      },
-      {
-        name: "Settings",
-        path: "/wiki/settings",
-        icon: "fas fa-cogs",
-        roles: [ROLES.ORO_WIKI_MANAGER],
-      },
-      {
-        name: "Reports",
-        path: "/wiki/reports",
-        icon: "fas fa-chart-bar",
-        roles: [ROLES.ORO_WIKI_MANAGER],
-      },
-      {
-        name: "Editor Dashboard",
-        path: "/wiki/dashboard",
-        icon: "fas fa-globe",
-        roles: [ROLES.ORO_WIKI_EDITOR],
-      },
-      {
-        name: "My Articles",
-        icon: "fas fa-file-alt",
-        roles: [ROLES.ORO_WIKI_EDITOR],
-        subMenu: [
-          { name: "All Articles", path: "/wiki/articles", icon: "fas fa-list" },
-          { name: "Create Article", path: "/wiki/articles/create", icon: "fas fa-plus" },
-          { name: "Drafts", path: "/wiki/articles/drafts", icon: "fas fa-edit" },
-        ],
-      },
-      {
-        name: "Media Library",
-        icon: "fas fa-photo-video",
-        roles: [ROLES.ORO_WIKI_EDITOR],
-        subMenu: [
-          { name: "All Media", path: "/wiki/media", icon: "fas fa-images" },
-          { name: "Upload Media", path: "/wiki/media/upload", icon: "fas fa-upload" },
-        ],
-      },
-      {
-        name: "Publisher Dashboard",
-        path: "/wiki/dashboard",
-        icon: "fas fa-globe",
-        roles: [ROLES.ORO_WIKI_PUBLISHER],
-      },
-      {
-        name: "Publishing",
-        icon: "fas fa-upload",
-        roles: [ROLES.ORO_WIKI_PUBLISHER],
-        subMenu: [
-          { name: "Publishing Queue", path: "/wiki/articles/publish", icon: "fas fa-upload" },
-          { name: "All Articles", path: "/wiki/articles", icon: "fas fa-list" },
-        ],
-      },
-      {
-        name: "Media Library",
-        icon: "fas fa-photo-video",
-        roles: [ROLES.ORO_WIKI_PUBLISHER],
-        subMenu: [
-          { name: "All Media", path: "/wiki/media", icon: "fas fa-images" },
-        ],
-      },
-      {
-        name: "Governance Dashboard",
-        path: "/wiki/dashboard",
-        icon: "fas fa-globe",
-        roles: [ROLES.ORO_WIKI_BUREAUCRAT],
-      },
-      {
-        name: "Users & Roles",
-        icon: "fas fa-users",
-        roles: [ROLES.ORO_WIKI_BUREAUCRAT],
-        subMenu: [
-          { name: "All Users", path: "/wiki/users", icon: "fas fa-user" },
-          { name: "Roles", path: "/wiki/roles", icon: "fas fa-user-tag" },
-        ],
-      },
-      {
-        name: "Reports",
-        path: "/wiki/reports",
-        icon: "fas fa-chart-bar",
-        roles: [ROLES.ORO_WIKI_BUREAUCRAT],
-      },
-      {
-        name: "Oversight Dashboard",
-        path: "/wiki/dashboard",
-        icon: "fas fa-globe",
-        roles: [ROLES.ORO_WIKI_OVERSIGHTER],
-      },
-      {
-        name: "Moderation",
-        path: "/wiki/moderation",
-        icon: "fas fa-shield-alt",
-        roles: [ROLES.ORO_WIKI_OVERSIGHTER],
-      },
-    ],
+  [MODULES.ORO_WIKI]: buildWikiRoutes(ROLES),
 
       [MODULES.REPOSITORY]: [
         {

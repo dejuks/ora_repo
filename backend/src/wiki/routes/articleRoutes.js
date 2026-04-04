@@ -28,12 +28,13 @@ import {
 const router = express.Router();
 
 // ==================== PUBLIC ROUTES ====================
+router.get("/slug/:slug", getArticleBySlugHandler);
+
 router.get("/", getArticles);
 router.get("/popular", getPopularArticles);
 router.get("/recent", getRecentArticles);
 router.get("/stats", getWikiStats);
 router.get("/languages/stats", getLanguageStats);
-router.get("/slug/:slug", getArticleBySlugHandler);
 router.get("/:id", getArticle);
 
 // ==================== VANDALISM ROUTES ====================

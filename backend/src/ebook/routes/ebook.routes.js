@@ -112,8 +112,8 @@ router.get('/submissions-mine/:uuid', asyncHandler(async (req, res) => {
   const result = await listMine(req.params.uuid, req.query || {});
   res.json(result);
 }));
+router.get('/submissions/:id/workflow', ebookSubmissionController.workflow);
 router.get('/submissions/:id',  ebookSubmissionController.show);
-router.get('/submissions/:uuid/workflow',  ebookSubmissionController.workflow);
 router.post('/submissions',  uploadEbookFile.single('file'), ebookSubmissionController.store);
 router.put('/submissions/:id',  ebookSubmissionController.update);
 router.patch('/submissions/:id',  ebookSubmissionController.update);

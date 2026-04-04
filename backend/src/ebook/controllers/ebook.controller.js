@@ -157,9 +157,18 @@ export const ebookSubmissionController = {
     res.json(await ebookWorkflowService.getReviewerOptions());
   }),
 
-  workflow: asyncHandler(async (req, res) => {
-    res.json(await ebookWorkflowService.getWorkflow(req.params.id));
-  }),
+ workflow: asyncHandler(async (req, res) => {
+  // The route parameter is 'uuid', not 'id'
+  const submissionId = req.params.uuid || req.params.id;
+  
+  if (!submissionId) {
+    const error = new Error("Submission ID is required");
+    error.status = 400;
+    throw error;
+  }
+  
+  res.json(await ebookWorkflowService.getWorkflow(submissionId));
+}),
 
   submit: asyncHandler(async (req, res) => {
     res.json(

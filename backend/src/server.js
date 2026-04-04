@@ -54,6 +54,8 @@ import ebookRoutes from "./ebook/routes/ebook.routes.js";
 import ebookPublicRoutes from "./ebook/routes/ebookPublic.routes.js";
 import repositoryAuthorRoutes from './repository/authors/routes/repositoryAuthor.routes.js';
 
+import ebookAuthorRoutes from "./ora_ebooks/routes/author.routes.js";
+import ebookManuscriptRoutes from "./ora_ebooks/routes/manuscript.routes.js";
 import publicRoutes from "./ebook/routes/public.routes.js";
 
 dotenv.config();
@@ -144,7 +146,9 @@ app.use("/api/public", publicRoutes);
 
 // Repository Authors
 app.use('/api/repository-authors', repositoryAuthorRoutes);
+app.use("/api/ebook_authors", ebookAuthorRoutes);
 
+app.use("/api/ebook/manuscripts", ebookManuscriptRoutes);
 /* =======================
    DEFAULT ROUTE
 ======================= */

@@ -21,9 +21,9 @@ export function buildEbookRoutes(ROLES) {
       icon: "fas fa-user-edit",
       roles: [AU, A],
       subMenu: [
-        { name: "My Submissions", path: "/ebook/my-submissions", icon: "fas fa-file-alt", roles: [AU, A] },
+        { name: "My Submissions", path: "/ebook/submissions", icon: "fas fa-file-alt", roles: [AU, A] },
         { name: "My Drafts", path: "/ebook/drafts", icon: "fas fa-file-alt", roles: [AU, A] },
-        { name: "Revision Requests", path: "/ebook/my-revisions", icon: "fas fa-edit", roles: [AU, A] },
+        { name: "Revision Requests", path: "/ebook/manuscripts/revisions", icon: "fas fa-edit", roles: [AU, A] },
         { name: "Payments & Waivers", path: "/ebook/my-payments", icon: "fas fa-credit-card", roles: [AU, A] },
         { name: "Proof Approvals", path: "/ebook/my-proofs", icon: "fas fa-check-circle", roles: [AU, A] },
         { name: "Rejected by Editor", path: "/ebook/my-rejected", icon: "fas fa-times-circle", roles: [AU, A] },

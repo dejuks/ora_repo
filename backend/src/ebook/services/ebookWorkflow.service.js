@@ -297,69 +297,70 @@ export const ebookWorkflowService = {
     return rows;
   },
 
-  async getWorkflow(submissionId) {
-    const submissionRes = await pool.query(
-      `SELECT es.*, a.full_name AS author_name, a.email AS author_email,
-              e.full_name AS editor_name, e.email AS editor_email,
-              ep.publication_id, ep.slug, ep.access_level, ep.is_public, ep.published_at,
-              epd.production_id, epd.pdf_ready, epd.epub_ready, epd.proof_sent_to_author, epd.author_proof_approved,
-              epd.isbn, epd.doi, epd.repository_path,
-              efc.finance_id, efc.payment_status, efc.amount_due, efc.amount_paid, efc.invoice_number, efc.receipt_number
-       FROM ebook_submissions es
-       LEFT JOIN users a ON a.uuid = es.author_id
-       LEFT JOIN users e ON e.uuid = es.editor_id
-       LEFT JOIN ebook_publications ep ON ep.submission_id = es.submission_id
-       LEFT JOIN ebook_production epd ON epd.submission_id = es.submission_id
-       LEFT JOIN ebook_finance_clearances efc ON efc.submission_id = es.submission_id
-       WHERE es.submission_id = $1`,
+async getWorkflow(submissionId) {
+  console.log("Submission ID:", submissionId);
+
+  const submissionRes = await ool.query(
+  `SELECT 
+      era.*, 
+      u.full_name AS reviewer_name, 
+      u.email AS reviewer_email
+   FROM ebook_review_assignments era
+   LEFT JOIN users u ON u.uuid = era.reviewer_id
+   WHERE era.submission_id = $1
+   ORDER BY COALESCE(era.round_no, 1) DESC, era.assigned_at DESC`,
+  [submissionId]
+);
+
+  const submission = submissionRes.rows[0];
+
+  if (!submission) {
+    console.error("No submission found for ID:", submissionId);
+    throw notFound("Submission not found");
+  }
+
+  const [filesRes, assignmentsRes, reviewsRes, historyRes] = await Promise.all([
+    pool.query(
+      `SELECT *
+       FROM ebook_submission_files
+       WHERE submission_id = $1
+       ORDER BY version_no DESC, created_at DESC`,
       [submissionId]
-    );
+    ),
+    pool.query(
+      `SELECT era.*, u.full_name AS reviewer_name, u.email AS reviewer_email,era.round_no as round_no,
+       FROM ebook_review_assignments era
+       LEFT JOIN users u ON u.uuid = era.reviewer_id
+       WHERE era.submission_id = $1
+       ORDER BY COALESCE(era.round_no, 1) DESC, era.assigned_at DESC`,
+      [submissionId]
+    ),
+    pool.query(
+      `SELECT er.*, u.full_name AS reviewer_name, u.email AS reviewer_email
+       FROM ebook_reviews er
+       LEFT JOIN users u ON u.uuid = er.reviewer_id
+       WHERE er.submission_id = $1
+       ORDER BY COALESCE(er.round_no, 1) DESC, er.submitted_at DESC`,
+      [submissionId]
+    ),
+    pool.query(
+      `SELECT ewh.*, u.full_name AS actor_name, u.email AS actor_email
+       FROM ebook_workflow_history ewh
+       LEFT JOIN users u ON u.uuid = ewh.actor_id
+       WHERE ewh.submission_id = $1
+       ORDER BY ewh.acted_at DESC`,
+      [submissionId]
+    ),
+  ]);
 
-    const submission = submissionRes.rows[0];
-    if (!submission) throw notFound("Submission not found");
-
-    const [filesRes, assignmentsRes, reviewsRes, historyRes] = await Promise.all([
-      pool.query(
-        `SELECT *
-         FROM ebook_submission_files
-         WHERE submission_id = $1
-         ORDER BY version_no DESC, created_at DESC`,
-        [submissionId]
-      ),
-      pool.query(
-        `SELECT era.*, u.full_name AS reviewer_name, u.email AS reviewer_email
-         FROM ebook_review_assignments era
-         LEFT JOIN users u ON u.uuid = era.reviewer_id
-         WHERE era.submission_id = $1
-         ORDER BY COALESCE(era.round_no, 1) DESC, era.assigned_at DESC`,
-        [submissionId]
-      ),
-      pool.query(
-        `SELECT er.*, u.full_name AS reviewer_name, u.email AS reviewer_email
-         FROM ebook_reviews er
-         LEFT JOIN users u ON u.uuid = er.reviewer_id
-         WHERE er.submission_id = $1
-         ORDER BY COALESCE(er.round_no, 1) DESC, er.submitted_at DESC`,
-        [submissionId]
-      ),
-      pool.query(
-        `SELECT ewh.*, u.full_name AS actor_name, u.email AS actor_email
-         FROM ebook_workflow_history ewh
-         LEFT JOIN users u ON u.uuid = ewh.actor_id
-         WHERE ewh.submission_id = $1
-         ORDER BY ewh.acted_at DESC`,
-        [submissionId]
-      ),
-    ]);
-
-    return {
-      submission,
-      files: filesRes.rows,
-      assignments: assignmentsRes.rows,
-      reviews: reviewsRes.rows,
-      history: historyRes.rows,
-    };
-  },
+  return {
+    submission,
+    files: filesRes.rows,
+    assignments: assignmentsRes.rows,
+    reviews: reviewsRes.rows,
+    history: historyRes.rows,
+  };
+},
 
   async createSubmission(payload = {}, actorId, file = null, fileRole = "manuscript") {
     const client = await pool.connect();
@@ -1797,13 +1798,13 @@ export const ebookWorkflowService = {
   async getTrendingEbooks({ limit = 10 } = {}) {
     const { rows } = await pool.query(
       `SELECT ep.*, es.title, es.subtitle, es.abstract, es.language, es.category,
-              u.full_name AS author_name, es.downloads, es.rating
+              u.full_name AS author_name
        FROM ebook_publications ep
        INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
        LEFT JOIN users u ON u.uuid = es.author_id
        WHERE ep.is_public = TRUE
-         AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
-       ORDER BY es.rating DESC
+            AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
+          ORDER BY ep.downloads DESC
        LIMIT $1`,
       [limit]
     );
@@ -1836,7 +1837,7 @@ export const ebookWorkflowService = {
        WHERE ep.is_public = TRUE
          AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
          AND ep.is_featured = TRUE
-       ORDER BY ep.featured_order ASC, ep.published_at DESC
+       ORDER BY ep.published_at DESC
        LIMIT $1`,
       [limit]
     );
@@ -1846,7 +1847,7 @@ export const ebookWorkflowService = {
   async getPublicationBySlug(slug) {
     const { rows } = await pool.query(
       `SELECT ep.*, es.title, es.subtitle, es.abstract, es.keywords, es.language, 
-              es.category, es.publication_year, es.downloads, es.rating,
+              es.category, es.publication_year,
               u.full_name AS author_name, u.uuid AS author_id,
               epd.pdf_ready, epd.epub_ready, epd.isbn, epd.doi
        FROM ebook_publications ep
@@ -1864,7 +1865,7 @@ export const ebookWorkflowService = {
   async getPublicationById(id) {
     const { rows } = await pool.query(
       `SELECT ep.*, es.title, es.subtitle, es.abstract, es.keywords, es.language, 
-              es.category, es.publication_year, es.downloads, es.rating,
+              es.category, es.publication_year,
               u.full_name AS author_name, u.uuid AS author_id,
               epd.pdf_ready, epd.epub_ready, epd.isbn, epd.doi
        FROM ebook_publications ep
@@ -1899,7 +1900,7 @@ export const ebookWorkflowService = {
 
     const { rows } = await pool.query(
       `SELECT ep.*, es.title, es.subtitle, es.abstract, es.language,
-              u.full_name AS author_name,es.downloads
+              u.full_name AS author_name
        FROM ebook_publications ep
        INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
        LEFT JOIN users u ON u.uuid = es.author_id
@@ -1907,7 +1908,6 @@ export const ebookWorkflowService = {
          AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
          AND ep.publication_id != $1
          AND es.category = $2
-       ORDER BY es.downloads DESC
        LIMIT $3`,
       [publicationId, publication.category, limit]
     );
@@ -1922,7 +1922,7 @@ export const ebookWorkflowService = {
          AND es.status = 'published'
        LEFT JOIN ebook_publications ep ON ep.submission_id = es.submission_id
          AND ep.is_public = TRUE
-       GROUP BY c.id, c.name,  c.color
+       GROUP BY c.id, c.name,  c.created_at, c.updated_at
        ORDER BY ebook_count DESC`
     );
     return rows;
@@ -1967,14 +1967,14 @@ export const ebookWorkflowService = {
     const offset = (page - 1) * limit;
 
     const { rows } = await pool.query(
-      `SELECT u.uuid as id, u.full_name, u.email, u.bio, u.avatar,es.downloads
+      `SELECT u.uuid as id, u.full_name, u.email, u.bio, u.avatar,
               COUNT(DISTINCT es.submission_id)::int as publication_count,
-              COALESCE(SUM(es.downloads), 0) as total_downloads,
+              COALESCE(SUM(ep.downloads), 0) as total_downloads,
               COALESCE(AVG(es.rating), 0) as avg_rating
        FROM users u
        LEFT JOIN ebook_submissions es ON es.author_id = u.uuid 
          AND es.status = 'published'
-       WHERE u.role = 'author'
+       LEFT JOIN ebook_publications ep ON ep.submission_id = es.submission_id
        GROUP BY u.uuid, u.full_name, u.email, u.bio, u.avatar
        ORDER BY ${sort === 'downloads' ? 'total_downloads' : 'publication_count'} DESC
        LIMIT $1 OFFSET $2`,
@@ -1999,12 +1999,12 @@ export const ebookWorkflowService = {
     const { rows } = await pool.query(
       `SELECT u.uuid as id, u.full_name,
               COUNT(DISTINCT es.submission_id)::int as publication_count,
-              COALESCE(SUM(es.downloads), 0) as total_downloads,
+              COALESCE(SUM(ep.downloads), 0) as total_downloads,
               COALESCE(AVG(es.rating), 0) as avg_rating
        FROM users u
        LEFT JOIN ebook_submissions es ON es.author_id = u.uuid 
          AND es.status = 'published'
-       WHERE u.role = 'author'
+       LEFT JOIN ebook_publications ep ON ep.submission_id = es.submission_id
        GROUP BY u.uuid, u.full_name
        ORDER BY ${sortBy === 'downloads' ? 'total_downloads' : 'publication_count'} DESC
        LIMIT $1`,
@@ -2017,13 +2017,13 @@ export const ebookWorkflowService = {
     const { rows } = await pool.query(
       `SELECT u.uuid as id, u.full_name, u.email, u.bio, u.avatar,
               COUNT(DISTINCT es.submission_id)::int as publication_count,
-              COALESCE(SUM(es.downloads), 0) as total_downloads,
+              COALESCE(SUM(ep.downloads), 0) as total_downloads,
               COALESCE(AVG(es.rating), 0) as avg_rating
        FROM users u
        LEFT JOIN ebook_submissions es ON es.author_id = u.uuid 
          AND es.status = 'published'
+       LEFT JOIN ebook_publications ep ON ep.submission_id = es.submission_id
        WHERE u.uuid = $1
-         AND u.role = 'author'
        GROUP BY u.uuid, u.full_name, u.email, u.bio, u.avatar`,
       [authorId]
     );
@@ -2126,7 +2126,7 @@ export const ebookWorkflowService = {
        LEFT JOIN publication_tags pt ON pt.tag_id = t.id
        LEFT JOIN ebook_publications ep ON ep.publication_id = pt.publication_id
          AND ep.is_public = TRUE
-       GROUP BY t.id
+       GROUP BY t.id, t.name, t.slug, t.created_at
        ORDER BY usage_count DESC
        LIMIT $1`,
       [limit]
@@ -2173,55 +2173,55 @@ export const ebookWorkflowService = {
     };
   },
 
- async getPublicStats() {
-  try {
-    const [totalEbooks, totalDownloads, totalAuthors, languagesRes] = await Promise.all([
-      pool.query(
-        `SELECT COUNT(*)::int as count
-         FROM ebook_publications ep
-         WHERE ep.is_public = TRUE
-           AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)`
-      ),
-      pool.query(
-        `SELECT COALESCE(SUM(ep.downloads), 0)::int as total
-         FROM ebook_publications ep
-         WHERE ep.is_public = TRUE
-           AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)`
-      ),
-      pool.query(
-        `SELECT COUNT(DISTINCT es.author_id)::int as count
-         FROM ebook_publications ep
-         INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
-         WHERE ep.is_public = TRUE
-           AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)`
-      ),
-      pool.query(
-        `SELECT COUNT(DISTINCT es.language)::int as count
-         FROM ebook_publications ep
-         INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
-         WHERE ep.is_public = TRUE
-           AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
-           AND es.language IS NOT NULL`
-      )
-    ]);
+  async getPublicStats() {
+    try {
+      const [totalEbooks, totalDownloads, totalAuthors, languagesRes] = await Promise.all([
+        pool.query(
+          `SELECT COUNT(*)::int as count
+           FROM ebook_publications ep
+           WHERE ep.is_public = TRUE
+             AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)`
+        ),
+        pool.query(
+          `SELECT COALESCE(SUM(ep.downloads), 0)::int as total
+           FROM ebook_publications ep
+           WHERE ep.is_public = TRUE
+             AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)`
+        ),
+        pool.query(
+          `SELECT COUNT(DISTINCT es.author_id)::int as count
+           FROM ebook_publications ep
+           INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
+           WHERE ep.is_public = TRUE
+             AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)`
+        ),
+        pool.query(
+          `SELECT COUNT(DISTINCT es.language)::int as count
+           FROM ebook_publications ep
+           INNER JOIN ebook_submissions es ON es.submission_id = ep.submission_id
+           WHERE ep.is_public = TRUE
+             AND (ep.embargo_until IS NULL OR ep.embargo_until <= CURRENT_DATE)
+             AND es.language IS NOT NULL`
+        )
+      ]);
 
-    return {
-      totalEbooks: totalEbooks.rows[0]?.count || 0,
-      totalDownloads: totalDownloads.rows[0]?.total || 0,
-      totalAuthors: totalAuthors.rows[0]?.count || 0,
-      languages: languagesRes.rows[0]?.count || 0
-    };
-  } catch (error) {
-    console.error('Error in getPublicStats:', error);
-    // Return default values on error
-    return {
-      totalEbooks: 0,
-      totalDownloads: 0,
-      totalAuthors: 0,
-      languages: 0
-    };
-  }
-},
+      return {
+        totalEbooks: totalEbooks.rows[0]?.count || 0,
+        totalDownloads: totalDownloads.rows[0]?.total || 0,
+        totalAuthors: totalAuthors.rows[0]?.count || 0,
+        languages: languagesRes.rows[0]?.count || 0
+      };
+    } catch (error) {
+      console.error('Error in getPublicStats:', error);
+      // Return default values on error
+      return {
+        totalEbooks: 0,
+        totalDownloads: 0,
+        totalAuthors: 0,
+        languages: 0
+      };
+    }
+  },
 
   async getLanguageStats() {
     const { rows } = await pool.query(

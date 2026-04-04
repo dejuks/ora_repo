@@ -198,6 +198,14 @@ import EbookEditorReviewsPage from "./pages/ebook/EbookEditorReviewsPage.jsx";
 import EbookEditorDecisionPage from "./pages/ebook/EbookEditorDecisionPage.jsx";
 import EbookEditorHandoffPage from "./pages/ebook/EbookEditorHandoffPage.jsx";
 import AccessLicense from "./pages/repository/author/AccessLicense.jsx";
+import AuthorRegister from "./landing/pages/ora_ebook/AuthorRegister.jsx";
+import ManuscriptPage from "./landing/pages/ora_ebook/manuscript/ManuscriptPage.jsx";
+import ManuscriptEditPage from "./landing/pages/ora_ebook/manuscript/ManuscriptEditPage.jsx";
+import ManuscriptShowPage from "./landing/pages/ora_ebook/manuscript/ManuscriptShowPage.jsx";
+import DraftManuscriptPage from "./landing/pages/ora_ebook/manuscript/DraftManuscriptPage.jsx";
+import RevisionRequiredManuscriptPage from "./landing/pages/ora_ebook/manuscript/RevisionRequiredManuscriptPage.jsx";
+import MyArticleList from "./pages/wiki/MyArticleList.jsx";
+import MyDraftArticleList from "./pages/wiki/MyDraftArticleList.jsx";
 
 function App() {
   return (
@@ -264,7 +272,7 @@ function App() {
         {/* Wiki Protected Routes */}
         <Route path="/wiki/dashboard" element={<ProtectedRoute><WikiDashboard /></ProtectedRoute>} />
         <Route path="/wiki/profile/edit" element={<ProtectedRoute><WikiProfileEdit /></ProtectedRoute>} />
-        <Route path="/wiki/create" element={<CreateArticlePage />} />
+        <Route path="/wiki/articles/create" element={<ProtectedRoute><ArticleCreate /></ProtectedRoute>} />
         <Route path="/wiki/articles/new" element={<ProtectedRoute><CreateArticlePage /></ProtectedRoute>} />
         <Route path="/wiki/articles/edit/:id" element={<ProtectedRoute><ArticleEdit /></ProtectedRoute>} />
         <Route path="/wiki/articles/drafts" element={<ProtectedRoute><ArticleDraftList /></ProtectedRoute>} />
@@ -274,7 +282,9 @@ function App() {
         <Route path="/wiki/media/upload" element={<ProtectedRoute><WikiMediaUploadPage /></ProtectedRoute>} />
         <Route path="/wiki/media" element={<ProtectedRoute><WikiMediaGalleryPage /></ProtectedRoute>} />
         <Route path="/wiki/vandalism/check" element={<ProtectedRoute><VandalismCheck /></ProtectedRoute>} />
-
+{/* /wiki/my-articles */}
+        <Route path="/wiki/my-articles" element={<ProtectedRoute><MyArticleList /></ProtectedRoute>} />
+        <Route path="/wiki/my-articles/drafts" element={<ProtectedRoute><MyDraftArticleList /></ProtectedRoute>} />
         {/* Journal Protected Routes */}
         <Route path="/journal-dashboard" element={<ProtectedRoute><JournalDashboard /></ProtectedRoute>} />
         <Route path="/journal/author-dashboard" element={<ProtectedRoute><JournalAuthorDashboard /></ProtectedRoute>} />
@@ -440,6 +450,17 @@ function App() {
         <Route path="/journal/auth/register" element={<JournalRegisterPage />} />
         //Ebooks
         <Route path="/ebooks" element={<Ebooks />} />
+        {/* // Ebook Author Registration */}
+        <Route path="/ebook/author/register" element={<AuthorRegister />} />
+        {/* ebook manuscripts */}
+        <Route path="/ebook/manuscripts" element={<ManuscriptPage />} />
+        <Route path="/ebook/manuscripts/edit/:id" element={<ManuscriptEditPage />} />
+        {/* show */}
+          <Route path="/ebook/manuscripts/show/:id" element={<ManuscriptShowPage />} />
+{/* Drafts */}
+        <Route path="/ebook/manuscripts/drafts" element={<DraftManuscriptPage />} />
+        /* Revision Required Manuscripts */
+        <Route path="/ebook/manuscripts/revisions" element={<RevisionRequiredManuscriptPage />} />
         {/* 404 Not Found - This should be the LAST route */}
         <Route path="*" element={<h1>404 Not Found</h1>} />
       </Routes>
