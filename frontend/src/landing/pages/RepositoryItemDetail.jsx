@@ -32,6 +32,11 @@ export default function RepositoryItemDetail() {
 
         setItem(fetchedItem || null);
 
+        // Load existing rating if user has rated before
+        if (fetchedItem?.user_rating) {
+          setRating(fetchedItem.user_rating);
+        }
+
         try {
           await publicationAPI.trackView(uuid);
         } catch (viewErr) {
@@ -80,6 +85,7 @@ export default function RepositoryItemDetail() {
   const getTypeIcon = (type) => {
     const icons = {
       Thesis: "🎓",
+      Dissertation: "🎓",
       "Journal Article": "📰",
       Article: "📰",
       Book: "📖",
@@ -97,6 +103,8 @@ export default function RepositoryItemDetail() {
       Videos: "🎥",
       Photograph: "🖼️",
       Photographs: "🖼️",
+      Report: "📋",
+      Manuscript: "✍️",
     };
 
     return icons[type] || "📁";
@@ -105,6 +113,7 @@ export default function RepositoryItemDetail() {
   const getTypeColor = (type) => {
     const colors = {
       Thesis: "#2563eb",
+      Dissertation: "#2563eb",
       "Journal Article": "#0ea5e9",
       Article: "#14b8a6",
       Book: "#f59e0b",
@@ -122,6 +131,8 @@ export default function RepositoryItemDetail() {
       Videos: "#dc2626",
       Photograph: "#7c3aed",
       Photographs: "#7c3aed",
+      Report: "#64748b",
+      Manuscript: "#b8860b",
     };
 
     return colors[type] || "#64748b";
@@ -196,6 +207,48 @@ export default function RepositoryItemDetail() {
     }
   };
 
+  // Parse authors from various possible formats
+  const getAuthors = () => {
+    if (item?.authors && Array.isArray(item.authors) && item.authors.length > 0) {
+      return item.authors;
+    }
+    if (item?.author) {
+      return [item.author];
+    }
+    if (item?.creator) {
+      return [item.creator];
+    }
+    if (item?.submitter_name) {
+      return [item.submitter_name];
+    }
+    return [];
+  };
+
+  // Parse contributors
+  const getContributors = () => {
+    if (item?.contributors && Array.isArray(item.contributors) && item.contributors.length > 0) {
+      return item.contributors;
+    }
+    if (item?.contributor) {
+      return [item.contributor];
+    }
+    return [];
+  };
+
+  // Parse subjects/keywords
+  const getSubjects = () => {
+    if (item?.subjects && Array.isArray(item.subjects) && item.subjects.length > 0) {
+      return item.subjects;
+    }
+    if (item?.keywords && Array.isArray(item.keywords) && item.keywords.length > 0) {
+      return item.keywords;
+    }
+    if (item?.subject) {
+      return [item.subject];
+    }
+    return [];
+  };
+
   if (loading) {
     return (
       <>
@@ -230,6 +283,10 @@ export default function RepositoryItemDetail() {
     );
   }
 
+  const authors = getAuthors();
+  const contributors = getContributors();
+  const subjects = getSubjects();
+
   return (
     <>
       <Navbar />
@@ -259,9 +316,25 @@ export default function RepositoryItemDetail() {
 
                 <h1 style={styles.title}>{item.title}</h1>
 
-                <p style={styles.abstract}>
-                  {item.abstract || "No abstract available for this item."}
-                </p>
+                {/* Authors Section */}
+                {authors.length > 0 && (
+                  <div style={styles.authorsSection}>
+                    <span style={styles.authorsLabel}>By</span>
+                    <div style={styles.authorsList}>
+                      {authors.map((author, idx) => (
+                        <span key={idx} style={styles.authorName}>
+                          {author}
+                          {idx < authors.length - 1 && ", "}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Abstract */}
+                {item.abstract && (
+                  <p style={styles.abstract}>{item.abstract}</p>
+                )}
 
                 <div style={styles.metaChips}>
                   <span style={styles.metaChip}>Year: {displayYear}</span>
@@ -297,14 +370,26 @@ export default function RepositoryItemDetail() {
                   <h3 style={styles.cardTitle}>Item Information</h3>
 
                   <div style={styles.infoList}>
-                    <InfoRow label="UUID" value={item.uuid} />
                     <InfoRow label="Type" value={item.item_type || "—"} />
                     <InfoRow label="Language" value={item.language || "—"} />
                     <InfoRow label="DOI" value={item.doi || "—"} />
                     <InfoRow label="Handle" value={item.handle || "—"} />
+                    <InfoRow label="ISSN" value={item.issn || item.pissn || "—"} />
+                    <InfoRow label="ISBN" value={item.isbn || "—"} />
+                    <InfoRow label="Volume" value={item.volume || "—"} />
+                    <InfoRow label="Issue" value={item.issue || "—"} />
+                    <InfoRow label="Pages" value={item.pages || "—"} />
                     <InfoRow
-                      label="Created"
+                      label="Published"
+                      value={formatDate(item.publication_date || item.created_at)}
+                    />
+                    <InfoRow
+                      label="Added to Archive"
                       value={formatDate(item.created_at)}
+                    />
+                    <InfoRow
+                      label="Last Updated"
+                      value={formatDate(item.updated_at)}
                     />
                     <InfoRow
                       label="Embargo Until"
@@ -314,8 +399,48 @@ export default function RepositoryItemDetail() {
                       label="Access Level"
                       value={item.access_level || "Open"}
                     />
+                    <InfoRow label="License" value={item.license || "—"} />
+                    <InfoRow label="Rights" value={item.rights || "—"} />
+                    <InfoRow label="UUID" value={item.uuid} />
                   </div>
                 </div>
+
+                {/* Contributors Card */}
+                {contributors.length > 0 && (
+                  <div style={styles.card}>
+                    <h3 style={styles.cardTitle}>Contributors</h3>
+                    <div style={styles.contributorsList}>
+                      {contributors.map((contributor, idx) => (
+                        <div key={idx} style={styles.contributorItem}>
+                          <span style={styles.contributorName}>{contributor}</span>
+                          {item.contributor_roles && item.contributor_roles[idx] && (
+                            <span style={styles.contributorRole}>
+                              ({item.contributor_roles[idx]})
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Subjects/Keywords Card */}
+                {subjects.length > 0 && (
+                  <div style={styles.card}>
+                    <h3 style={styles.cardTitle}>Subjects & Keywords</h3>
+                    <div style={styles.subjectsList}>
+                      {subjects.map((subject, idx) => (
+                        <Link
+                          key={idx}
+                          to={`/repository/search?q=${encodeURIComponent(subject)}`}
+                          style={styles.subjectTag}
+                        >
+                          {subject}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div style={styles.card}>
                   <h3 style={styles.cardTitle}>Rate this item</h3>
@@ -354,13 +479,79 @@ export default function RepositoryItemDetail() {
         <section style={styles.contentSection}>
           <div style={styles.contentGrid}>
             <div style={styles.leftPanel}>
+              {/* Full Description */}
+              {item.description && item.description !== item.abstract && (
+                <div style={styles.sectionCard}>
+                  <h2 style={styles.sectionTitle}>Full Description</h2>
+                  <p style={styles.paragraph}>{item.description}</p>
+                </div>
+              )}
+
+              {/* Table of Contents */}
+              {item.table_of_contents && (
+                <div style={styles.sectionCard}>
+                  <h2 style={styles.sectionTitle}>Table of Contents</h2>
+                  <div style={styles.tocContent}>
+                    {item.table_of_contents.split('\n').map((line, idx) => (
+                      <p key={idx} style={styles.paragraph}>{line}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Citation Information */}
               <div style={styles.sectionCard}>
-                <h2 style={styles.sectionTitle}>Description</h2>
-                <p style={styles.paragraph}>
-                  {item.abstract || "No description has been provided for this item."}
-                </p>
+                <h2 style={styles.sectionTitle}>How to Cite</h2>
+                <div style={styles.citationBox}>
+                  <p style={styles.citationText}>
+                    {authors.length > 0 ? authors.join(", ") : item.submitter_name || "Unknown Author"}. 
+                    ({displayYear}). <em>{item.title}</em>. 
+                    {item.publisher ? ` ${item.publisher}.` : ""}
+                    {item.doi ? ` https://doi.org/${item.doi}` : ""}
+                  </p>
+                  <button 
+                    style={styles.copyButton}
+                    onClick={() => {
+                      const citation = `${authors.length > 0 ? authors.join(", ") : item.submitter_name || "Unknown Author"} (${displayYear}). ${item.title}.${item.publisher ? ` ${item.publisher}.` : ""}${item.doi ? ` https://doi.org/${item.doi}` : ""}`;
+                      navigator.clipboard.writeText(citation);
+                      alert("Citation copied to clipboard!");
+                    }}
+                  >
+                    <i className="fas fa-copy"></i> Copy Citation
+                  </button>
+                </div>
               </div>
 
+              {/* Publisher Information */}
+              {(item.publisher || item.publication_place) && (
+                <div style={styles.sectionCard}>
+                  <h2 style={styles.sectionTitle}>Publication Information</h2>
+                  <div style={styles.infoGrid}>
+                    {item.publisher && (
+                      <div style={styles.infoGridItem}>
+                        <strong>Publisher:</strong> {item.publisher}
+                      </div>
+                    )}
+                    {item.publication_place && (
+                      <div style={styles.infoGridItem}>
+                        <strong>Place of Publication:</strong> {item.publication_place}
+                      </div>
+                    )}
+                    {item.series && (
+                      <div style={styles.infoGridItem}>
+                        <strong>Series:</strong> {item.series}
+                      </div>
+                    )}
+                    {item.edition && (
+                      <div style={styles.infoGridItem}>
+                        <strong>Edition:</strong> {item.edition}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* File Access */}
               <div style={styles.sectionCard}>
                 <h2 style={styles.sectionTitle}>File Access</h2>
                 {item.file_path ? (
@@ -368,7 +559,12 @@ export default function RepositoryItemDetail() {
                     <div style={styles.fileIcon}>📄</div>
                     <div style={styles.fileDetails}>
                       <div style={styles.fileLabel}>Attached File</div>
-                      <div style={styles.filePath}>{item.file_path}</div>
+                      <div style={styles.filePath}>{item.file_path.split('/').pop()}</div>
+                      {item.file_size && (
+                        <div style={styles.fileSize}>
+                          Size: {Math.round(item.file_size / 1024)} KB
+                        </div>
+                      )}
                     </div>
                     <button
                       type="button"
@@ -399,9 +595,22 @@ export default function RepositoryItemDetail() {
                     <div style={styles.statNumber}>{formatNumber(item.downloads)}</div>
                     <div style={styles.statLabel}>Downloads</div>
                   </div>
+                  {item.average_rating > 0 && (
+                    <div style={styles.statCard}>
+                      <div style={styles.statNumber}>{item.average_rating.toFixed(1)}</div>
+                      <div style={styles.statLabel}>Average Rating</div>
+                    </div>
+                  )}
+                  {item.rating_count > 0 && (
+                    <div style={styles.statCard}>
+                      <div style={styles.statNumber}>{formatNumber(item.rating_count)}</div>
+                      <div style={styles.statLabel}>Ratings</div>
+                    </div>
+                  )}
                 </div>
               </div>
 
+              {/* Related Items */}
               <div style={styles.sectionCard}>
                 <h2 style={styles.sectionTitle}>Related Items</h2>
                 {relatedItems.length > 0 ? (
@@ -630,12 +839,39 @@ const styles = {
   typeIcon: {
     fontSize: "18px",
   },
-     title: {
+
+  title: {
     margin: "0 0 16px",
     fontSize: "40px",
     fontWeight: 800,
     lineHeight: 1.2,
     letterSpacing: "-0.5px",
+  },
+
+  authorsSection: {
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: "8px",
+    marginBottom: "16px",
+  },
+
+  authorsLabel: {
+    fontSize: "16px",
+    fontWeight: 500,
+    color: "rgba(255,255,255,0.7)",
+  },
+
+  authorsList: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "4px",
+  },
+
+  authorName: {
+    fontSize: "16px",
+    fontWeight: 600,
+    color: "#facc15",
   },
 
   abstract: {
@@ -720,16 +956,59 @@ const styles = {
     justifyContent: "space-between",
     gap: "12px",
     fontSize: "14px",
+    padding: "6px 0",
+    borderBottom: "1px solid #e2e8f0",
   },
 
   infoLabel: {
     color: "#64748b",
+    fontWeight: 500,
   },
 
   infoValue: {
     color: "#0f172a",
     fontWeight: 500,
     textAlign: "right",
+    wordBreak: "break-word",
+    maxWidth: "60%",
+  },
+
+  contributorsList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+  },
+
+  contributorItem: {
+    fontSize: "14px",
+    color: "#0f172a",
+  },
+
+  contributorName: {
+    fontWeight: 600,
+  },
+
+  contributorRole: {
+    color: "#64748b",
+    fontSize: "12px",
+    marginLeft: "6px",
+  },
+
+  subjectsList: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+  },
+
+  subjectTag: {
+    display: "inline-block",
+    padding: "6px 12px",
+    background: "#f1f5f9",
+    borderRadius: "20px",
+    fontSize: "13px",
+    color: "#0f172a",
+    textDecoration: "none",
+    transition: "all 0.2s",
   },
 
   starRow: {
@@ -792,6 +1071,51 @@ const styles = {
     fontSize: "15px",
     lineHeight: 1.7,
     color: "#475569",
+    marginBottom: "12px",
+  },
+
+  tocContent: {
+    fontSize: "15px",
+    lineHeight: 1.7,
+    color: "#475569",
+  },
+
+  citationBox: {
+    background: "#f8fafc",
+    padding: "16px",
+    borderRadius: "12px",
+    border: "1px solid #e2e8f0",
+  },
+
+  citationText: {
+    fontSize: "14px",
+    lineHeight: 1.6,
+    color: "#0f172a",
+    marginBottom: "12px",
+    fontFamily: "monospace",
+  },
+
+  copyButton: {
+    background: "#0f172a",
+    color: "#fff",
+    border: "none",
+    padding: "8px 16px",
+    borderRadius: "8px",
+    fontSize: "13px",
+    cursor: "pointer",
+  },
+
+  infoGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr",
+    gap: "10px",
+  },
+
+  infoGridItem: {
+    fontSize: "14px",
+    color: "#475569",
+    padding: "6px 0",
+    borderBottom: "1px solid #e2e8f0",
   },
 
   fileBox: {
@@ -823,6 +1147,12 @@ const styles = {
     wordBreak: "break-all",
   },
 
+  fileSize: {
+    fontSize: "11px",
+    color: "#64748b",
+    marginTop: "4px",
+  },
+
   fileButton: {
     padding: "8px 14px",
     borderRadius: "8px",
@@ -838,6 +1168,7 @@ const styles = {
     background: "#f8fafc",
     color: "#64748b",
     fontSize: "14px",
+    textAlign: "center",
   },
 
   statGrid: {
@@ -877,6 +1208,7 @@ const styles = {
     padding: "10px",
     borderRadius: "10px",
     background: "#f8fafc",
+    transition: "background 0.2s",
   },
 
   relatedIcon: {

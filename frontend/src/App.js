@@ -229,6 +229,7 @@ import RepositoryCurationSubmissionsPage from "./pages/repository/RepositoryCura
 import RepositoryReadySubmissionsPage from "./pages/repository/RepositoryReadySubmissionsPage.jsx";
 import RepositoryApprovedSubmissionsPage from "./pages/repository/RepositoryApprovedSubmissionsPage.jsx";
 import RepositoryRejectedSubmissionsPage from "./pages/repository/RepositoryRejectedSubmissionsPage.jsx";
+import RepositoryItemDetail from "./landing/pages/RepositoryItemDetail.jsx";
 
 function App() {
   return (
@@ -254,7 +255,7 @@ function App() {
 
         {/* Public Repository Routes */}
         <Route path="/repository/public" element={<PublicRepository />} />
-        <Route path="/repository/item/:uuid" element={<PublicRepositoryDetail />} />
+        <Route path="/repository/item/:uuid" element={<RepositoryItemDetail />} />
         <Route path="/public/login" element={<PublicLogin />} />
         <Route path="/register" element={<PublicRegister />} />
         {/* repository/submissions/pending */}
