@@ -16,9 +16,9 @@ import {
   getArticleRevisions,
   getWikiStatistics,
   getPopularArticles as getPopularArticlesModel,
-  getRecentArticles as getRecentArticlesModel  // FIXED: renamed import
+  getRecentArticles as getRecentArticlesModel,
+  getRecentChanges,
 } from "../models/wikiArticle.model.js";
-
 // ============================================
 // EXISTING FUNCTIONS
 // ============================================
@@ -369,22 +369,22 @@ export const getRevisions = async (req, res) => {
     });
   }
 };
-
 export const getPopularArticles = async (req, res) => {
   try {
-    const limit = req.query.limit ? parseInt(req.query.limit) : 6;
-    
-    const articles = await getPopularArticlesModel(limit);
+    const limit = req.query.limit ? parseInt(req.query.limit, 10) : 10;
+    const status = req.query.status || null;
+
+    const articles = await getPopularArticlesModel(limit, status);
 
     res.json({
       success: true,
-      data: articles
+      data: articles,
     });
   } catch (error) {
     console.error("❌ Get popular articles error:", error);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to get popular articles"
+      message: error.message || "Failed to get popular articles",
     });
   }
 };
@@ -1460,6 +1460,37 @@ export const getVandalismReports = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || "Failed to fetch reports"
+    });
+  }
+};
+export const getRecentChangesHandler = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      user,
+      articleId,
+      changeType,
+    } = req.query;
+
+    const filters = {
+      user,
+      articleId,
+      changeType,
+    };
+
+    const result = await getRecentChanges(filters, Number(page), Number(limit));
+
+    res.json({
+      success: true,
+      data: result.data,
+      pagination: result.pagination,
+    });
+  } catch (error) {
+    console.error("❌ Get recent changes error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to get recent changes",
     });
   }
 };

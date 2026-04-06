@@ -330,21 +330,24 @@ export const getUserStats = async () => {
 };
 
 // Get popular articles
-export const getPopularArticles = async (limit = 6) => {
+// Get popular articles
+export const getPopularArticles = async (params = {}) => {
   try {
     const API = getAPI();
-    const response = await API.get(`/popular?limit=${limit}`);
-    
-    if (response.data.success) {
+    const response = await API.get("/popular", {
+      params,
+    });
+
+    if (response?.data?.success) {
       return {
         success: true,
-        data: response.data.data
+        data: response.data.data || [],
       };
     }
-    
+
     return {
       success: false,
-      data: []
+      data: [],
     };
   } catch (error) {
     console.error("Error fetching popular articles:", error);
@@ -352,6 +355,30 @@ export const getPopularArticles = async (limit = 6) => {
   }
 };
 
+// Get recent changes
+export const getRecentChanges = async (params = {}) => {
+  try {
+    const API = getAPI();
+    const response = await API.get("/recent-changes", {
+      params,
+    });
+
+    if (response?.data?.success) {
+      return {
+        success: true,
+        data: response.data.data || [],
+      };
+    }
+
+    return {
+      success: false,
+      data: [],
+    };
+  } catch (error) {
+    console.error("Error fetching recent changes:", error);
+    throw error;
+  }
+};
 // Get recent articles
 export const getRecentArticles = async (limit = 6) => {
   try {
@@ -427,3 +454,6 @@ export const searchArticles = async (query, params = {}) => {
     throw error;
   }
 };
+
+
+

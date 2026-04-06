@@ -300,7 +300,7 @@ export const ebookWorkflowService = {
 async getWorkflow(submissionId) {
   console.log("Submission ID:", submissionId);
 
-  const submissionRes = await ool.query(
+  const submissionRes = await pool.query(
   `SELECT 
       era.*, 
       u.full_name AS reviewer_name, 

@@ -33,7 +33,6 @@ export function buildWikiRoutes(ROLES) {
         { name: "All Categories", path: "/wiki/categories", icon: "fas fa-list" },
         { name: "Create Category", path: "/wiki/categories/create", icon: "fas fa-plus" },
         { name: "All Users", path: "/wiki/users", icon: "fas fa-user" },
-        { name: "Roles", path: "/wiki/roles", icon: "fas fa-user-tag" },
         { name: "Settings", path: "/wiki/settings", icon: "fas fa-cogs" },
         { name: "Reports", path: "/wiki/reports", icon: "fas fa-chart-bar" },
       ],
@@ -84,6 +83,7 @@ export function buildWikiRoutes(ROLES) {
       icon: "fas fa-chart-bar",
       roles: [WM, BUR],
     },
+
     /* ================= Author ================= */
     {
       name: "Author",
@@ -107,6 +107,45 @@ export function buildWikiRoutes(ROLES) {
         { name: "Drafts", path: "/wiki/articles/drafts", icon: "fas fa-edit" },
       ],
     },
+
+    /* ================= Global Governance ================= */
+{
+  name: "Global Governance",
+  icon: "fas fa-globe",
+  roles: [BUR],
+  subMenu: [
+    {
+      name: "Dashboard",
+      path: "/wiki/global-governance/dashboard",
+      icon: "fas fa-globe",
+    },
+    {
+      name: "Role Management",
+      path: "/wiki/global-governance/role-management",
+      icon: "fas fa-user-shield",
+    },
+    {
+      name: "Global Actions",
+      path: "/wiki/global-governance/global-actions",
+      icon: "fas fa-user-lock",
+    },
+    {
+      name: "Community Policies",
+      path: "/wiki/global-governance/community-policies",
+      icon: "fas fa-balance-scale",
+    },
+    {
+      name: "Review Queue",
+      path: "/wiki/global-governance/review-queue",
+      icon: "fas fa-tasks",
+    },
+    {
+      name: "Activity Logs",
+      path: "/wiki/global-governance/activity-logs",
+      icon: "fas fa-history",
+    },
+  ],
+},
 
     /* ================= Publisher ================= */
     {
@@ -149,5 +188,6 @@ export function buildWikiRoutes(ROLES) {
         { name: "My Profile", path: "/wiki/profile", icon: "fas fa-user" },
       ],
     },
+    
   ];
 }

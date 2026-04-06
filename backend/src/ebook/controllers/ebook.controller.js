@@ -158,16 +158,39 @@ export const ebookSubmissionController = {
   }),
 
  workflow: asyncHandler(async (req, res) => {
-  // The route parameter is 'uuid', not 'id'
-  const submissionId = req.params.uuid || req.params.id;
-  
+  const submissionId = req.params.id || req.params.uuid;
+
   if (!submissionId) {
     const error = new Error("Submission ID is required");
     error.status = 400;
     throw error;
   }
-  
-  res.json(await ebookWorkflowService.getWorkflow(submissionId));
+
+  const result = await ebookWorkflowService.getWorkflow(submissionId);
+
+  // normalize response so frontend always gets the same shape
+  if (result?.submission) {
+    return res.json({
+      submission: result.submission || null,
+      files: Array.isArray(result.files) ? result.files : [],
+      history: Array.isArray(result.history) ? result.history : [],
+      finance: result.finance || null,
+      production: result.production || null,
+      reviews: Array.isArray(result.reviews) ? result.reviews : [],
+      assignments: Array.isArray(result.assignments) ? result.assignments : [],
+    });
+  }
+
+  // fallback in case service returns flat row
+  return res.json({
+    submission: result || null,
+    files: Array.isArray(result?.files) ? result.files : [],
+    history: Array.isArray(result?.history) ? result.history : [],
+    finance: result?.finance || null,
+    production: result?.production || null,
+    reviews: Array.isArray(result?.reviews) ? result.reviews : [],
+    assignments: Array.isArray(result?.assignments) ? result.assignments : [],
+  });
 }),
 
   submit: asyncHandler(async (req, res) => {

@@ -1,0 +1,89 @@
+.public-search-page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: auto;
+}
+
+/* Search Bar */
+.search-box {
+  display: grid;
+  grid-template-columns: 1fr 160px 120px 120px;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.search-box input,
+.search-box select {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+}
+
+.search-box button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.search-box button:hover {
+  background: #1e40af;
+}
+
+/* Results */
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.repo-card {
+  background: white;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+.repo-card h3 {
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+.repo-card .author {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.repo-card .abstract {
+  font-size: 14px;
+  margin: 10px 0;
+}
+
+.repo-card .meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.view-btn {
+  display: inline-block;
+  margin-top: 12px;
+  color: #2563eb;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+/* States */
+.no-data {
+  text-align: center;
+  padding: 80px 20px;
+  color: #6b7280;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px;
+}

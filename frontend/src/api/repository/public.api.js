@@ -1,16 +1,14 @@
 // src/api/repository/public.api.js
 import axios from "axios";
 
-/* ================= AXIOS INSTANCE ================= */
 const API = axios.create({
   baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000/api",
-  timeout: 15000, // 15 seconds timeout
+  timeout: 15000,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-/* ================= GLOBAL ERROR HANDLER ================= */
 const handleError = (error) => {
   if (error.response) {
     console.error("API Error:", error.response.data);
@@ -34,17 +32,18 @@ const handleError = (error) => {
   });
 };
 
-/* ================= PUBLICATION API ================= */
 export const publicationAPI = {
-  /* ===== Get All Published Manuscripts ===== */
-  getPublishedManuscripts: async (page = 1, limit = 6, search = "") => {
+  searchPublicItems: async (
+    query = "",
+    page = 1,
+    limit = 10,
+    item_type = "all",
+    year = "all",
+    sort = "recent"
+  ) => {
     try {
-      const response = await API.get("/publications/manuscripts", {
-        params: {
-          page,
-          limit,
-          ...(search && { search }),
-        },
+      const response = await API.get("/repository/public/search", {
+        params: { query, page, limit, item_type, year, sort },
       });
       return response.data;
     } catch (error) {
@@ -52,20 +51,18 @@ export const publicationAPI = {
     }
   },
 
-  /* ===== Get Single Manuscript ===== */
-  getManuscriptById: async (id) => {
+  getPublicItem: async (uuid) => {
     try {
-      const response = await API.get(`/publications/manuscripts/${id}`);
+      const response = await API.get(`/repository/public/item/${uuid}`);
       return response.data;
     } catch (error) {
       return handleError(error);
     }
   },
 
-  /* ===== Get Recent Manuscripts ===== */
-  getRecentManuscripts: async (limit = 5) => {
+  getRecentItems: async (limit = 5) => {
     try {
-      const response = await API.get("/publications/manuscripts/recent", {
+      const response = await API.get("/repository/public/recent", {
         params: { limit },
       });
       return response.data;
@@ -74,74 +71,102 @@ export const publicationAPI = {
     }
   },
 
-  /* ===== Get Journal Stats ===== */
-  getJournalStats: async () => {
+  getRepositoryStats: async () => {
     try {
-      const response = await API.get("/publications/stats");
+      const response = await API.get("/repository/public/stats");
       return response.data;
     } catch (error) {
       return handleError(error);
     }
   },
 
-  /* ===== Search Public Items ===== */
-  searchPublicItems: async (query = "", page = 1, limit = 10) => {
+  trackView: async (uuid) => {
     try {
-      const response = await API.get("/publications/search", {
-        params: { q: query, page, limit },
+      const response = await API.post(`/repository/public/item/${uuid}/view`);
+      return response.data;
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+
+  trackDownload: async (uuid) => {
+    try {
+      const response = await API.post(`/repository/public/item/${uuid}/download`);
+      return response.data;
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+
+  rateItem: async (uuid, rating) => {
+    try {
+      const response = await API.post(`/repository/public/item/${uuid}/rate`, {
+        rating,
       });
-      return response.data;
-    } catch (error) {
-      return handleError(error);
-    }
-  },
-
-  /* ===== Track Manuscript View ===== */
-  trackView: async (manuscriptId) => {
-    try {
-      const response = await API.post(
-        `/publications/manuscripts/${manuscriptId}/view`
-      );
-      return response.data;
-    } catch (error) {
-      return handleError(error);
-    }
-  },
-
-  /* ===== Track Manuscript Download ===== */
-  trackDownload: async (manuscriptId) => {
-    try {
-      const response = await API.post(
-        `/publications/manuscripts/${manuscriptId}/download`
-      );
-      return response.data;
-    } catch (error) {
-      return handleError(error);
-    }
-  },
-
-  /* ===== Get Related Articles ===== */
-  getRelatedArticles: async (category, currentId, limit = 3) => {
-    try {
-      const response = await API.get("/publications/manuscripts/related", {
-        params: { category, currentId, limit },
-      });
-      return response.data;
-    } catch (error) {
-      return handleError(error);
-    }
-  },
-
-  /* ===== Download Manuscript File ===== */
-  downloadFile: async (fileId) => {
-    try {
-      const response = await API.get(
-        `/publications/files/${fileId}/download`,
-        { responseType: "blob" }
-      );
       return response.data;
     } catch (error) {
       return handleError(error);
     }
   },
 };
+
+/* optional direct helper exports */
+export const getPublicItem = async (uuid) => {
+  try {
+    const response = await API.get(`/repository/public/item/${uuid}`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const trackView = async (uuid) => {
+  try {
+    const response = await API.post(`/repository/public/item/${uuid}/view`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const trackDownload = async (uuid) => {
+  try {
+    const response = await API.post(`/repository/public/item/${uuid}/download`);
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const rateItem = async (uuid, rating) => {
+  try {
+    const response = await API.post(`/repository/public/item/${uuid}/rate`, {
+      rating,
+    });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const getPublicStats = async () => {
+  try {
+    const response = await API.get("/repository/public/stats");
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const getRecentPublicItems = async (limit = 5) => {
+  try {
+    const response = await API.get("/repository/public/recent", {
+      params: { limit },
+    });
+    return response.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export default publicationAPI;

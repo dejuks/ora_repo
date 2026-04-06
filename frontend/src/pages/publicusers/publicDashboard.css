@@ -1,0 +1,108 @@
+.public-dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+/* SIDEBAR */
+.public-sidebar {
+  width: 240px;
+  background: #020617;
+  color: #fff;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.public-sidebar .brand {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 30px;
+}
+
+.public-sidebar nav button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  color: #e5e7eb;
+  padding: 12px;
+  width: 100%;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.public-sidebar nav button:hover {
+  background: #1e293b;
+}
+
+.logout-btn {
+  margin-top: auto;
+  background: #dc2626;
+  border: none;
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* CONTENT */
+.public-content {
+  flex: 1;
+  padding: 40px;
+}
+
+.public-content h1 {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  color: #6b7280;
+  margin-bottom: 30px;
+}
+
+/* ACTIONS */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.action-card {
+  background: white;
+  padding: 24px;
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.06);
+  transition: all 0.2s ease;
+}
+
+.action-card:hover {
+  transform: translateY(-4px);
+}
+
+.action-card .icon {
+  font-size: 28px;
+  color: #2563eb;
+  margin-bottom: 10px;
+}
+
+.action-card h4 {
+  margin-bottom: 6px;
+}
+
+.action-card p {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* EMPTY */
+.empty-box {
+  margin-top: 40px;
+  background: white;
+  padding: 24px;
+  border-radius: 14px;
+  color: #6b7280;
+}

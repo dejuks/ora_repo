@@ -1,0 +1,13 @@
+Role-separated user entry pages now available:
+- /ebook/workflow-overview
+- /ebook/my-submissions
+- /ebook/my-revisions
+- /ebook/my-payments
+- /ebook/my-proofs
+- /ebook/editor/screening
+- /ebook/editor/reviews
+- /ebook/editor/handoff
+- /ebook/reviewer
+- /ebook/finance
+- /ebook/production
+- /ebook/admin

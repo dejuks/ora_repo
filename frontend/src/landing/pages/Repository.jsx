@@ -1,5 +1,4 @@
-// src/landing/pages/Repository.jsx
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { publicationAPI } from "../../api/repository/public.api";
@@ -21,159 +20,210 @@ export default function RepositoryPage() {
     stats: true,
   });
 
-  // Fetch initial data
   useEffect(() => {
     fetchFeaturedItems();
     fetchCategories();
     fetchStats();
   }, []);
 
-  // Search with debounce
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
-      if (searchQuery.trim().length > 2) handleSearch();
-      else if (searchQuery.trim().length === 0) setSearchResults([]);
+      if (searchQuery.trim().length > 2) {
+        handleSearch();
+      } else if (searchQuery.trim().length === 0) {
+        setSearchResults([]);
+      }
     }, 500);
+
     return () => clearTimeout(delayDebounce);
   }, [searchQuery]);
 
-  // Fetch featured items
   const fetchFeaturedItems = async () => {
     try {
       setLoading((prev) => ({ ...prev, featured: true }));
-      const res = await publicationAPI.getPublishedManuscripts(1, 4, "");
-      setFeaturedItems(res.items || []);
+      const res = await publicationAPI.getRecentItems(4);
+      setFeaturedItems(Array.isArray(res?.items) ? res.items : []);
     } catch (err) {
-      console.error(err);
+      console.error("fetchFeaturedItems error:", err);
       setFeaturedItems([]);
     } finally {
       setLoading((prev) => ({ ...prev, featured: false }));
     }
   };
 
-  // Fetch categories (group by category)
   const fetchCategories = async () => {
     try {
       setLoading((prev) => ({ ...prev, categories: true }));
-      const res = await publicationAPI.getPublishedManuscripts(1, 100);
+      const res = await publicationAPI.searchPublicItems("", 1, 100, "all", "all", "recent");
       const categoryMap = new Map();
-      (res.items || []).forEach((item) => {
-        const cat = item.category || "Uncategorized";
-        if (!categoryMap.has(cat)) categoryMap.set(cat, { name: cat, count: 0, icon: getCategoryIcon(cat), color: getCategoryColor(cat) });
-        categoryMap.get(cat).count++;
+
+      (res?.items || []).forEach((item) => {
+        const cat = item.item_type || "Uncategorized";
+        if (!categoryMap.has(cat)) {
+          categoryMap.set(cat, {
+            name: cat,
+            count: 0,
+            icon: getCategoryIcon(cat),
+            color: getCategoryColor(cat),
+          });
+        }
+        categoryMap.get(cat).count += 1;
       });
+
       setCategories(Array.from(categoryMap.values()));
     } catch (err) {
-      console.error(err);
+      console.error("fetchCategories error:", err);
       setCategories([]);
     } finally {
       setLoading((prev) => ({ ...prev, categories: false }));
     }
   };
 
-  // Fetch stats
   const fetchStats = async () => {
     try {
       setLoading((prev) => ({ ...prev, stats: true }));
-      const res = await publicationAPI.getJournalStats();
+      const res = await publicationAPI.getRepositoryStats();
       setStats({
-        totalItems: res.totalItems || 0,
-        totalDownloads: res.totalDownloads || 0,
-        totalContributors: res.totalContributors || 0,
+        totalItems: res?.totalItems || 0,
+        totalDownloads: res?.totalDownloads || 0,
+        totalContributors: res?.totalContributors || 0,
       });
     } catch (err) {
-      console.error(err);
+      console.error("fetchStats error:", err);
+      setStats({
+        totalItems: 0,
+        totalDownloads: 0,
+        totalContributors: 0,
+      });
     } finally {
       setLoading((prev) => ({ ...prev, stats: false }));
     }
   };
 
-  // Handle search
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
+
     setIsSearching(true);
     try {
-      const res = await publicationAPI.searchPublicItems(searchQuery);
-      setSearchResults(res.items || []);
+      const res = await publicationAPI.searchPublicItems(searchQuery, 1, 10, "all", "all", "recent");
+      setSearchResults(Array.isArray(res?.items) ? res.items : []);
     } catch (err) {
-      console.error(err);
+      console.error("handleSearch error:", err);
       setSearchResults([]);
     } finally {
       setIsSearching(false);
     }
   };
 
-  // Track view
   const handleItemClick = async (uuid) => {
-    try { await publicationAPI.trackView(uuid); } 
-    catch (err) { console.error(err); }
+    try {
+      await publicationAPI.trackView(uuid);
+    } catch (err) {
+      console.error("trackView error:", err);
+    }
   };
 
-  // Track download
   const handleDownload = async (uuid, e) => {
     e.preventDefault();
     e.stopPropagation();
-    try { 
-      await publicationAPI.trackDownload(uuid); 
-      window.open(`/api/repository/public/item/${uuid}/download`, "_blank");
-    } catch (err) { console.error(err); }
+
+    try {
+      await publicationAPI.trackDownload(uuid);
+      window.open(
+        `${process.env.REACT_APP_API_URL || "http://localhost:5000/api"}/repository/public/item/${uuid}/download`,
+        "_blank"
+      );
+    } catch (err) {
+      console.error("trackDownload error:", err);
+    }
   };
 
-  // Helpers
   const formatNumber = (num) => {
     if (!num) return "0";
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
-    if (num >= 1000) return (num / 1000).toFixed(1) + "K";
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
   };
 
+  const formatYear = (value) => {
+    if (!value) return "—";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "—";
+    return date.getFullYear();
+  };
+
+  const getItemLabel = (item) => {
+    return item?.item_type || "Repository Item";
+  };
+
+  const getAuthorLabel = (item) => {
+    return item?.author || item?.creator || item?.submitter_name || "Unknown Author";
+  };
+
   const getCategoryIcon = (category) => {
-    const icons = { 
-      "Research Papers": "📄", 
-      "Historical Documents": "📜", 
-      "Oral Histories": "🎤", 
-      "Photographs": "🖼️", 
-      "Audio Recordings": "🎵", 
-      "Videos": "🎥", 
-      Theses: "📚", 
-      Books: "📖", 
-      Articles: "📰", 
-      "Data Sets": "📊" 
+    const icons = {
+      "Journal Article": "📰",
+      Thesis: "📚",
+      Dissertation: "🎓",
+      Dataset: "📊",
+      Book: "📖",
+      "Conference Paper": "📄",
+      "Policy Paper": "📘",
+      Collection: "🗂️",
+      Report: "📑",
+      Manuscript: "📝",
+      "Research Paper": "📄",
+      "Historical Document": "📜",
+      "Audio Recording": "🎵",
+      Video: "🎥",
+      Photograph: "🖼️",
     };
+
     return icons[category] || "📁";
   };
 
   const getCategoryColor = (category) => {
-    const colors = { 
-      "Research Papers": "#C9A227", 
-      "Historical Documents": "#2E86AB", 
-      "Oral Histories": "#A569BD", 
-      Photographs: "#E67E22", 
-      "Audio Recordings": "#27AE60", 
-      Videos: "#E74C3C", 
-      Theses: "#3498DB", 
-      Books: "#F39C12", 
-      Articles: "#1ABC9C", 
-      "Data Sets": "#9B59B6" 
+    const colors = {
+      "Journal Article": "#1ABC9C",
+      Thesis: "#3498DB",
+      Dissertation: "#6C5CE7",
+      Dataset: "#9B59B6",
+      Book: "#F39C12",
+      "Conference Paper": "#2E86AB",
+      "Policy Paper": "#34495E",
+      Collection: "#16A085",
+      Report: "#E67E22",
+      Manuscript: "#C9A227",
+      "Research Paper": "#C9A227",
+      "Historical Document": "#2E86AB",
+      "Audio Recording": "#27AE60",
+      Video: "#E74C3C",
+      Photograph: "#E67E22",
     };
+
     return colors[category] || "#95A5A6";
   };
+
+  const hasSearchResults = useMemo(
+    () => Array.isArray(searchResults) && searchResults.length > 0,
+    [searchResults]
+  );
 
   return (
     <>
       <Navbar />
+
       <div style={styles.container}>
-        {/* Hero Section with Animated Background */}
         <section style={styles.hero}>
           <div style={styles.heroOverlay}>
             <div style={styles.animatedGrid}></div>
             <div style={styles.floatingOrbs}>
-              <div style={{...styles.orb, ...styles.orb1}}></div>
-              <div style={{...styles.orb, ...styles.orb2}}></div>
-              <div style={{...styles.orb, ...styles.orb3}}></div>
+              <div style={{ ...styles.orb, ...styles.orb1 }}></div>
+              <div style={{ ...styles.orb, ...styles.orb2 }}></div>
+              <div style={{ ...styles.orb, ...styles.orb3 }}></div>
             </div>
           </div>
-          
+
           <div style={styles.heroContent}>
             <div style={styles.badgeWrapper}>
               <span style={styles.badge}>
@@ -181,65 +231,69 @@ export default function RepositoryPage() {
                 Digital Repository
               </span>
             </div>
-            
+
             <h1 style={styles.title}>
-              Oromo Knowledge{' '}
-              <span style={styles.gradientText}>Archive</span>
+              Oromo Knowledge <span style={styles.gradientText}>Archive</span>
             </h1>
-            
+
             <p style={styles.subtitle}>
-              Preserving Oromo cultural heritage, historical documents, 
-              and academic research for generations to come
+              Preserving Oromo cultural heritage, historical documents, and academic
+              research for generations to come
             </p>
-            
-            {/* Enhanced Search */}
+
             <div style={styles.searchWrapper}>
               <div style={styles.searchContainer}>
                 <span style={styles.searchIcon}>🔍</span>
                 <input
                   type="text"
-                  placeholder="Search manuscripts, documents, audio recordings..."
+                  placeholder="Search articles, theses, datasets, reports..."
                   style={styles.searchInput}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 {isSearching && <div style={styles.searchSpinner}></div>}
               </div>
-              <button 
-                style={styles.searchButton} 
-                onClick={handleSearch} 
+
+              <button
+                style={styles.searchButton}
+                onClick={handleSearch}
                 disabled={isSearching}
+                className="search-button"
               >
-                {isSearching ? 'Searching...' : 'Search Repository'}
+                {isSearching ? "Searching..." : "Search Repository"}
               </button>
             </div>
 
-            {/* Search Results Dropdown */}
-            {searchResults.length > 0 && (
+            {hasSearchResults && (
               <div style={styles.searchResults}>
                 <div style={styles.resultsHeader}>
                   <span>Search Results</span>
                   <span style={styles.resultCount}>{searchResults.length} items</span>
                 </div>
+
                 {searchResults.map((item) => (
-                  <Link 
-                    key={item.uuid} 
-                    to={`/repository/item/${item.uuid}`} 
+                  <Link
+                    key={item.uuid}
+                    to={`/repository/item/${item.uuid}`}
                     style={styles.searchResultItem}
+                    className="search-result-item"
                     onClick={() => handleItemClick(item.uuid)}
                   >
-                    <div style={{
-                      ...styles.resultIcon,
-                      backgroundColor: `${getCategoryColor(item.category)}15`,
-                      color: getCategoryColor(item.category)
-                    }}>
-                      {getCategoryIcon(item.category)}
+                    <div
+                      style={{
+                        ...styles.resultIcon,
+                        backgroundColor: `${getCategoryColor(getItemLabel(item))}15`,
+                        color: getCategoryColor(getItemLabel(item)),
+                      }}
+                    >
+                      {getCategoryIcon(getItemLabel(item))}
                     </div>
+
                     <div style={styles.resultInfo}>
                       <div style={styles.resultTitle}>{item.title}</div>
                       <div style={styles.resultMeta}>
-                        <span>{item.author}</span>
-                        <span>• {item.year}</span>
+                        <span>{getAuthorLabel(item)}</span>
+                        <span>• {formatYear(item.created_at)}</span>
                         <span>• ⬇️ {formatNumber(item.downloads)}</span>
                       </div>
                     </div>
@@ -248,65 +302,79 @@ export default function RepositoryPage() {
               </div>
             )}
 
-            {/* Stats with Animation */}
             <div style={styles.statsContainer}>
               <div style={styles.statItem}>
-                <div style={styles.statValue}>{formatNumber(stats.totalItems)}</div>
+                <div style={styles.statValue} className="stat-value">
+                  {loading.stats ? "..." : formatNumber(stats.totalItems)}
+                </div>
                 <div style={styles.statLabel}>Items</div>
               </div>
+
               <div style={styles.statDivider}></div>
+
               <div style={styles.statItem}>
-                <div style={styles.statValue}>{formatNumber(stats.totalDownloads)}</div>
+                <div style={styles.statValue} className="stat-value">
+                  {loading.stats ? "..." : formatNumber(stats.totalDownloads)}
+                </div>
                 <div style={styles.statLabel}>Downloads</div>
               </div>
+
               <div style={styles.statDivider}></div>
+
               <div style={styles.statItem}>
-                <div style={styles.statValue}>{formatNumber(stats.totalContributors)}</div>
+                <div style={styles.statValue} className="stat-value">
+                  {loading.stats ? "..." : formatNumber(stats.totalContributors)}
+                </div>
                 <div style={styles.statLabel}>Contributors</div>
               </div>
             </div>
           </div>
-          
+
           <div style={styles.scrollIndicator}>
             <span style={styles.scrollText}>Scroll to explore</span>
             <div style={styles.scrollArrow}>↓</div>
           </div>
         </section>
 
-        {/* Categories Section */}
         <section style={styles.categoriesSection}>
           <div style={styles.sectionHeader}>
             <h2 style={styles.sectionTitle}>
               Browse by <span style={styles.gradientText}>Category</span>
             </h2>
             <p style={styles.sectionSubtitle}>
-              Discover materials organized by type and topic
+              Discover materials organized by repository item type
             </p>
           </div>
-          
+
           <div style={styles.categoriesGrid}>
-            {categories.map((cat, index) => (
-              <Link 
-                key={cat.name} 
-                to={`/repository/category/${encodeURIComponent(cat.name)}`} 
+            {categories.map((cat) => (
+              <Link
+                key={cat.name}
+                to={`/repository/category/${encodeURIComponent(cat.name)}`}
                 style={styles.categoryCard}
                 className="category-card"
               >
                 <div style={styles.categoryCardInner}>
-                  <div style={{
-                    ...styles.categoryIconWrapper,
-                    backgroundColor: `${cat.color}15`,
-                    color: cat.color
-                  }}>
+                  <div
+                    style={{
+                      ...styles.categoryIconWrapper,
+                      backgroundColor: `${cat.color}15`,
+                      color: cat.color,
+                    }}
+                    className="category-icon-wrapper"
+                  >
                     <span style={styles.categoryIcon}>{cat.icon}</span>
-                    <div style={{
-                      ...styles.categoryIconGlow,
-                      backgroundColor: cat.color
-                    }}></div>
+                    <div
+                      style={{
+                        ...styles.categoryIconGlow,
+                        backgroundColor: cat.color,
+                      }}
+                    ></div>
                   </div>
+
                   <h3 style={styles.categoryName}>{cat.name}</h3>
                   <p style={styles.categoryCount}>
-                    {formatNumber(cat.count)} {cat.count === 1 ? 'item' : 'items'}
+                    {formatNumber(cat.count)} {cat.count === 1 ? "item" : "items"}
                   </p>
                   <div style={styles.categoryArrow}>→</div>
                 </div>
@@ -315,51 +383,55 @@ export default function RepositoryPage() {
           </div>
         </section>
 
-        {/* Featured Items Section */}
         <section style={styles.featuredSection}>
           <div style={styles.sectionHeader}>
             <h2 style={styles.sectionTitle}>
               Featured <span style={styles.gradientText}>Items</span>
             </h2>
             <p style={styles.sectionSubtitle}>
-              Most popular and recently added materials
+              Most recent publicly available repository materials
             </p>
           </div>
-          
+
           <div style={styles.featuredGrid}>
-            {featuredItems.map((item, index) => (
-              <Link 
-                key={item.uuid} 
-                to={`/repository/item/${item.uuid}`} 
+            {featuredItems.map((item) => (
+              <Link
+                key={item.uuid}
+                to={`/repository/item/${item.uuid}`}
                 style={styles.featuredCard}
                 className="featured-card"
                 onClick={() => handleItemClick(item.uuid)}
               >
                 <div style={styles.featuredCardHeader}>
-                  <div style={{
-                    ...styles.featuredIcon,
-                    backgroundColor: `${getCategoryColor(item.category)}15`,
-                    color: getCategoryColor(item.category)
-                  }}>
-                    {getCategoryIcon(item.category)}
+                  <div
+                    style={{
+                      ...styles.featuredIcon,
+                      backgroundColor: `${getCategoryColor(getItemLabel(item))}15`,
+                      color: getCategoryColor(getItemLabel(item)),
+                    }}
+                  >
+                    {getCategoryIcon(getItemLabel(item))}
                   </div>
+
                   <span style={styles.featuredBadge}>Featured</span>
                 </div>
-                
+
                 <h3 style={styles.featuredTitle}>{item.title}</h3>
-                <p style={styles.featuredAuthor}>by {item.author}</p>
-                
+                <p style={styles.featuredAuthor}>by {getAuthorLabel(item)}</p>
+
                 <div style={styles.featuredFooter}>
                   <div style={styles.featuredStats}>
                     <span style={styles.featuredDownloads}>
                       ⬇️ {formatNumber(item.downloads)}
                     </span>
-                    {item.year && (
-                      <span style={styles.featuredYear}>{item.year}</span>
-                    )}
+                    <span style={styles.featuredYear}>
+                      {formatYear(item.created_at)}
+                    </span>
                   </div>
-                  <button 
+
+                  <button
                     style={styles.featuredDownloadBtn}
+                    className="featured-download-btn"
                     onClick={(e) => handleDownload(item.uuid, e)}
                   >
                     Download
@@ -368,7 +440,7 @@ export default function RepositoryPage() {
               </Link>
             ))}
           </div>
-          
+
           <div style={styles.viewAllContainer}>
             <Link to="/repository/browse" style={styles.viewAllLink}>
               View All Items <span style={styles.viewAllArrow}>→</span>
@@ -376,22 +448,21 @@ export default function RepositoryPage() {
           </div>
         </section>
 
-        {/* Contribute CTA Section */}
         <section style={styles.contributeSection}>
           <div style={styles.contributeBackground}>
             <div style={styles.contributePattern}></div>
           </div>
-          
+
           <div style={styles.contributeContent}>
             <div style={styles.contributeBadge}>✨ Share Your Knowledge</div>
             <h2 style={styles.contributeTitle}>
               Contribute to the <span style={styles.gradientText}>Archive</span>
             </h2>
             <p style={styles.contributeText}>
-              Help preserve Oromo heritage by sharing your materials, 
-              research, and cultural artifacts with our community
+              Help preserve Oromo heritage by sharing your materials, research,
+              and cultural artifacts with our community
             </p>
-            
+
             <div style={styles.contributeFeatures}>
               <div style={styles.featureItem}>
                 <span style={styles.featureIcon}>📝</span>
@@ -410,20 +481,20 @@ export default function RepositoryPage() {
                 <span>Historical Docs</span>
               </div>
             </div>
-            
+
             <div style={styles.contributeButtons}>
-              <Link to="/repository/author/create" style={styles.primaryButton}>
+              <Link to="/repository/author/create" style={styles.primaryButton} className="primary-button">
                 Start Contributing
-                <span style={styles.buttonArrow}>→</span>
+                <span style={styles.buttonArrow} className="button-arrow">→</span>
               </Link>
-              <Link to="/repository/guidelines" style={styles.secondaryButton}>
+
+              <Link to="/repository/guidelines" style={styles.secondaryButton} className="secondary-button">
                 Learn More
               </Link>
             </div>
           </div>
         </section>
 
-        {/* Footer */}
         <footer style={styles.footer}>
           <div style={styles.footerContent}>
             <div style={styles.footerLogo}>
@@ -431,110 +502,124 @@ export default function RepositoryPage() {
               <span style={styles.footerLogoText}>Oromo Knowledge Archive</span>
             </div>
             <p style={styles.footerCopyright}>
-              © {new Date().getFullYear()} Oromo Researcher Association. 
-              All rights reserved.
+              © {new Date().getFullYear()} Oromo Researcher Association. All rights reserved.
             </p>
           </div>
         </footer>
       </div>
-      
-      {/* Add dynamic styles */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-20px) rotate(5deg); }
-        }
-        
-        @keyframes pulse {
-          0%, 100% { opacity: 0.5; transform: scale(1); }
-          50% { opacity: 0.8; transform: scale(1.05); }
-        }
-        
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-        
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .category-card, .featured-card {
-          transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        
-        .category-card:hover {
-          transform: translateY(-8px) scale(1.02);
-          box-shadow: 0 20px 30px -10px rgba(0,0,0,0.15);
-        }
-        
-        .category-card:hover .category-icon-wrapper {
-          transform: scale(1.1);
-        }
-        
-        .featured-card:hover {
-          transform: translateY(-10px);
-          box-shadow: 0 30px 40px -15px rgba(0,0,0,0.2);
-        }
-        
-        .search-result-item:hover {
-          background: linear-gradient(90deg, #f8f9fa 0%, #ffffff 100%);
-          border-left-color: #C9A227;
-        }
-        
-        .search-button:not(:disabled):hover {
-          transform: translateY(-2px);
-          box-shadow: 0 10px 20px -5px rgba(201, 162, 39, 0.3);
-        }
-        
-        .featured-download-btn:hover {
-          background: #C9A227;
-          color: white;
-        }
-        
-        .primary-button:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 15px 25px -5px rgba(201, 162, 39, 0.4);
-        }
-        
-        .primary-button:hover .button-arrow {
-          transform: translateX(5px);
-        }
-        
-        .secondary-button:hover {
-          background: rgba(255,255,255,0.15);
-        }
-        
-        .stat-value {
-          animation: fadeInUp 0.6s ease-out;
-        }
-        
-        @media (prefers-reduced-motion: reduce) {
-          * {
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
-          }
-        }
-      ` }} />
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes float {
+              0%, 100% { transform: translateY(0px) rotate(0deg); }
+              50% { transform: translateY(-20px) rotate(5deg); }
+            }
+
+            @keyframes pulse {
+              0%, 100% { opacity: 0.5; transform: scale(1); }
+              50% { opacity: 0.8; transform: scale(1.05); }
+            }
+
+            @keyframes slideIn {
+              from {
+                opacity: 0;
+                transform: translateY(20px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+
+            @keyframes fadeInUp {
+              from {
+                opacity: 0;
+                transform: translateY(30px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+
+            @keyframes spin {
+              0% { transform: translateY(-50%) rotate(0deg); }
+              100% { transform: translateY(-50%) rotate(360deg); }
+            }
+
+            @keyframes bounce {
+              0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+              40% { transform: translateY(-10px); }
+              60% { transform: translateY(-5px); }
+            }
+
+            .category-card, .featured-card {
+              transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            }
+
+            .category-card:hover {
+              transform: translateY(-8px) scale(1.02);
+              box-shadow: 0 20px 30px -10px rgba(0,0,0,0.15);
+            }
+
+            .category-card:hover .category-icon-wrapper {
+              transform: scale(1.1);
+            }
+
+            .featured-card:hover {
+              transform: translateY(-10px);
+              box-shadow: 0 30px 40px -15px rgba(0,0,0,0.2);
+            }
+
+            .search-result-item:hover {
+              background: linear-gradient(90deg, #f8f9fa 0%, #ffffff 100%);
+              border-left-color: #C9A227;
+            }
+
+            .search-button:not(:disabled):hover {
+              transform: translateY(-2px);
+              box-shadow: 0 10px 20px -5px rgba(201, 162, 39, 0.3);
+            }
+
+            .featured-download-btn:hover {
+              background: #C9A227;
+              color: white;
+            }
+
+            .primary-button:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 15px 25px -5px rgba(201, 162, 39, 0.4);
+            }
+
+            .primary-button:hover .button-arrow {
+              transform: translateX(5px);
+            }
+
+            .secondary-button:hover {
+              background: rgba(255,255,255,0.15);
+            }
+
+            .stat-value {
+              animation: fadeInUp 0.6s ease-out;
+            }
+
+            @media (max-width: 768px) {
+              .repository-search-results {
+                width: 95% !important;
+              }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+              * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+              }
+            }
+          `,
+        }}
+      />
     </>
   );
 }
