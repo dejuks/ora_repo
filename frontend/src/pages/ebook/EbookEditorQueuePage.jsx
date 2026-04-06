@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import MainLayout from '../../components/layout/MainLayout.jsx';
-import ebookApi from '../../api/ebook.api';
+import ebookApi from './mock/ebookMockApi.js';
 import StatusBadge from './components/StatusBadge.jsx';
 
 const statusOptions = [

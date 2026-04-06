@@ -157,9 +157,41 @@ export const ebookSubmissionController = {
     res.json(await ebookWorkflowService.getReviewerOptions());
   }),
 
-  workflow: asyncHandler(async (req, res) => {
-    res.json(await ebookWorkflowService.getWorkflow(req.params.id));
-  }),
+ workflow: asyncHandler(async (req, res) => {
+  const submissionId = req.params.id || req.params.uuid;
+
+  if (!submissionId) {
+    const error = new Error("Submission ID is required");
+    error.status = 400;
+    throw error;
+  }
+
+  const result = await ebookWorkflowService.getWorkflow(submissionId);
+
+  // normalize response so frontend always gets the same shape
+  if (result?.submission) {
+    return res.json({
+      submission: result.submission || null,
+      files: Array.isArray(result.files) ? result.files : [],
+      history: Array.isArray(result.history) ? result.history : [],
+      finance: result.finance || null,
+      production: result.production || null,
+      reviews: Array.isArray(result.reviews) ? result.reviews : [],
+      assignments: Array.isArray(result.assignments) ? result.assignments : [],
+    });
+  }
+
+  // fallback in case service returns flat row
+  return res.json({
+    submission: result || null,
+    files: Array.isArray(result?.files) ? result.files : [],
+    history: Array.isArray(result?.history) ? result.history : [],
+    finance: result?.finance || null,
+    production: result?.production || null,
+    reviews: Array.isArray(result?.reviews) ? result.reviews : [],
+    assignments: Array.isArray(result?.assignments) ? result.assignments : [],
+  });
+}),
 
   submit: asyncHandler(async (req, res) => {
     res.json(

@@ -214,6 +214,10 @@ export default function EbookDashboard() {
               <span style={responsiveStyles.badgeDot}></span>
               Digital Library
             </span>
+            {/* start contribution link /ebook/author/register */}
+            <Link to="/ebook/author/register" style={responsiveStyles.contributeLink}>
+              Contribute an eBook
+            </Link>
             <h1 style={responsiveStyles.title}>
               Oromo <span style={responsiveStyles.gradient}>eBooks</span>
             </h1>
@@ -440,7 +444,7 @@ export default function EbookDashboard() {
           </section>
         )}
 
-        {/* Featured eBooks Section */}
+        {/* Featured eBooks Section
         {featuredEbooks.length > 0 && (
           <section style={responsiveStyles.featuredSection}>
             <div style={responsiveStyles.sectionHeader}>
@@ -478,7 +482,7 @@ export default function EbookDashboard() {
               ))}
             </div>
           </section>
-        )}
+        )} */}
 
         {/* Features Grid */}
         <section style={responsiveStyles.featuresSection}>
@@ -576,7 +580,816 @@ export default function EbookDashboard() {
   );
 }
 
-// [Keep all the responsiveStyles from your original code]
+// Responsive CSS-in-JS styles
 const responsiveStyles = {
-  // ... (keep all your existing styles from the original component)
+  // Base container
+  container: {
+    minHeight: "100vh",
+    background: "#f8fafc",
+  },
+
+  // Hero Section
+  hero: {
+    position: "relative",
+    background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+    padding: "80px 24px 120px",
+    overflow: "hidden",
+  },
+  heroOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: "radial-gradient(circle at 20% 50%, rgba(46, 134, 171, 0.15) 0%, transparent 50%)",
+  },
+  heroPattern: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+  },
+  heroContent: {
+    position: "relative",
+    maxWidth: "1200px",
+    margin: "0 auto",
+    textAlign: "center",
+    zIndex: 2,
+  },
+  badge: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+    background: "rgba(255,255,255,0.1)",
+    backdropFilter: "blur(10px)",
+    padding: "8px 16px",
+    borderRadius: "100px",
+    fontSize: "14px",
+    fontWeight: "500",
+    color: "#e2e8f0",
+    marginBottom: "24px",
+  },
+  badgeDot: {
+    width: "8px",
+    height: "8px",
+    background: "#4ECDC4",
+    borderRadius: "50%",
+    display: "inline-block",
+    animation: "pulse 2s infinite",
+  },
+  title: {
+    fontSize: "clamp(2rem, 5vw, 3.5rem)",
+    fontWeight: "800",
+    color: "#ffffff",
+    marginBottom: "16px",
+    letterSpacing: "-0.02em",
+  },
+  gradient: {
+    background: "linear-gradient(135deg, #4ECDC4, #2E86AB)",
+    WebkitBackgroundClip: "text",
+    backgroundClip: "text",
+    color: "transparent",
+  },
+  subtitle: {
+    fontSize: "clamp(1rem, 3vw, 1.25rem)",
+    color: "#cbd5e1",
+    maxWidth: "600px",
+    margin: "0 auto 32px",
+    lineHeight: "1.6",
+  },
+  searchContainer: {
+    maxWidth: "600px",
+    margin: "0 auto 32px",
+    display: "flex",
+    gap: "12px",
+    flexWrap: "wrap",
+    justifyContent: "center",
+  },
+  searchWrapper: {
+    flex: 1,
+    minWidth: "250px",
+    position: "relative",
+  },
+  searchIcon: {
+    position: "absolute",
+    left: "16px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    fontSize: "18px",
+    pointerEvents: "none",
+  },
+  searchInput: {
+    width: "100%",
+    padding: "14px 40px 14px 44px",
+    border: "none",
+    borderRadius: "12px",
+    fontSize: "16px",
+    background: "#ffffff",
+    outline: "none",
+    transition: "box-shadow 0.2s",
+  },
+  clearButton: {
+    position: "absolute",
+    right: "12px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    background: "none",
+    border: "none",
+    fontSize: "18px",
+    cursor: "pointer",
+    color: "#94a3b8",
+    padding: "4px",
+  },
+  searchButton: {
+    padding: "14px 32px",
+    background: "linear-gradient(135deg, #4ECDC4, #2E86AB)",
+    border: "none",
+    borderRadius: "12px",
+    color: "#ffffff",
+    fontWeight: "600",
+    fontSize: "16px",
+    cursor: "pointer",
+    transition: "transform 0.2s, box-shadow 0.2s",
+  },
+  mobileSearchButton: {
+    width: "100%",
+    maxWidth: "300px",
+    margin: "0 auto 24px",
+    padding: "14px 24px",
+    background: "linear-gradient(135deg, #4ECDC4, #2E86AB)",
+    border: "none",
+    borderRadius: "12px",
+    color: "#ffffff",
+    fontWeight: "600",
+    fontSize: "16px",
+    cursor: "pointer",
+  },
+  languageFiltersWrapper: {
+    display: "flex",
+    justifyContent: "center",
+    marginBottom: "40px",
+  },
+  languageFilters: {
+    display: "flex",
+    gap: "12px",
+    background: "rgba(255,255,255,0.05)",
+    padding: "8px",
+    borderRadius: "100px",
+    backdropFilter: "blur(10px)",
+  },
+  languageFilter: {
+    padding: "8px 20px",
+    background: "transparent",
+    border: "none",
+    borderRadius: "100px",
+    color: "#cbd5e1",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+    transition: "all 0.2s",
+  },
+  languageFilterActive: {
+    padding: "8px 20px",
+    background: "#2E86AB",
+    border: "none",
+    borderRadius: "100px",
+    color: "#ffffff",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+  },
+  stats: {
+    display: "flex",
+    justifyContent: "center",
+    gap: "32px",
+    flexWrap: "wrap",
+    marginTop: "40px",
+  },
+  stat: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "8px",
+  },
+  statNumber: {
+    fontSize: "clamp(1.5rem, 4vw, 2rem)",
+    fontWeight: "800",
+    color: "#ffffff",
+  },
+  statLabel: {
+    fontSize: "14px",
+    color: "#94a3b8",
+    textTransform: "uppercase",
+    letterSpacing: "1px",
+  },
+  statDivider: {
+    width: "1px",
+    height: "40px",
+    background: "rgba(255,255,255,0.1)",
+  },
+
+  // Section Common
+  sectionHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "32px",
+    flexWrap: "wrap",
+    gap: "16px",
+  },
+  sectionTitle: {
+    fontSize: "clamp(1.5rem, 3vw, 2rem)",
+    fontWeight: "700",
+    color: "#1e293b",
+  },
+  viewAllSmall: {
+    color: "#2E86AB",
+    textDecoration: "none",
+    fontWeight: "500",
+    fontSize: "14px",
+  },
+  viewAllButton: {
+    padding: "10px 20px",
+    background: "#ffffff",
+    border: "1px solid #e2e8f0",
+    borderRadius: "8px",
+    color: "#2E86AB",
+    textDecoration: "none",
+    fontWeight: "500",
+    fontSize: "14px",
+    transition: "all 0.2s",
+  },
+
+  // Categories Section
+  categoriesSection: {
+    maxWidth: "1200px",
+    margin: "60px auto",
+    padding: "0 24px",
+  },
+  categoriesGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+    gap: "24px",
+  },
+  categoryCard: {
+    background: "#ffffff",
+    padding: "24px 16px",
+    borderRadius: "16px",
+    textAlign: "center",
+    textDecoration: "none",
+    transition: "transform 0.2s, box-shadow 0.2s",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+    cursor: "pointer",
+  },
+  categoryIcon: {
+    width: "56px",
+    height: "56px",
+    margin: "0 auto 16px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "28px",
+    fontSize: "28px",
+  },
+  categoryName: {
+    fontSize: "16px",
+    fontWeight: "600",
+    color: "#1e293b",
+    marginBottom: "8px",
+  },
+  categoryCount: {
+    fontSize: "13px",
+    color: "#64748b",
+  },
+
+  // Trending Section
+  trendingSection: {
+    maxWidth: "1200px",
+    margin: "60px auto",
+    padding: "0 24px",
+  },
+  featuredGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+    gap: "24px",
+  },
+  bookCard: {
+    background: "#ffffff",
+    borderRadius: "16px",
+    overflow: "hidden",
+    transition: "transform 0.2s, box-shadow 0.2s",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+    display: "flex",
+  },
+  bookCardHover: {
+    transform: "translateY(-4px)",
+    boxShadow: "0 12px 24px rgba(0,0,0,0.1)",
+  },
+  bookCover: {
+    width: "120px",
+    minWidth: "120px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  bookIcon: {
+    fontSize: "40px",
+  },
+  trendingBadge: {
+    position: "absolute",
+    top: "8px",
+    left: "8px",
+    background: "#FF6B6B",
+    color: "#ffffff",
+    fontSize: "11px",
+    fontWeight: "bold",
+    padding: "4px 8px",
+    borderRadius: "20px",
+  },
+  bookInfo: {
+    padding: "16px",
+    flex: 1,
+  },
+  bookTitle: {
+    fontSize: "16px",
+    fontWeight: "700",
+    color: "#1e293b",
+    marginBottom: "6px",
+    display: "-webkit-box",
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
+  },
+  bookAuthor: {
+    fontSize: "13px",
+    color: "#64748b",
+    marginBottom: "10px",
+  },
+  bookMeta: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "12px",
+  },
+  bookRating: {
+    fontSize: "13px",
+    color: "#f59e0b",
+  },
+  ratingCount: {
+    fontSize: "11px",
+    color: "#94a3b8",
+    marginLeft: "4px",
+  },
+  bookLanguage: {
+    fontSize: "11px",
+    background: "#f1f5f9",
+    padding: "2px 8px",
+    borderRadius: "12px",
+    color: "#475569",
+  },
+  bookActions: {
+    display: "flex",
+    gap: "12px",
+    alignItems: "center",
+  },
+  downloadBtn: {
+    flex: 1,
+    padding: "8px 12px",
+    background: "linear-gradient(135deg, #4ECDC4, #2E86AB)",
+    border: "none",
+    borderRadius: "8px",
+    color: "#ffffff",
+    fontSize: "13px",
+    fontWeight: "500",
+    cursor: "pointer",
+  },
+  viewLink: {
+    color: "#2E86AB",
+    textDecoration: "none",
+    fontSize: "13px",
+    fontWeight: "500",
+  },
+  trendingScroll: {
+    display: "flex",
+    overflowX: "auto",
+    gap: "16px",
+    paddingBottom: "8px",
+    scrollSnapType: "x mandatory",
+  },
+  trendingCard: {
+    minWidth: "280px",
+    background: "#ffffff",
+    borderRadius: "16px",
+    overflow: "hidden",
+    scrollSnapAlign: "start",
+    display: "flex",
+    flexDirection: "column",
+  },
+
+  // New Releases Section
+  newSection: {
+    maxWidth: "1200px",
+    margin: "60px auto",
+    padding: "0 24px",
+  },
+  timelineGrid: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+  },
+  timelineCard: {
+    display: "flex",
+    gap: "20px",
+    background: "#ffffff",
+    borderRadius: "16px",
+    padding: "20px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+  },
+  timelineDate: {
+    minWidth: "60px",
+    textAlign: "center",
+    paddingRight: "16px",
+    borderRight: "2px solid #e2e8f0",
+  },
+  timelineMonth: {
+    display: "block",
+    fontSize: "12px",
+    fontWeight: "600",
+    color: "#2E86AB",
+    textTransform: "uppercase",
+  },
+  timelineDay: {
+    display: "block",
+    fontSize: "24px",
+    fontWeight: "700",
+    color: "#1e293b",
+  },
+  timelineContent: {
+    flex: 1,
+  },
+  timelineHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "8px",
+  },
+  timelineIcon: {
+    fontSize: "24px",
+  },
+  timelineInfo: {
+    flex: 1,
+  },
+  timelineTitle: {
+    fontSize: "16px",
+    fontWeight: "700",
+    color: "#1e293b",
+    marginBottom: "4px",
+  },
+  timelineAuthor: {
+    fontSize: "13px",
+    color: "#64748b",
+  },
+  timelineDescription: {
+    fontSize: "13px",
+    color: "#475569",
+    lineHeight: "1.5",
+    marginBottom: "12px",
+  },
+  timelineFooter: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  timelineFormat: {
+    fontSize: "11px",
+    color: "#94a3b8",
+  },
+  timelineLink: {
+    color: "#2E86AB",
+    textDecoration: "none",
+    fontSize: "13px",
+    fontWeight: "500",
+  },
+
+  // Featured Section
+  featuredSection: {
+    maxWidth: "1200px",
+    margin: "60px auto",
+    padding: "0 24px",
+  },
+  featuredGridMobile: {
+    display: "flex",
+    overflowX: "auto",
+    gap: "16px",
+    paddingBottom: "8px",
+  },
+  bookCardSmall: {
+    minWidth: "160px",
+    background: "#ffffff",
+    borderRadius: "12px",
+    overflow: "hidden",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+  },
+  bookCoverSmall: {
+    height: "160px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bookIconSmall: {
+    fontSize: "48px",
+  },
+  bookInfoSmall: {
+    padding: "12px",
+  },
+  bookTitleSmall: {
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#1e293b",
+    marginBottom: "4px",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+  bookAuthorSmall: {
+    fontSize: "11px",
+    color: "#64748b",
+    marginBottom: "8px",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+  bookMetaSmall: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginBottom: "12px",
+  },
+  bookRatingSmall: {
+    fontSize: "11px",
+    color: "#f59e0b",
+  },
+  bookPages: {
+    fontSize: "10px",
+    color: "#94a3b8",
+  },
+  downloadBtnSmall: {
+    width: "100%",
+    padding: "8px",
+    background: "linear-gradient(135deg, #4ECDC4, #2E86AB)",
+    border: "none",
+    borderRadius: "6px",
+    color: "#ffffff",
+    fontSize: "11px",
+    fontWeight: "500",
+    cursor: "pointer",
+  },
+
+  // Features Section
+  featuresSection: {
+    background: "#ffffff",
+    padding: "60px 24px",
+    marginTop: "60px",
+  },
+  featuresContainer: {
+    maxWidth: "1200px",
+    margin: "0 auto",
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+    gap: "32px",
+  },
+  featureCard: {
+    textAlign: "center",
+    padding: "24px",
+  },
+  featureIconWrapper: {
+    width: "64px",
+    height: "64px",
+    margin: "0 auto 16px",
+    background: "linear-gradient(135deg, #4ECDC4, #2E86AB)",
+    borderRadius: "32px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  featureIcon: {
+    fontSize: "28px",
+  },
+  featureTitle: {
+    fontSize: "18px",
+    fontWeight: "600",
+    color: "#1e293b",
+    marginBottom: "8px",
+  },
+  featureDescription: {
+    fontSize: "14px",
+    color: "#64748b",
+  },
+
+  // Newsletter Section
+  newsletterSection: {
+    background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+    padding: "80px 24px",
+    position: "relative",
+    overflow: "hidden",
+  },
+  newsletterPattern: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+  },
+  newsletterContainer: {
+    position: "relative",
+    maxWidth: "500px",
+    margin: "0 auto",
+    textAlign: "center",
+    zIndex: 2,
+  },
+  newsletterBadge: {
+    display: "inline-block",
+    background: "rgba(255,255,255,0.1)",
+    padding: "6px 12px",
+    borderRadius: "100px",
+    fontSize: "13px",
+    color: "#cbd5e1",
+    marginBottom: "16px",
+  },
+  newsletterTitle: {
+    fontSize: "clamp(1.5rem, 4vw, 2rem)",
+    fontWeight: "700",
+    color: "#ffffff",
+    marginBottom: "12px",
+  },
+  newsletterText: {
+    fontSize: "16px",
+    color: "#cbd5e1",
+    marginBottom: "24px",
+  },
+  newsletterForm: {
+    display: "flex",
+    gap: "12px",
+    flexWrap: "wrap",
+    justifyContent: "center",
+  },
+  newsletterInput: {
+    flex: 1,
+    minWidth: "200px",
+    padding: "14px 20px",
+    border: "none",
+    borderRadius: "12px",
+    fontSize: "16px",
+    background: "#ffffff",
+    outline: "none",
+  },
+  newsletterButton: {
+    padding: "14px 28px",
+    background: "linear-gradient(135deg, #4ECDC4, #2E86AB)",
+    border: "none",
+    borderRadius: "12px",
+    color: "#ffffff",
+    fontWeight: "600",
+    cursor: "pointer",
+  },
+  newsletterPrivacy: {
+    fontSize: "12px",
+    color: "#64748b",
+    marginTop: "16px",
+  },
+
+  // Footer
+  footer: {
+    background: "#0f172a",
+    padding: "48px 24px 24px",
+  },
+  footerContent: {
+    maxWidth: "1200px",
+    margin: "0 auto",
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+    gap: "32px",
+    marginBottom: "32px",
+  },
+  footerSection: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+  },
+  footerTitle: {
+    fontSize: "16px",
+    fontWeight: "600",
+    color: "#ffffff",
+    marginBottom: "4px",
+  },
+  footerText: {
+    fontSize: "13px",
+    color: "#94a3b8",
+    lineHeight: "1.5",
+  },
+  footerLink: {
+    color: "#94a3b8",
+    textDecoration: "none",
+    fontSize: "13px",
+    transition: "color 0.2s",
+  },
+  footerBottom: {
+    textAlign: "center",
+    paddingTop: "24px",
+    borderTop: "1px solid rgba(255,255,255,0.1)",
+  },
+  copyright: {
+    fontSize: "12px",
+    color: "#64748b",
+  },
+
+  // Loading States
+  loadingContainer: {
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#f8fafc",
+  },
+  spinner: {
+    width: "48px",
+    height: "48px",
+    border: "3px solid #e2e8f0",
+    borderTopColor: "#2E86AB",
+    borderRadius: "50%",
+    animation: "spin 1s linear infinite",
+  },
+  loadingText: {
+    marginTop: "16px",
+    color: "#64748b",
+    fontSize: "14px",
+  },
+  skeletonGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+    gap: "24px",
+    maxWidth: "1200px",
+    marginTop: "48px",
+    padding: "0 24px",
+  },
+  skeletonCard: {
+    height: "200px",
+    background: "#e2e8f0",
+    borderRadius: "16px",
+    animation: "pulse 1.5s ease-in-out infinite",
+  },
+
+  // Error States
+  errorContainer: {
+    minHeight: "100vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#f8fafc",
+  },
+  errorContent: {
+    textAlign: "center",
+    padding: "24px",
+  },
+  errorIcon: {
+    fontSize: "64px",
+    display: "block",
+    marginBottom: "16px",
+  },
+  errorTitle: {
+    fontSize: "24px",
+    fontWeight: "700",
+    color: "#1e293b",
+    marginBottom: "8px",
+  },
+  errorMessage: {
+    color: "#64748b",
+    marginBottom: "24px",
+  },
+  retryButton: {
+    padding: "10px 24px",
+    background: "#2E86AB",
+    border: "none",
+    borderRadius: "8px",
+    color: "#ffffff",
+    fontWeight: "500",
+    cursor: "pointer",
+  },
 };
+
+// Add keyframe animations
+const styleSheet = document.createElement("style");
+styleSheet.textContent = `
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+`;
+document.head.appendChild(styleSheet);

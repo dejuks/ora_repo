@@ -15,14 +15,14 @@ import {
   getRevisions,
   getPopularArticles,
   getRecentArticles,
+  getRecentChangesHandler,
   getWikiStats,
   getAdminUserActivity,
   updateArticleHandler,
   getLanguageStats,
-  // VANDALISM FUNCTIONS - FIXED IMPORTS
-  reportVandalism,           // For POST /:id/report-vandalism
-  reviewVandalismReport,      // For PUT /vandalism/reports/:id/review
-  getVandalismReports         // For GET /vandalism/reports
+  reportVandalism,
+  reviewVandalismReport,
+  getVandalismReports,
 } from "../controllers/articleController.js";
 
 const router = express.Router();
@@ -31,30 +31,30 @@ const router = express.Router();
 router.get("/", getArticles);
 router.get("/popular", getPopularArticles);
 router.get("/recent", getRecentArticles);
+router.get("/recent-changes", getRecentChangesHandler);
 router.get("/stats", getWikiStats);
 router.get("/languages/stats", getLanguageStats);
 router.get("/slug/:slug", getArticleBySlugHandler);
-router.get("/:id", getArticle);
 
-// ==================== VANDALISM ROUTES ====================
-// Report vandalism (any authenticated user) - THIS IS THE FIX
-router.post("/:id/report-vandalism", authenticate, reportVandalism);
-
-// Admin vandalism management routes
-router.get("/vandalism/reports", authenticate, getVandalismReports);
-router.put("/vandalism/reports/:id/review", authenticate, reviewVandalismReport);
-
-// ==================== PROTECTED ROUTES ====================
+// ==================== PROTECTED FIXED ROUTES ====================
 router.post("/", authenticate, createNewArticle);
 router.get("/my-articles", authenticate, getMyArticles);
 router.get("/user/activity", authenticate, getUserActivity);
 router.get("/admin/activity", authenticate, getAdminUserActivity);
 router.get("/user/contributions", authenticate, getUserContributions);
 router.get("/user/stats", authenticate, getUserStats);
+
+// ==================== VANDALISM ROUTES ====================
+router.get("/vandalism/reports", authenticate, getVandalismReports);
+router.put("/vandalism/reports/:id/review", authenticate, reviewVandalismReport);
+
+// ==================== DYNAMIC ARTICLE ROUTES ====================
+router.get("/:id", getArticle);
 router.put("/:id", authenticate, updateArticleHandler);
 router.delete("/:id", authenticate, deleteArticleHandler);
 router.post("/:id/restore", authenticate, restoreArticleHandler);
 router.get("/:id/revisions", authenticate, getRevisions);
+router.post("/:id/report-vandalism", authenticate, reportVandalism);
 
 // ==================== ADMIN ONLY ROUTES ====================
 router.delete("/:id/permanent", authenticate, permanentlyDeleteArticleHandler);

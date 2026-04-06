@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import MainLayout from "../../components/layout/MainLayout.jsx";
-import ebookApi from "../../api/ebook.api";
+import ebookApi from "./mock/ebookMockApi.js";
 import StatusBadge from "./components/StatusBadge.jsx";
 
 const queueLabels = {
@@ -182,7 +182,7 @@ export default function EbookFinancePage() {
       <section className="content-header mb-3">
         <div className="d-flex justify-content-between align-items-center flex-wrap">
           <div>
-            <h1 className="mb-1">Finance Officer Workspace</h1>
+            <h1 className="mb-1">ORA eBook Finance & Operations Workspace</h1>
             <p className="text-muted mb-0">Validate BPC, manage waivers, verify payment proof, generate invoice and receipt, then clear for production.</p>
           </div>
           <button className="btn btn-outline-secondary" onClick={load}>Refresh</button>

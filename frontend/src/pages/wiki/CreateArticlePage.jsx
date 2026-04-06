@@ -1,12 +1,12 @@
-// CreateArticlePage.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { FaSave, FaTimes, FaStar, FaRegEdit } from "react-icons/fa";
 import Navbar from "../../landing/components/Navbar";
-import { FaSave, FaTimes } from "react-icons/fa";
+import MainLayout from "../../components/layout/MainLayout";
 
 const CreateArticlePage = () => {
   const navigate = useNavigate();
-const API_URL = process.env.REACT_APP_API_URL;
+  const API_URL = process.env.REACT_APP_API_URL;
 
   const [loading, setLoading] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
@@ -35,7 +35,6 @@ const API_URL = process.env.REACT_APP_API_URL;
       return;
     }
 
-    // Optional: check if token expired
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
 
@@ -71,10 +70,10 @@ const API_URL = process.env.REACT_APP_API_URL;
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       [name]: type === "checkbox" ? checked : value,
-    });
+    }));
   };
 
   const handleCategoryChange = (e) => {
@@ -83,10 +82,10 @@ const API_URL = process.env.REACT_APP_API_URL;
       (option) => option.value
     );
 
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       categories: selectedOptions,
-    });
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -102,8 +101,6 @@ const API_URL = process.env.REACT_APP_API_URL;
         navigate("/wiki/login");
         return;
       }
-
-      const API_URL = process.env.REACT_APP_API_URL;
 
       const res = await fetch(`${API_URL}/wiki/articles`, {
         method: "POST",
@@ -129,275 +126,202 @@ const API_URL = process.env.REACT_APP_API_URL;
     }
   };
 
-  // Prevent UI flash before auth check
   if (authChecking) {
     return (
       <>
         <Navbar />
-        <div style={{ padding: "40px", textAlign: "center" }}>
-          Checking authentication...
+        <div className="content-wrapper">
+          <section className="content pt-4">
+            <div className="container-fluid">
+              <div className="card">
+                <div className="card-body text-center">
+                  Checking authentication...
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </>
     );
   }
 
   return (
-    <>
-      <Navbar />
-
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>Create New Article</h1>
-          <p style={styles.subtitle}>
-            Share your knowledge with the Oromo Wikipedia community
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} style={styles.form}>
-          {error && <div style={styles.error}>{error}</div>}
-
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Title *</label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              style={styles.input}
-              required
-            />
-          </div>
-
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Content *</label>
-            <textarea
-              name="content"
-              value={formData.content}
-              onChange={handleChange}
-              style={styles.textarea}
-              rows={15}
-              required
-            />
-          </div>
-
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Edit Summary</label>
-            <input
-              type="text"
-              name="summary"
-              value={formData.summary}
-              onChange={handleChange}
-              style={styles.input}
-            />
-          </div>
-
-          <div style={styles.row}>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Categories</label>
-
-              <select
-                multiple
-                value={formData.categories}
-                onChange={handleCategoryChange}
-                style={styles.select}
-              >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Status</label>
-
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                style={styles.select}
-              >
-                <option value="draft">Draft</option>
-                <option value="pending">Submit for Review</option>
-                <option value="published">Publish</option>
-              </select>
+    <MainLayout>
+        <section className="content-header">
+          <div className="container-fluid">
+            <div className="row mb-2">
+              <div className="col-sm-6">
+                <h1>
+                  <FaRegEdit className="mr-2 text-primary" />
+                  Create New Article
+                </h1>
+                <p className="text-muted mb-0">
+                  Share your knowledge with the Oromo Wikipedia community
+                </p>
+              </div>
+              <div className="col-sm-6 text-sm-right mt-2 mt-sm-0">
+                <span className="badge badge-primary p-2">
+                  Article Editor
+                </span>
+              </div>
             </div>
           </div>
+        </section>
 
-          <div style={styles.checkboxGroup}>
-            <label>
-              <input
-                type="checkbox"
-                name="is_featured"
-                checked={formData.is_featured}
-                onChange={handleChange}
-              />{" "}
-              Mark as featured article
-            </label>
-          </div>
-
-          <div style={styles.actions}>
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              style={styles.cancelButton}
-            >
-              <FaTimes /> Cancel
-            </button>
-
-            <button
-              type="submit"
-              disabled={loading}
-              style={styles.submitButton}
-            >
-              {loading ? "Creating..." : (
-                <>
-                  <FaSave /> Create Article
-                </>
+        <section className="content">
+          <div className="container-fluid">
+            <form onSubmit={handleSubmit}>
+              {error && (
+                <div className="alert alert-danger" role="alert">
+                  {error}
+                </div>
               )}
-            </button>
+
+              <div className="card card-primary card-outline">
+                <div className="card-header">
+                  <h3 className="card-title">Article Information</h3>
+                </div>
+
+                <div className="card-body">
+                  <div className="form-group">
+                    <label>Title *</label>
+                    <input
+                      type="text"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleChange}
+                      className="form-control"
+                      placeholder="Enter article title"
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Content *</label>
+                    <textarea
+                      name="content"
+                      value={formData.content}
+                      onChange={handleChange}
+                      className="form-control"
+                      rows="12"
+                      placeholder="Write your article content here..."
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group mb-0">
+                    <label>Edit Summary</label>
+                    <input
+                      type="text"
+                      name="summary"
+                      value={formData.summary}
+                      onChange={handleChange}
+                      className="form-control"
+                      placeholder="Brief summary of the article"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="card card-warning card-outline">
+                <div className="card-header">
+                  <h3 className="card-title">Publishing Settings</h3>
+                </div>
+
+                <div className="card-body">
+                  <div className="row">
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <label>Categories</label>
+                        <select
+                          multiple
+                          value={formData.categories}
+                          onChange={handleCategoryChange}
+                          className="form-control"
+                          style={{ minHeight: "180px" }}
+                        >
+                          {categories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </option>
+                          ))}
+                        </select>
+                        <small className="form-text text-muted">
+                          Hold Ctrl (Windows) or Cmd (Mac) to select multiple
+                          categories.
+                        </small>
+                      </div>
+                    </div>
+
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <label>Status</label>
+                        <select
+                          name="status"
+                          value={formData.status}
+                          onChange={handleChange}
+                          className="form-control"
+                        >
+                          <option value="draft">Draft</option>
+                          <option value="pending">Submit for Review</option>
+                          <option value="published">Publish</option>
+                        </select>
+                      </div>
+
+                      <div className="card bg-light mt-4">
+                        <div className="card-body">
+                          <div className="custom-control custom-checkbox">
+                            <input
+                              type="checkbox"
+                              className="custom-control-input"
+                              id="featuredArticle"
+                              name="is_featured"
+                              checked={formData.is_featured}
+                              onChange={handleChange}
+                            />
+                            <label
+                              className="custom-control-label"
+                              htmlFor="featuredArticle"
+                            >
+                              <FaStar className="text-warning mr-2" />
+                              Mark as featured article
+                            </label>
+                          </div>
+                          <small className="text-muted d-block mt-2">
+                            Featured articles get more visibility on the
+                            platform.
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card-footer d-flex justify-content-between">
+                  <button
+                    type="button"
+                    onClick={() => navigate(-1)}
+                    className="btn btn-default"
+                  >
+                    <FaTimes className="mr-1" />
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="btn btn-primary"
+                  >
+                    <FaSave className="mr-1" />
+                    {loading ? "Creating..." : "Create Article"}
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
-        </form>
-      </div>
-    </>
+        </section>
+    </MainLayout>
   );
-};
-
-const styles = {
-  container: {
-    maxWidth: "900px",
-    margin: "0 auto",
-    padding: "50px 20px",
-    fontFamily: "'Inter', sans-serif",
-  },
-
-  header: {
-    marginBottom: "35px",
-  },
-
-  title: {
-    fontSize: "32px",
-    fontWeight: "700",
-    color: "#0F3D2E",
-    marginBottom: "6px",
-  },
-
-  subtitle: {
-    color: "#6c757d",
-    fontSize: "15px",
-  },
-
-  form: {
-    background: "#ffffff",
-    padding: "40px",
-    borderRadius: "14px",
-    boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
-  },
-
-  formGroup: {
-    marginBottom: "25px",
-  },
-
-  label: {
-    display: "block",
-    marginBottom: "8px",
-    fontWeight: "600",
-    color: "#333",
-    fontSize: "14px",
-  },
-
-  input: {
-    width: "100%",
-    padding: "14px 16px",
-    fontSize: "15px",
-    borderRadius: "10px",
-    border: "2px solid #e4e7ec",
-    outline: "none",
-    transition: "all 0.25s ease",
-    background: "#fafafa",
-  },
-
-  textarea: {
-    width: "100%",
-    padding: "16px",
-    fontSize: "15px",
-    borderRadius: "10px",
-    border: "2px solid #e4e7ec",
-    outline: "none",
-    minHeight: "220px",
-    resize: "vertical",
-    background: "#fafafa",
-    lineHeight: "1.6",
-  },
-
-  row: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "25px",
-  },
-
-  select: {
-    width: "100%",
-    padding: "12px 14px",
-    borderRadius: "10px",
-    border: "2px solid #e4e7ec",
-    fontSize: "15px",
-    background: "#fafafa",
-    outline: "none",
-  },
-
-  checkboxGroup: {
-    marginBottom: "25px",
-    fontSize: "14px",
-    color: "#444",
-  },
-
-  actions: {
-    display: "flex",
-    gap: "15px",
-    marginTop: "20px",
-  },
-
-  submitButton: {
-    flex: 1,
-    padding: "15px",
-    background: "linear-gradient(135deg,#C9A227,#B8961E)",
-    color: "#0F3D2E",
-    border: "none",
-    borderRadius: "10px",
-    fontWeight: "600",
-    fontSize: "15px",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "8px",
-    transition: "0.3s",
-  },
-
-  cancelButton: {
-    flex: 1,
-    padding: "15px",
-    background: "#f4f4f4",
-    border: "2px solid #e4e7ec",
-    borderRadius: "10px",
-    fontWeight: "600",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "8px",
-  },
-
-  error: {
-    background: "#fff3f3",
-    color: "#c62828",
-    padding: "12px",
-    borderRadius: "8px",
-    marginBottom: "20px",
-    border: "1px solid #ffcdd2",
-  },
 };
 
 export default CreateArticlePage;

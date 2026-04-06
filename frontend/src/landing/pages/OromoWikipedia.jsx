@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { 
-  FaSearch, 
-  FaClock, 
-  FaEye, 
-  FaUser, 
-  FaTag, 
+import {
+  FaSearch,
+  FaClock,
+  FaEye,
+  FaUser,
+  FaTag,
   FaStar,
   FaFire,
   FaNewspaper,
@@ -17,9 +17,27 @@ import {
   FaLandmark,
   FaMusic,
   FaUsers,
-  FaMapMarkedAlt
+  FaMapMarkedAlt,
 } from "react-icons/fa";
 import wikiApi from "../../api/api";
+
+/**
+ * IMPORTANT:
+ * Your error shows wikiApi.getArticles / getFeaturedArticles / getCategories etc
+ * are NOT functions. That usually means wikiApi is just an axios instance.
+ *
+ * So this component uses wikiApi.get(url, { params }) directly.
+ *
+ * If your backend paths are a little different, only edit ENDPOINTS below.
+ */
+const ENDPOINTS = {
+  articles: "/wiki/articles",
+  featuredArticles: "/wiki/articles/featured",
+  popularArticles: "/wiki/articles/popular",
+  categories: "/wiki/categories",
+  languagesStats: "/wiki/languages/stats",
+  articlesStats: "/wiki/articles/stats",
+};
 
 export default function OromoWikipedia() {
   const [articles, setArticles] = useState([]);
@@ -28,7 +46,12 @@ export default function OromoWikipedia() {
   const [recentArticles, setRecentArticles] = useState([]);
   const [categories, setCategories] = useState([]);
   const [languages, setLanguages] = useState([]);
-  const [stats, setStats] = useState({});
+  const [stats, setStats] = useState({
+    totalArticles: 0,
+    totalEditors: 0,
+    totalEdits: 0,
+    totalViews: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLang, setSelectedLang] = useState("all");
@@ -36,34 +59,93 @@ export default function OromoWikipedia() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Fetch all data on component mount
-  useEffect(() => {
-    fetchDashboardData();
-    fetchCategories();
-    fetchLanguages();
-    fetchStats();
-  }, []);
+  const isPublished = (article) => {
+    return String(article?.status || "").toLowerCase() === "published";
+  };
 
-  // Fetch articles when filters change
-  useEffect(() => {
-    fetchArticles();
-  }, [selectedLang, selectedCategory, currentPage, searchQuery]);
+  const safeArray = (value) => (Array.isArray(value) ? value : []);
+
+  const extractArrayFromResponse = (response) => {
+    // handles:
+    // axios => response.data
+    // custom => response.data.data
+    // custom => response.data.articles
+    // direct => response.data as array
+    const payload = response?.data;
+
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.articles)) return payload.articles;
+    if (Array.isArray(payload?.data?.articles)) return payload.data.articles;
+
+    return [];
+  };
+
+  const extractStatsFromResponse = (response) => {
+    const payload = response?.data;
+
+    if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+      if (payload.data && typeof payload.data === "object" && !Array.isArray(payload.data)) {
+        return payload.data;
+      }
+      return payload;
+    }
+
+    return {
+      totalArticles: 0,
+      totalEditors: 0,
+      totalEdits: 0,
+      totalViews: 0,
+    };
+  };
+
+  const extractPaginationPages = (response, fallbackLength = 0, limit = 12) => {
+    const payload = response?.data;
+
+    return (
+      payload?.pagination?.pages ||
+      payload?.data?.pagination?.pages ||
+      Math.max(1, Math.ceil(fallbackLength / limit))
+    );
+  };
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch all dashboard data in parallel
-      const [featuredRes, popularRes, recentRes] = await Promise.all([
-        wikiApi.getFeaturedArticles(4),
-        wikiApi.getPopularArticles(6),
-        wikiApi.getArticles({ limit: 6 })
+      const [featuredRes, popularRes, recentRes] = await Promise.allSettled([
+        wikiApi.get(ENDPOINTS.featuredArticles, {
+          params: { limit: 4, status: "published" },
+        }),
+        wikiApi.get(ENDPOINTS.popularArticles, {
+          params: { limit: 6, status: "published" },
+        }),
+        wikiApi.get(ENDPOINTS.articles, {
+          params: { limit: 6, status: "published", sort: "latest" },
+        }),
       ]);
 
-      setFeaturedArticles(featuredRes.data || []);
-      setPopularArticles(popularRes.data || []);
-      setRecentArticles(recentRes.data || []);
+      const featuredData =
+        featuredRes.status === "fulfilled"
+          ? extractArrayFromResponse(featuredRes.value).filter(isPublished)
+          : [];
+
+      const popularData =
+        popularRes.status === "fulfilled"
+          ? extractArrayFromResponse(popularRes.value).filter(isPublished)
+          : [];
+
+      const recentData =
+        recentRes.status === "fulfilled"
+          ? extractArrayFromResponse(recentRes.value).filter(isPublished)
+          : [];
+
+      setFeaturedArticles(featuredData);
+      setPopularArticles(popularData);
+      setRecentArticles(recentData);
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      // Optional: Show error toast/notification here
+      console.error("Error fetching dashboard data:", error);
+      setFeaturedArticles([]);
+      setPopularArticles([]);
+      setRecentArticles([]);
     }
   };
 
@@ -72,46 +154,32 @@ export default function OromoWikipedia() {
     try {
       const params = {
         page: currentPage,
-        limit: 12
+        limit: 12,
+        status: "published",
       };
-      
-      if (searchQuery) {
-        params.search = searchQuery;
+
+      if (searchQuery.trim()) {
+        params.search = searchQuery.trim();
       }
-      
-      if (selectedCategory && selectedCategory !== 'all') {
+
+      if (selectedCategory !== "all") {
         params.category = selectedCategory;
       }
 
-      if (selectedLang && selectedLang !== 'all') {
+      if (selectedLang !== "all") {
         params.language = selectedLang;
       }
 
-      const response = await wikiApi.getArticles(params);
-      
-      console.log('API Response:', response);
-      
-      // Handle different response structures
-      if (response.success && response.data) {
-        if (Array.isArray(response.data)) {
-          setArticles(response.data);
-          setTotalPages(Math.ceil(response.data.length / 12) || 1);
-        } 
-        else if (response.data.articles) {
-          setArticles(response.data.articles);
-          setTotalPages(response.data.pagination?.pages || 1);
-        }
-      } else if (Array.isArray(response)) {
-        setArticles(response);
-        setTotalPages(Math.ceil(response.length / 12) || 1);
-      } else {
-        setArticles([]);
-        setTotalPages(1);
-      }
+      const response = await wikiApi.get(ENDPOINTS.articles, { params });
+
+      const rows = extractArrayFromResponse(response).filter(isPublished);
+
+      setArticles(rows);
+      setTotalPages(extractPaginationPages(response, rows.length, 12));
     } catch (error) {
-      console.error('Error fetching articles:', error);
+      console.error("Error fetching articles:", error);
       setArticles([]);
-      // Optional: Show error toast/notification here
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -119,34 +187,61 @@ export default function OromoWikipedia() {
 
   const fetchCategories = async () => {
     try {
-      const response = await wikiApi.getCategories();
-      setCategories(response.data || []);
+      const response = await wikiApi.get(ENDPOINTS.categories);
+      const rows = extractArrayFromResponse(response);
+      setCategories(rows);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error("Error fetching categories:", error);
+      setCategories([]);
     }
   };
 
   const fetchLanguages = async () => {
     try {
-      const response = await wikiApi.getLanguagesStats();
-      setLanguages(response.data || []);
+      const response = await wikiApi.get(ENDPOINTS.languagesStats);
+      const rows = extractArrayFromResponse(response);
+      setLanguages(rows);
     } catch (error) {
-      console.error('Error fetching languages:', error);
+      console.error("Error fetching languages:", error);
+      setLanguages([]);
     }
   };
 
   const fetchStats = async () => {
     try {
-      const response = await wikiApi.getArticlesStats();
-      setStats(response.data || {});
+      const response = await wikiApi.get(ENDPOINTS.articlesStats);
+      const data = extractStatsFromResponse(response);
+      setStats({
+        totalArticles: data.totalArticles || data.total_articles || 0,
+        totalEditors: data.totalEditors || data.total_editors || 0,
+        totalEdits: data.totalEdits || data.total_edits || 0,
+        totalViews: data.totalViews || data.total_views || 0,
+      });
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      console.error("Error fetching stats:", error);
+      setStats({
+        totalArticles: 0,
+        totalEditors: 0,
+        totalEdits: 0,
+        totalViews: 0,
+      });
     }
   };
 
+  useEffect(() => {
+    fetchDashboardData();
+    fetchCategories();
+    fetchLanguages();
+    fetchStats();
+  }, []);
+
+  useEffect(() => {
+    fetchArticles();
+  }, [selectedLang, selectedCategory, currentPage, searchQuery]);
+
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
-    setCurrentPage(1); // Reset to first page on new search
+    setCurrentPage(1);
   };
 
   const handleLanguageChange = (langCode) => {
@@ -160,41 +255,51 @@ export default function OromoWikipedia() {
   };
 
   const formatNumber = (num) => {
-    if (!num) return '0';
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-    return num.toString();
+    const n = Number(num || 0);
+    if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+    if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+    return `${n}`;
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return "Unknown";
+
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return "Unknown";
+
     const now = new Date();
-    const diffTime = Math.abs(now - date);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
     if (diffDays < 7) return `${diffDays} days ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: now.getFullYear() !== date.getFullYear() ? "numeric" : undefined,
+    });
   };
 
   const getCategoryIcon = (categoryName) => {
     const icons = {
-      'History': <FaHistory />,
-      'Culture': <FaLandmark />,
-      'Language': <FaGlobe />,
-      'Music': <FaMusic />,
-      'People': <FaUsers />,
-      'Geography': <FaMapMarkedAlt />
+      History: <FaHistory />,
+      Culture: <FaLandmark />,
+      Language: <FaGlobe />,
+      Music: <FaMusic />,
+      People: <FaUsers />,
+      Geography: <FaMapMarkedAlt />,
     };
+
     return icons[categoryName] || <FaBookOpen />;
   };
 
   return (
     <>
       <Navbar />
+
       <div style={styles.container}>
-        {/* Hero Header */}
         <header style={styles.header}>
           <div style={styles.headerOverlay}>
             <div style={styles.headerContent}>
@@ -202,29 +307,27 @@ export default function OromoWikipedia() {
                 <span style={styles.logoOromo}>Oromo</span>
                 <span style={styles.logoWikipedia}>Wikipedia</span>
               </h1>
-              <p style={styles.tagline}>
-                The Free Encyclopedia of Oromo Knowledge
-              </p>
-              
-              {/* Search Bar */}
-              <div style={styles.searchWrapper}>
+
+              <p style={styles.tagline}>The Free Encyclopedia of Oromo Knowledge</p>
+
+              <div className="searchWrapper" style={styles.searchWrapper}>
                 <div style={styles.searchContainer}>
                   <FaSearch style={styles.searchIcon} />
                   <input
                     type="text"
-                    placeholder="Search articles..."
+                    placeholder="Search published articles..."
                     style={styles.searchInput}
                     value={searchQuery}
                     onChange={handleSearch}
                   />
                 </div>
-                <Link to="/wiki/create" style={styles.createButton}>
+
+                <Link to="/auth" style={styles.createButton}>
                   + Create Article
                 </Link>
               </div>
 
-              {/* Quick Stats */}
-              <div style={styles.quickStats}>
+              <div className="quickStats" style={styles.quickStats}>
                 <div style={styles.quickStat}>
                   <span style={styles.quickStatNumber}>{formatNumber(stats.totalArticles)}</span>
                   <span style={styles.quickStatLabel}>Articles</span>
@@ -246,30 +349,31 @@ export default function OromoWikipedia() {
           </div>
         </header>
 
-        {/* Language Filter Bar */}
         <section style={styles.langBar}>
           <div style={styles.langContainer}>
             <span style={styles.langLabel}>Read in:</span>
+
             <div style={styles.langButtons}>
               <button
                 style={{
                   ...styles.langButton,
-                  ...(selectedLang === 'all' ? styles.langActive : {})
+                  ...(selectedLang === "all" ? styles.langActive : {}),
                 }}
-                onClick={() => handleLanguageChange('all')}
+                onClick={() => handleLanguageChange("all")}
               >
                 <span style={styles.langName}>All Languages</span>
               </button>
-              {languages.map((lang) => (
+
+              {safeArray(languages).map((lang, index) => (
                 <button
-                  key={lang.code}
+                  key={lang.code || lang.id || index}
                   style={{
                     ...styles.langButton,
-                    ...(selectedLang === lang.code ? styles.langActive : {})
+                    ...(selectedLang === lang.code ? styles.langActive : {}),
                   }}
                   onClick={() => handleLanguageChange(lang.code)}
                 >
-                  <span style={styles.langName}>{lang.name}</span>
+                  <span style={styles.langName}>{lang.name || lang.code || "Unknown"}</span>
                   <span style={styles.langCount}>{formatNumber(lang.count)}</span>
                 </button>
               ))}
@@ -277,15 +381,13 @@ export default function OromoWikipedia() {
           </div>
         </section>
 
-        {/* Main Content */}
-        <div style={styles.mainGrid}>
-          {/* Left Sidebar - Categories */}
+        <div className="mainGrid" style={styles.mainGrid}>
           <aside style={styles.leftSidebar}>
             <div style={styles.welcomeCard}>
               <h3 style={styles.welcomeTitle}>Welcome to Oromo Wikipedia</h3>
               <p style={styles.welcomeText}>
-                A free encyclopedia that anyone can edit. Join us in preserving 
-                and sharing Oromo knowledge with the world.
+                A free encyclopedia that anyone can edit. Join us in preserving and
+                sharing Oromo knowledge with the world.
               </p>
               <Link to="/wiki/help" style={styles.helpLink}>
                 Learn how to contribute →
@@ -297,30 +399,38 @@ export default function OromoWikipedia() {
                 <FaTag style={styles.sectionIcon} />
                 Categories
               </h3>
+
               <div style={styles.categoryList}>
                 <button
                   style={{
                     ...styles.categoryButton,
-                    ...(selectedCategory === 'all' ? styles.categoryActive : {})
+                    ...(selectedCategory === "all" ? styles.categoryActive : {}),
                   }}
-                  onClick={() => handleCategoryChange('all')}
+                  onClick={() => handleCategoryChange("all")}
                 >
                   <span style={styles.categoryIcon}>📚</span>
                   <span style={styles.categoryName}>All Articles</span>
-                  <span style={styles.categoryCount}>{formatNumber(stats.totalArticles)}</span>
+                  <span style={styles.categoryCount}>
+                    {formatNumber(stats.totalArticles)}
+                  </span>
                 </button>
-                {categories.map((cat) => (
+
+                {safeArray(categories).map((cat, index) => (
                   <button
-                    key={cat.id}
+                    key={cat.id || index}
                     style={{
                       ...styles.categoryButton,
-                      ...(selectedCategory === cat.id ? styles.categoryActive : {})
+                      ...(selectedCategory === cat.id ? styles.categoryActive : {}),
                     }}
                     onClick={() => handleCategoryChange(cat.id)}
                   >
-                    <span style={styles.categoryIcon}>{getCategoryIcon(cat.name)}</span>
-                    <span style={styles.categoryName}>{cat.name}</span>
-                    <span style={styles.categoryCount}>{formatNumber(cat.article_count)}</span>
+                    <span style={styles.categoryIcon}>
+                      {getCategoryIcon(cat.name)}
+                    </span>
+                    <span style={styles.categoryName}>{cat.name || "Unknown"}</span>
+                    <span style={styles.categoryCount}>
+                      {formatNumber(cat.article_count)}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -331,51 +441,56 @@ export default function OromoWikipedia() {
                 <FaFire style={styles.sectionIcon} />
                 Trending Topics
               </h3>
+
               <div style={styles.trendingList}>
-                {popularArticles.slice(0, 5).map((article, index) => (
-                  <Link 
-                    key={article.id}
+                {safeArray(popularArticles).slice(0, 5).map((article, index) => (
+                  <Link
+                    key={article.id || article.slug || index}
                     to={`/wiki/article/${article.slug}`}
                     style={styles.trendingItem}
                   >
                     <span style={styles.trendingRank}>#{index + 1}</span>
                     <span style={styles.trendingTitle}>{article.title}</span>
-                    <span style={styles.trendingViews}>{formatNumber(article.view_count)} views</span>
+                    <span style={styles.trendingViews}>
+                      {formatNumber(article.view_count)} views
+                    </span>
                   </Link>
                 ))}
               </div>
             </div>
           </aside>
 
-          {/* Main Content Area */}
           <main style={styles.mainContent}>
-            {/* Featured Section */}
             {featuredArticles.length > 0 && (
               <section style={styles.featuredSection}>
                 <h2 style={styles.featuredTitle}>
                   <FaStar style={styles.featuredIcon} />
                   Featured Articles
                 </h2>
-                <div style={styles.featuredGrid}>
-                  {featuredArticles.map((article) => (
-                    <Link 
-                      key={article.id}
+
+                <div className="featuredGrid" style={styles.featuredGrid}>
+                  {safeArray(featuredArticles).map((article, index) => (
+                    <Link
+                      key={article.id || article.slug || index}
                       to={`/wiki/article/${article.slug}`}
                       style={styles.featuredCard}
                     >
                       <div style={styles.featuredCardHeader}>
-                        <span style={styles.featuredEmoji}>
-                          {article.emoji || '📖'}
-                        </span>
+                        <span style={styles.featuredEmoji}>{article.emoji || "📖"}</span>
                       </div>
+
                       <div style={styles.featuredCardBody}>
                         <h4 style={styles.featuredCardTitle}>{article.title}</h4>
                         <p style={styles.featuredCardDesc}>
-                          {article.description || article.excerpt?.substring(0, 100)}...
+                          {article.description ||
+                            article.excerpt?.substring(0, 100) ||
+                            "No description available."}
+                          ...
                         </p>
+
                         <div style={styles.featuredCardMeta}>
                           <span style={styles.featuredCardCategory}>
-                            {article.categories?.[0]?.name || 'General'}
+                            {article.categories?.[0]?.name || "General"}
                           </span>
                           <span style={styles.featuredCardViews}>
                             <FaEye /> {formatNumber(article.view_count)}
@@ -388,23 +503,23 @@ export default function OromoWikipedia() {
               </section>
             )}
 
-            {/* All Articles Section */}
             <section style={styles.articlesSection}>
               <div style={styles.articlesHeader}>
                 <h2 style={styles.articlesTitle}>
                   <FaNewspaper style={styles.articlesIcon} />
-                  All Articles
+                  Published Articles
                 </h2>
-                <div style={styles.viewControls}>
+
+                <div>
                   <span style={styles.articlesCount}>
-                    Showing {articles.length} of {formatNumber(stats.totalArticles)} articles
+                    Showing {articles.length} article{articles.length !== 1 ? "s" : ""}
                   </span>
                 </div>
               </div>
 
               {loading ? (
-                <div style={styles.loadingGrid}>
-                  {[1,2,3,4,5,6].map(n => (
+                <div className="articlesGrid" style={styles.loadingGrid}>
+                  {[1, 2, 3, 4, 5, 6].map((n) => (
                     <div key={n} style={styles.skeletonCard}>
                       <div style={styles.skeletonImage}></div>
                       <div style={styles.skeletonTitle}></div>
@@ -414,24 +529,34 @@ export default function OromoWikipedia() {
                 </div>
               ) : (
                 <>
-                  <div style={styles.articlesGrid}>
+                  <div className="articlesGrid" style={styles.articlesGrid}>
                     {articles.length > 0 ? (
-                      articles.map((article) => (
-                        <Link 
-                          key={article.id}
+                      articles.map((article, index) => (
+                        <Link
+                          key={article.id || article.slug || index}
                           to={`/wiki/article/${article.slug}`}
                           style={styles.articleCard}
                         >
                           <div style={styles.articleCardContent}>
                             <h3 style={styles.articleCardTitle}>{article.title}</h3>
+
                             <p style={styles.articleCardDesc}>
-                              {article.excerpt?.substring(0, 120)}...
+                              {article.excerpt?.substring(0, 120) ||
+                                article.description?.substring(0, 120) ||
+                                "No summary available."}
+                              ...
                             </p>
+
                             <div style={styles.articleCardFooter}>
                               <div style={styles.articleCardAuthor}>
                                 <FaUser style={styles.authorIcon} />
-                                <span>{article.author_name || article.author_username || 'Unknown'}</span>
+                                <span>
+                                  {article.author_name ||
+                                    article.author_username ||
+                                    "Unknown"}
+                                </span>
                               </div>
+
                               <div style={styles.articleCardStats}>
                                 <span title="Views">
                                   <FaEye /> {formatNumber(article.view_count)}
@@ -441,10 +566,11 @@ export default function OromoWikipedia() {
                                 </span>
                               </div>
                             </div>
+
                             {article.categories && article.categories.length > 0 && (
                               <div style={styles.articleCardCategories}>
-                                {article.categories.slice(0, 2).map(cat => (
-                                  <span key={cat.id} style={styles.articleCardCategory}>
+                                {article.categories.slice(0, 2).map((cat, i) => (
+                                  <span key={cat.id || i} style={styles.articleCardCategory}>
                                     {cat.name}
                                   </span>
                                 ))}
@@ -460,28 +586,37 @@ export default function OromoWikipedia() {
                       ))
                     ) : (
                       <div style={styles.noResults}>
-                        <p>No articles found. Try adjusting your search or filters.</p>
+                        <p>No published articles found. Try adjusting your search or filters.</p>
                       </div>
                     )}
                   </div>
 
-                  {/* Pagination */}
                   {totalPages > 1 && (
                     <div style={styles.pagination}>
                       <button
-                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                         disabled={currentPage === 1}
-                        style={styles.pageButton}
+                        style={{
+                          ...styles.pageButton,
+                          ...(currentPage === 1 ? styles.pageButtonDisabled : {}),
+                        }}
                       >
                         Previous
                       </button>
+
                       <span style={styles.pageInfo}>
                         Page {currentPage} of {totalPages}
                       </span>
+
                       <button
-                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                         disabled={currentPage === totalPages}
-                        style={styles.pageButton}
+                        style={{
+                          ...styles.pageButton,
+                          ...(currentPage === totalPages
+                            ? styles.pageButtonDisabled
+                            : {}),
+                        }}
                       >
                         Next
                       </button>
@@ -492,25 +627,24 @@ export default function OromoWikipedia() {
             </section>
           </main>
 
-          {/* Right Sidebar */}
           <aside style={styles.rightSidebar}>
-            {/* Recent Articles */}
             <div style={styles.sectionCard}>
               <h3 style={styles.sectionTitle}>
                 <FaClock style={styles.sectionIcon} />
                 Recent Articles
               </h3>
+
               <div style={styles.recentList}>
-                {recentArticles.map((article) => (
-                  <Link 
-                    key={article.id}
+                {safeArray(recentArticles).map((article, index) => (
+                  <Link
+                    key={article.id || article.slug || index}
                     to={`/wiki/article/${article.slug}`}
                     style={styles.recentItem}
                   >
                     <div style={styles.recentContent}>
                       <h4 style={styles.recentTitle}>{article.title}</h4>
                       <span style={styles.recentDate}>
-                        {formatDate(article.created_at)}
+                        {formatDate(article.created_at || article.updated_at)}
                       </span>
                     </div>
                     <FaArrowRight style={styles.recentArrow} />
@@ -519,16 +653,16 @@ export default function OromoWikipedia() {
               </div>
             </div>
 
-            {/* Popular Articles */}
             <div style={styles.sectionCard}>
               <h3 style={styles.sectionTitle}>
                 <FaFire style={styles.sectionIcon} />
                 Most Popular
               </h3>
+
               <div style={styles.popularList}>
-                {popularArticles.map((article, index) => (
-                  <Link 
-                    key={article.id}
+                {safeArray(popularArticles).map((article, index) => (
+                  <Link
+                    key={article.id || article.slug || index}
                     to={`/wiki/article/${article.slug}`}
                     style={styles.popularItem}
                   >
@@ -544,12 +678,12 @@ export default function OromoWikipedia() {
               </div>
             </div>
 
-            {/* Community Links */}
             <div style={styles.sectionCard}>
               <h3 style={styles.sectionTitle}>
                 <FaUsers style={styles.sectionIcon} />
                 Community
               </h3>
+
               <div style={styles.communityLinks}>
                 <Link to="/wiki/help" style={styles.communityLink}>
                   <span style={styles.communityIcon}>📖</span>
@@ -572,18 +706,28 @@ export default function OromoWikipedia() {
           </aside>
         </div>
 
-        {/* Footer */}
         <footer style={styles.footer}>
           <div style={styles.footerContent}>
             <div style={styles.footerLinks}>
-              <Link to="/about" style={styles.footerLink}>About</Link>
-              <Link to="/disclaimer" style={styles.footerLink}>Disclaimer</Link>
-              <Link to="/privacy" style={styles.footerLink}>Privacy</Link>
-              <Link to="/terms" style={styles.footerLink}>Terms</Link>
-              <Link to="/contact" style={styles.footerLink}>Contact</Link>
+              <Link to="/about" style={styles.footerLink}>
+                About
+              </Link>
+              <Link to="/disclaimer" style={styles.footerLink}>
+                Disclaimer
+              </Link>
+              <Link to="/privacy" style={styles.footerLink}>
+                Privacy
+              </Link>
+              <Link to="/terms" style={styles.footerLink}>
+                Terms
+              </Link>
+              <Link to="/contact" style={styles.footerLink}>
+                Contact
+              </Link>
             </div>
+
             <p style={styles.copyright}>
-              Oromo Wikipedia is a free encyclopedia. Content available under 
+              Oromo Wikipedia is a free encyclopedia. Content available under
               Creative Commons Attribution-ShareAlike License.
             </p>
             <p style={styles.copyright}>
@@ -596,9 +740,7 @@ export default function OromoWikipedia() {
   );
 }
 
-// ... (keep all the styles object exactly as it was) ...
 const styles = {
-  // ... (copy all the styles from your original code here) ...
   container: {
     width: "100%",
     minHeight: "100vh",
@@ -606,7 +748,6 @@ const styles = {
     backgroundColor: "#f8f9fa",
   },
 
-  // Header
   header: {
     background: "linear-gradient(135deg, #0F3D2E 0%, #1A5439 100%)",
     position: "relative",
@@ -639,7 +780,6 @@ const styles = {
     marginBottom: "40px",
   },
 
-  // Search
   searchWrapper: {
     display: "flex",
     gap: "15px",
@@ -677,13 +817,8 @@ const styles = {
     whiteSpace: "nowrap",
     transition: "all 0.3s ease",
     boxShadow: "0 4px 20px rgba(201,162,39,0.3)",
-    ':hover': {
-      transform: "translateY(-2px)",
-      boxShadow: "0 6px 25px rgba(201,162,39,0.4)",
-    },
   },
 
-  // Quick Stats
   quickStats: {
     display: "flex",
     justifyContent: "center",
@@ -704,7 +839,6 @@ const styles = {
     color: "rgba(255,255,255,0.8)",
   },
 
-  // Language Bar
   langBar: {
     background: "white",
     borderBottom: "1px solid #eaeef2",
@@ -744,21 +878,18 @@ const styles = {
     fontSize: "0.9rem",
     transition: "all 0.3s ease",
     whiteSpace: "nowrap",
-    ':hover': {
-      background: "#f8f9fa",
-    },
   },
   langActive: {
     background: "#C9A227",
     borderColor: "#C9A227",
     color: "#0F3D2E",
   },
+  langName: {},
   langCount: {
     fontSize: "0.8rem",
     color: "#5a6a7a",
   },
 
-  // Main Grid
   mainGrid: {
     display: "grid",
     gridTemplateColumns: "280px 1fr 300px",
@@ -768,7 +899,6 @@ const styles = {
     padding: "0 20px",
   },
 
-  // Sidebars
   leftSidebar: {
     display: "flex",
     flexDirection: "column",
@@ -780,7 +910,6 @@ const styles = {
     gap: "25px",
   },
 
-  // Cards
   welcomeCard: {
     background: "linear-gradient(135deg, #0F3D2E 0%, #1A5439 100%)",
     borderRadius: "16px",
@@ -822,7 +951,6 @@ const styles = {
     color: "#C9A227",
   },
 
-  // Categories
   categoryList: {
     display: "flex",
     flexDirection: "column",
@@ -840,9 +968,6 @@ const styles = {
     width: "100%",
     textAlign: "left",
     transition: "all 0.3s ease",
-    ':hover': {
-      background: "#f8f9fa",
-    },
   },
   categoryActive: {
     background: "#C9A22720",
@@ -862,14 +987,12 @@ const styles = {
     color: "#a0aec0",
   },
 
-  // Main Content
   mainContent: {
     display: "flex",
     flexDirection: "column",
     gap: "30px",
   },
 
-  // Featured Section
   featuredSection: {
     background: "white",
     borderRadius: "16px",
@@ -898,10 +1021,6 @@ const styles = {
     overflow: "hidden",
     textDecoration: "none",
     transition: "all 0.3s ease",
-    ':hover': {
-      transform: "translateY(-5px)",
-      boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-    },
   },
   featuredCardHeader: {
     background: "linear-gradient(135deg, #C9A22720, #C9A22740)",
@@ -940,7 +1059,6 @@ const styles = {
     gap: "5px",
   },
 
-  // Articles Section
   articlesSection: {
     background: "white",
     borderRadius: "16px",
@@ -951,7 +1069,9 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: "12px",
     marginBottom: "20px",
+    flexWrap: "wrap",
   },
   articlesTitle: {
     fontSize: "1.5rem",
@@ -974,13 +1094,12 @@ const styles = {
     gap: "20px",
   },
   noResults: {
-    gridColumn: "span 2",
+    gridColumn: "1 / -1",
     textAlign: "center",
     padding: "40px",
     color: "#a0aec0",
   },
 
-  // Article Cards
   articleCard: {
     background: "#f8f9fa",
     borderRadius: "12px",
@@ -988,11 +1107,6 @@ const styles = {
     textDecoration: "none",
     transition: "all 0.3s ease",
     border: "1px solid #eaeef2",
-    ':hover': {
-      transform: "translateY(-3px)",
-      boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
-      borderColor: "#C9A227",
-    },
   },
   articleCardContent: {
     padding: "20px",
@@ -1012,8 +1126,10 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: "12px",
     marginBottom: "15px",
     fontSize: "0.85rem",
+    flexWrap: "wrap",
   },
   articleCardAuthor: {
     display: "flex",
@@ -1028,6 +1144,7 @@ const styles = {
     display: "flex",
     gap: "15px",
     color: "#a0aec0",
+    flexWrap: "wrap",
   },
   articleCardCategories: {
     display: "flex",
@@ -1046,7 +1163,6 @@ const styles = {
     fontSize: "0.75rem",
   },
 
-  // Loading Skeletons
   loadingGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
@@ -1077,13 +1193,13 @@ const styles = {
     borderRadius: "4px",
   },
 
-  // Pagination
   pagination: {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
     gap: "20px",
     marginTop: "30px",
+    flexWrap: "wrap",
   },
   pageButton: {
     padding: "10px 20px",
@@ -1091,23 +1207,16 @@ const styles = {
     background: "white",
     borderRadius: "8px",
     cursor: "pointer",
-    transition: "all 0.3s ease",
-    ':hover:not(:disabled)': {
-      background: "#C9A227",
-      borderColor: "#C9A227",
-      color: "#0F3D2E",
-    },
-    ':disabled': {
-      opacity: 0.5,
-      cursor: "not-allowed",
-    },
+  },
+  pageButtonDisabled: {
+    opacity: 0.5,
+    cursor: "not-allowed",
   },
   pageInfo: {
     fontSize: "0.95rem",
     color: "#5a6a7a",
   },
 
-  // Trending List
   trendingList: {
     display: "flex",
     flexDirection: "column",
@@ -1120,10 +1229,6 @@ const styles = {
     padding: "8px",
     textDecoration: "none",
     borderRadius: "8px",
-    transition: "background 0.3s ease",
-    ':hover': {
-      background: "#f8f9fa",
-    },
   },
   trendingRank: {
     fontSize: "1rem",
@@ -1141,7 +1246,6 @@ const styles = {
     color: "#a0aec0",
   },
 
-  // Recent List
   recentList: {
     display: "flex",
     flexDirection: "column",
@@ -1151,13 +1255,10 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: "12px",
     padding: "10px",
     textDecoration: "none",
     borderRadius: "8px",
-    transition: "background 0.3s ease",
-    ':hover': {
-      background: "#f8f9fa",
-    },
   },
   recentContent: {
     flex: 1,
@@ -1176,7 +1277,6 @@ const styles = {
     fontSize: "0.9rem",
   },
 
-  // Popular List
   popularList: {
     display: "flex",
     flexDirection: "column",
@@ -1189,10 +1289,6 @@ const styles = {
     padding: "8px",
     textDecoration: "none",
     borderRadius: "8px",
-    transition: "background 0.3s ease",
-    ':hover': {
-      background: "#f8f9fa",
-    },
   },
   popularRank: {
     fontSize: "1rem",
@@ -1205,6 +1301,7 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: "12px",
   },
   popularTitle: {
     fontSize: "0.95rem",
@@ -1218,7 +1315,6 @@ const styles = {
     gap: "4px",
   },
 
-  // Community Links
   communityLinks: {
     display: "flex",
     flexDirection: "column",
@@ -1234,18 +1330,11 @@ const styles = {
     color: "#1a2639",
     borderRadius: "8px",
     fontSize: "0.9rem",
-    transition: "all 0.3s ease",
-    ':hover': {
-      background: "#C9A227",
-      color: "#0F3D2E",
-      transform: "translateX(5px)",
-    },
   },
   communityIcon: {
     fontSize: "1.1rem",
   },
 
-  // Footer
   footer: {
     background: "#0a1f17",
     color: "white",
@@ -1269,10 +1358,6 @@ const styles = {
     textDecoration: "none",
     opacity: 0.8,
     fontSize: "0.9rem",
-    transition: "opacity 0.3s ease",
-    ':hover': {
-      opacity: 1,
-    },
   },
   copyright: {
     fontSize: "0.85rem",
@@ -1281,34 +1366,38 @@ const styles = {
   },
 };
 
-// Add global styles
-const styleSheet = document.createElement("style");
-styleSheet.textContent = `
-  @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-  }
-  
-  @media (max-width: 1024px) {
-    .mainGrid {
-      grid-template-columns: 1fr !important;
+const existingStyleTagId = "oromo-wikipedia-page-styles";
+
+if (!document.getElementById(existingStyleTagId)) {
+  const styleSheet = document.createElement("style");
+  styleSheet.id = existingStyleTagId;
+  styleSheet.textContent = `
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
     }
-  }
-  
-  @media (max-width: 768px) {
-    .featuredGrid,
-    .articlesGrid {
-      grid-template-columns: 1fr !important;
+
+    @media (max-width: 1024px) {
+      .mainGrid {
+        grid-template-columns: 1fr !important;
+      }
     }
-    
-    .searchWrapper {
-      flex-direction: column;
+
+    @media (max-width: 768px) {
+      .featuredGrid,
+      .articlesGrid {
+        grid-template-columns: 1fr !important;
+      }
+
+      .searchWrapper {
+        flex-direction: column !important;
+      }
+
+      .quickStats {
+        gap: 20px !important;
+      }
     }
-    
-    .quickStats {
-      gap: 20px;
-    }
-  }
-`;
-document.head.appendChild(styleSheet);
+  `;
+  document.head.appendChild(styleSheet);
+}

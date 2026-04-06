@@ -21,9 +21,9 @@ export function buildEbookRoutes(ROLES) {
       icon: "fas fa-user-edit",
       roles: [AU, A],
       subMenu: [
-        { name: "My Submissions", path: "/ebook/my-submissions", icon: "fas fa-file-alt", roles: [AU, A] },
-        { name: "My Drafts", path: "/ebook/drafts", icon: "fas fa-file-alt", roles: [AU, A] },
-        { name: "Revision Requests", path: "/ebook/my-revisions", icon: "fas fa-edit", roles: [AU, A] },
+        { name: "My Submissions", path: "/ebook/manuscripts", icon: "fas fa-file-alt", roles: [AU, A] },
+        { name: "My Drafts", path: "/ebook/manuscripts/drafts", icon: "fas fa-file-alt", roles: [AU, A] },
+        { name: "Revision Requests", path: "/ebook/manuscripts/revisions", icon: "fas fa-edit", roles: [AU, A] },
         { name: "Payments & Waivers", path: "/ebook/my-payments", icon: "fas fa-credit-card", roles: [AU, A] },
         { name: "Proof Approvals", path: "/ebook/my-proofs", icon: "fas fa-check-circle", roles: [AU, A] },
         { name: "Rejected by Editor", path: "/ebook/my-rejected", icon: "fas fa-times-circle", roles: [AU, A] },
@@ -36,8 +36,8 @@ export function buildEbookRoutes(ROLES) {
       icon: "fas fa-pen-fancy",
       roles: [E, A],
       subMenu: [
-        { name: "Screening Queue", path: "/ebook/editor/screening", icon: "fas fa-filter", roles: [E, A] },
-        { name: "Screened Submissions", path: "/ebook/editor/screened", icon: "fas fa-check-circle", roles: [E, A] },
+        { name: "Screening Queue", path: "/ora/ebook/editor/screening", icon: "fas fa-filter", roles: [E, A] },
+        { name: "Screened Submissions", path: "/ora/ebook/editor/screened", icon: "fas fa-check-circle", roles: [E, A] },
         { name: "Decision Queue", path: "/ebook/editor/decision", icon: "fas fa-check-circle", roles: [E, A] },
         { name: "Review Monitoring", path: "/ebook/editor/reviews", icon: "fas fa-eye", roles: [E, A] },
         { name: "Accepted & Handoff", path: "/ebook/editor/handoff", icon: "fas fa-handshake", roles: [E, A] },
@@ -50,7 +50,7 @@ export function buildEbookRoutes(ROLES) {
       icon: "fas fa-star",
       roles: [R, A],
       subMenu: [
-        { name: "My Assignments", path: "/ebook/reviewer/pending", icon: "fas fa-clock", roles: [R, A] },
+        { name: "My Assignments", path: "/oraebook/reviewer/pending", icon: "fas fa-clock", roles: [R, A] },
         { name: "Accepted Assignments", path: "/ebook/reviewer/accepted", icon: "fas fa-check", roles: [R, A] },
         { name: "Rejected Assignments", path: "/ebook/reviewer/rejected", icon: "fas fa-times", roles: [R, A] },
         { name: "Completed Reviews", path: "/ebook/reviewer/completed", icon: "fas fa-check-double", roles: [R, A] },

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import MainLayout from "../../components/layout/MainLayout.jsx";
-import ebookApi from "../../api/ebook.api.js";
+import ebookApi from "./mock/ebookMockApi.js";
 import StatusBadge from "./components/StatusBadge.jsx";
 
 const FILTERS = [
@@ -221,7 +221,7 @@ export default function EbookProductionPage() {
       <section className="content-header mb-3">
         <div className="d-flex justify-content-between align-items-center flex-wrap" style={{ gap: 12 }}>
           <div>
-            <h1 className="mb-1">Digital Content Manager Workspace</h1>
+            <h1 className="mb-1">ORA eBook Digital Content Manager Workspace</h1>
             <p className="text-muted mb-0">Manage final files, proofing, identifiers, repository path, and publication release.</p>
           </div>
           <button className="btn btn-outline-secondary" onClick={load}>Refresh</button>

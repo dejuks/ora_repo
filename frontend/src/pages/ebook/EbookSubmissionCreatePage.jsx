@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout.jsx";
-import ebookApi from "../../api/ebook.api.js";
+import ebookApi from "./mock/ebookMockApi.js";
 
 const currentYear = new Date().getFullYear();
 
@@ -198,7 +198,7 @@ export default function EbookSubmissionCreatePage() {
   };
 
   return (
-    <MainLayout title="New eBook Submission">
+    <MainLayout title="New ORA eBook Submission">
       <div className="container-fluid">
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div>

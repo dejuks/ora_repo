@@ -25,6 +25,7 @@ import {
   FaBookOpen,
   FaRegClock
 } from "react-icons/fa";
+import MainLayout from "../../components/layout/MainLayout.jsx";
   const API_URL = process.env.REACT_APP_API_URL;
 
 const WikiDashboard = () => {
@@ -190,7 +191,7 @@ const fetchDashboardData = async () => {
 
   return (
     <>
-      <Navbar />
+      <MainLayout>
       <div style={styles.container}>
         {/* Header */}
         <div style={styles.header}>
@@ -568,6 +569,7 @@ const fetchDashboardData = async () => {
           </div>
         </div>
       </div>
+      </MainLayout>
     </>
   );
 };

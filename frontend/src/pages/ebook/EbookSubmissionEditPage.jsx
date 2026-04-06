@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout.jsx";
-import ebookApi from "../../api/ebook.api.js";
+import ebookApi from "./mock/ebookMockApi.js";
 
 const currentYear = new Date().getFullYear();
 const allowedExtensions = ["pdf", "doc", "docx", "epub", "zip", "txt"];

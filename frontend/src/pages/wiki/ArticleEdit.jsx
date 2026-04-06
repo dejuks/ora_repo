@@ -7,15 +7,17 @@ import ArticleForm from "../wiki/ArticleForm";
 
 export default function ArticleEdit() {
   const { id } = useParams();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  /* ================= FETCH ARTICLE ================= */
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   const fetchArticle = async () => {
     try {
+      setLoading(true);
       const res = await getArticle(id);
-      setData(res.data);
+      const articleData = res.data?.data || res.data;
+      setData(articleData);
     } catch (err) {
       console.error(err);
       Swal.fire("Error", "Failed to load article", "error");
@@ -25,10 +27,11 @@ export default function ArticleEdit() {
   };
 
   useEffect(() => {
-    fetchArticle();
-  }, []);
+    if (id) {
+      fetchArticle();
+    }
+  }, [id]);
 
-  /* ================= UPDATE ================= */
   const submit = async (form) => {
     try {
       await updateArticle(id, form);
@@ -50,48 +53,47 @@ export default function ArticleEdit() {
 
   return (
     <MainLayout>
-      <section className="content">
+      <section className="content pt-3">
         <div className="container-fluid">
-
-          {/* HEADER */}
           <div className="row mb-3">
-            <div className="col-md-8">
+            <div className="col-sm-8">
               <h1 className="m-0 text-dark">
-                <i className="fas fa-edit mr-2 text-info"></i>
+                <i className="fas fa-edit mr-2 text-primary"></i>
                 Edit Wiki Article
               </h1>
-              <p className="text-muted">
-                Modify article details and publication status
+              <p className="text-muted mb-0">
+                Update article information and save your changes
               </p>
             </div>
 
-            <div className="col-md-4 text-right">
-              <Link to="/wiki" className="btn btn-secondary">
+            <div className="col-sm-4 text-sm-right mt-2 mt-sm-0">
+              <Link to="/wiki/articles" className="btn btn-secondary">
                 <i className="fas fa-arrow-left mr-1"></i>
                 Back to List
               </Link>
             </div>
           </div>
 
-          {/* FORM CARD */}
-          <div className="card card-info card-outline">
-            <div className="card-body">
+          <div className="card card-primary card-outline">
+            <div className="card-header">
+              <h3 className="card-title">Article Information</h3>
+            </div>
 
+            <div className="card-body">
               {loading ? (
                 <div className="text-center py-5">
-                  <i className="fas fa-spinner fa-spin fa-2x text-info mb-3"></i>
-                  <p>Loading article...</p>
+                  <i className="fas fa-spinner fa-spin fa-2x text-primary mb-3"></i>
+                  <p className="mb-0">Loading article...</p>
                 </div>
+              ) : data ? (
+                <ArticleForm initialData={data} onSubmit={submit} />
               ) : (
-                <ArticleForm
-                  initialData={data}
-                  onSubmit={submit}
-                />
+                <div className="alert alert-danger mb-0">
+                  Article not found.
+                </div>
               )}
-
             </div>
           </div>
-
         </div>
       </section>
     </MainLayout>

@@ -13,6 +13,7 @@ import {
   FaTrash,
   FaEdit
 } from 'react-icons/fa';
+import MainLayout from '../../../components/layout/MainLayout';
 
 const WikiMediaUploadPage = () => {
   const navigate = useNavigate();
@@ -147,7 +148,7 @@ const WikiMediaUploadPage = () => {
 
   return (
     <>
-      <Navbar />
+      <MainLayout>
       <div style={styles.container}>
         <div style={styles.header}>
           <h1 style={styles.title}>Upload Media</h1>
@@ -326,6 +327,8 @@ const WikiMediaUploadPage = () => {
           </div>
         </div>
       </div>
+   
+   </MainLayout>
     </>
   );
 };

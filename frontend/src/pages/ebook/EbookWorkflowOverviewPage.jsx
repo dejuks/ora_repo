@@ -32,7 +32,7 @@ const roles = [
     title: "3. Peer Reviewer",
     tone: "info",
     points: ["Accept or decline assignments", "Submit structured review", "Attach annotated files", "Request extensions when needed"],
-    links: [["Reviewer dashboard", "/ebook/reviewer"]],
+    links: [["ORA eBook Reviewer dashboard", "/ebook/reviewer"]],
   },
   {
     title: "4. Finance Officer",

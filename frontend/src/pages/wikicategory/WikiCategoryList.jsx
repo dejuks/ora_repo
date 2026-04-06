@@ -13,9 +13,10 @@ export default function WikiCategoryList() {
     setLoading(true);
     try {
       const res = await getCategories();
-      setCategories(res.data);
+      setCategories(Array.isArray(res?.data) ? res.data : []);
     } catch (err) {
       console.error(err);
+      setCategories([]);
       Swal.fire("Error", "Failed to load categories", "error");
     } finally {
       setLoading(false);
@@ -36,23 +37,27 @@ export default function WikiCategoryList() {
     });
 
     if (confirm.isConfirmed) {
-      await deleteCategory(id);
-      Swal.fire("Deleted!", "Category has been deleted.", "success");
-      fetchCategories();
+      try {
+        await deleteCategory(id);
+        Swal.fire("Deleted!", "Category has been deleted.", "success");
+        fetchCategories();
+      } catch (err) {
+        console.error(err);
+        Swal.fire("Error", "Failed to delete category", "error");
+      }
     }
   };
 
-  // Filter categories by search
-  const filtered = categories.filter((c) =>
-    c.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = Array.isArray(categories)
+    ? categories.filter((c) =>
+        c?.name?.toLowerCase().includes(search.toLowerCase())
+      )
+    : [];
 
   return (
     <MainLayout>
       <section className="content">
         <div className="container-fluid mt-4">
-
-          {/* HEADER */}
           <div className="d-flex justify-content-between mb-3">
             <h2 className="text-dark">
               <i className="fas fa-th-list mr-2 text-warning"></i>
@@ -64,10 +69,7 @@ export default function WikiCategoryList() {
             </Link>
           </div>
 
-          {/* TABLE CARD */}
           <div className="card card-warning card-outline">
-            
-            {/* TABLE HEADER WITH SEARCH */}
             <div className="card-header d-flex justify-content-between align-items-center">
               <h3 className="card-title m-0">Category List</h3>
               <div className="card-tools">
@@ -81,7 +83,7 @@ export default function WikiCategoryList() {
                     onChange={(e) => setSearch(e.target.value)}
                   />
                   <div className="input-group-append">
-                    <button className="btn btn-warning">
+                    <button className="btn btn-warning" type="button">
                       <i className="fas fa-search"></i>
                     </button>
                   </div>
@@ -89,11 +91,11 @@ export default function WikiCategoryList() {
               </div>
             </div>
 
-            {/* TABLE BODY */}
             <div className="card-body p-0">
               {loading ? (
                 <div className="text-center py-5">
-                  <i className="fas fa-spinner fa-spin mr-2"></i>Loading categories...
+                  <i className="fas fa-spinner fa-spin mr-2"></i>
+                  Loading categories...
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="text-center py-5 text-muted">
@@ -113,7 +115,7 @@ export default function WikiCategoryList() {
                       {filtered.map((c) => (
                         <tr key={c.id}>
                           <td>{c.name}</td>
-                          <td>{c.description}</td>
+                          <td>{c.description || "-"}</td>
                           <td className="text-center">
                             <Link
                               to={`/wiki/categories/edit/${c.id}`}
@@ -136,7 +138,6 @@ export default function WikiCategoryList() {
               )}
             </div>
           </div>
-
         </div>
       </section>
     </MainLayout>

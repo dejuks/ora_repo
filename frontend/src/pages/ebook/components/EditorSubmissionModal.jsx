@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import ebookApi from '../../../api/ebook.api';
+import ebookApi from '.././mock/ebookMockApi.js';
 import StatusBadge from './StatusBadge';
 
 function ModalShell({ title, children, onClose, footer = null, size = 'modal-xl' }) {

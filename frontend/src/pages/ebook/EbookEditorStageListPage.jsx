@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout.jsx";
-import ebookApi from "../../api/ebook.api";
+import ebookApi from "./mock/ebookMockApi.js";
 import StatusBadge from "./components/StatusBadge.jsx";
 
 const STAGE_CONFIG = {
@@ -133,7 +133,7 @@ function ScreeningModal({
                       <tr>
                         <th>Current Status</th>
                         <td>
-                          <span value={source.status} ></span>
+                          <StatusBadge value={source.status} />
                         </td>
                       </tr>
                       <tr>

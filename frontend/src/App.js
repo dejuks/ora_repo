@@ -198,6 +198,38 @@ import EbookEditorReviewsPage from "./pages/ebook/EbookEditorReviewsPage.jsx";
 import EbookEditorDecisionPage from "./pages/ebook/EbookEditorDecisionPage.jsx";
 import EbookEditorHandoffPage from "./pages/ebook/EbookEditorHandoffPage.jsx";
 import AccessLicense from "./pages/repository/author/AccessLicense.jsx";
+import AuthorRegister from "./landing/pages/ora_ebook/AuthorRegister.jsx";
+import ManuscriptPage from "./landing/pages/ora_ebook/manuscript/ManuscriptPage.jsx";
+import ManuscriptEditPage from "./landing/pages/ora_ebook/manuscript/ManuscriptEditPage.jsx";
+import ManuscriptShowPage from "./landing/pages/ora_ebook/manuscript/ManuscriptShowPage.jsx";
+import DraftManuscriptPage from "./landing/pages/ora_ebook/manuscript/DraftManuscriptPage.jsx";
+import RevisionRequiredManuscriptPage from "./landing/pages/ora_ebook/manuscript/RevisionRequiredManuscriptPage.jsx";
+import MyArticleList from "./pages/wiki/MyArticleList.jsx";
+import MyDraftArticleList from "./pages/wiki/MyDraftArticleList.jsx";
+import OraEbookEditorScreeningPage from "./landing/pages/ora_ebook/be/OraEbookEditorScreeningPage.jsx";
+import OraEbookEditorScreenedPage from "./landing/pages/ora_ebook/be/OraEbookEditorScreenedPage.jsx";
+import EbookEditorAssignReviewersPage from "./landing/pages/ora_ebook/be/EbookEditorAssignReviewersPage.jsx";
+import EbookReviewerPendingPage from "./landing/pages/ora_ebook/br/EbookReviewerPendingPage.jsx";
+import RecentChangesPage from "./pages/wiki/RecentChangesPage.jsx";
+import PopularArticlesPage from "./pages/wiki/PopularArticlesPage.jsx";
+import UserList from "./pages/journals/users/pages/UserList";
+import WikiSettingsPage from "./pages/wiki/WikiSettingsPage.jsx";
+import WikiReportsPage from "./pages/wiki/WikiReportsPage.jsx";
+import GlobalGovernanceDashboardPage from "./pages/wiki/GlobalGovernanceDashboardPage.jsx";
+import RoleManagementPage from "./pages/wiki/RoleManagementPage.jsx";
+import GlobalActionsPage from "./pages/wiki/GlobalActionsPage.jsx";
+import CommunityPoliciesPage from "./pages/wiki/CommunityPoliciesPage.jsx";
+import ReviewQueuePage from "./pages/wiki/ReviewQueuePage.jsx";
+import GovernanceLogsPage from "./pages/wiki/GovernanceLogsPage.jsx";
+import WikiProfilePage from "./pages/wiki/users/WikiProfilePage.jsx";
+import WikiModerationDashboardPage from "./pages/wiki/WikiModerationDashboardPage.jsx";
+import ReportedContentPage from "./pages/wiki/ReportedContentPage.jsx";
+import RepositoryPendingSubmissionsPage from "./pages/repository/RepositoryPendingSubmissionsPage.jsx";
+import RepositoryCurationSubmissionsPage from "./pages/repository/RepositoryCurationSubmissionsPage.jsx";
+import RepositoryReadySubmissionsPage from "./pages/repository/RepositoryReadySubmissionsPage.jsx";
+import RepositoryApprovedSubmissionsPage from "./pages/repository/RepositoryApprovedSubmissionsPage.jsx";
+import RepositoryRejectedSubmissionsPage from "./pages/repository/RepositoryRejectedSubmissionsPage.jsx";
+import RepositoryItemDetail from "./landing/pages/RepositoryItemDetail.jsx";
 
 function App() {
   return (
@@ -223,9 +255,19 @@ function App() {
 
         {/* Public Repository Routes */}
         <Route path="/repository/public" element={<PublicRepository />} />
-        <Route path="/repository/:uuid" element={<PublicRepositoryDetail />} />
+        <Route path="/repository/item/:uuid" element={<RepositoryItemDetail />} />
         <Route path="/public/login" element={<PublicLogin />} />
         <Route path="/register" element={<PublicRegister />} />
+        {/* repository/submissions/pending */}
+        <Route path="repository/submissions/pending" element={<RepositoryPendingSubmissionsPage />} />
+        {/* repository/submissions/curation */}
+        <Route path="repository/submissions/curation" element={<RepositoryCurationSubmissionsPage />} />
+        {/* repository/submissions/ready */}
+        <Route path="repository/submissions/ready" element={<RepositoryReadySubmissionsPage />} />
+        {/* //epository/submissions/approved */}
+        <Route path="repository/submissions/approved" element={<RepositoryApprovedSubmissionsPage />} />
+        {/* repository/submissions/rejected */}
+        <Route path="repository/submissions/rejected" element={<RepositoryRejectedSubmissionsPage />} />
         <Route path="/public/dashboard" element={<PublicDashboard />} />
         
         {/* Public Layout with Nested Routes */}
@@ -235,6 +277,8 @@ function App() {
 
         {/* Wiki Public Routes */}
         <Route path="/wiki/articles" element={<ArticleList />} />
+        <Route path="/wiki/recent-changes" element={<RecentChangesPage />} />
+        <Route path="/wiki/popular" element={<PopularArticlesPage />} />
         <Route path="/wiki/articles/:slug" element={<ArticleDetails />} />
         <Route path="/wiki/article/:slug" element={<WikiArticlePage />} />
         <Route path="/wiki/register" element={<RegisterPage />} />
@@ -253,6 +297,13 @@ function App() {
 
         {/* Protected Routes */}
         <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+        {/* //wiki/settings */}
+        <Route path="/wiki/settings" element={<ProtectedRoute><WikiSettingsPage /></ProtectedRoute>} />
+        {/* // WIKI/REPORTS */}
+        <Route path="/wiki/reports" element={<ProtectedRoute><WikiReportsPage /></ProtectedRoute>} />
+        {/* //wikipedia user routes */}
+        <Route path="/wiki/users" element={<ProtectedRoute><UserList /></ProtectedRoute>} />
+
         <Route path="/roles" element={<ProtectedRoute><Roles /></ProtectedRoute>} />
         <Route path="/permissions" element={<ProtectedRoute><Permissions /></ProtectedRoute>} />
         <Route path="/role-permissions" element={<ProtectedRoute><RolePermissions /></ProtectedRoute>} />
@@ -264,7 +315,7 @@ function App() {
         {/* Wiki Protected Routes */}
         <Route path="/wiki/dashboard" element={<ProtectedRoute><WikiDashboard /></ProtectedRoute>} />
         <Route path="/wiki/profile/edit" element={<ProtectedRoute><WikiProfileEdit /></ProtectedRoute>} />
-        <Route path="/wiki/create" element={<CreateArticlePage />} />
+        <Route path="/wiki/articles/create" element={<ProtectedRoute><ArticleCreate /></ProtectedRoute>} />
         <Route path="/wiki/articles/new" element={<ProtectedRoute><CreateArticlePage /></ProtectedRoute>} />
         <Route path="/wiki/articles/edit/:id" element={<ProtectedRoute><ArticleEdit /></ProtectedRoute>} />
         <Route path="/wiki/articles/drafts" element={<ProtectedRoute><ArticleDraftList /></ProtectedRoute>} />
@@ -274,7 +325,9 @@ function App() {
         <Route path="/wiki/media/upload" element={<ProtectedRoute><WikiMediaUploadPage /></ProtectedRoute>} />
         <Route path="/wiki/media" element={<ProtectedRoute><WikiMediaGalleryPage /></ProtectedRoute>} />
         <Route path="/wiki/vandalism/check" element={<ProtectedRoute><VandalismCheck /></ProtectedRoute>} />
-
+{/* /wiki/my-articles */}
+        <Route path="/wiki/my-articles" element={<ProtectedRoute><MyArticleList /></ProtectedRoute>} />
+        <Route path="/wiki/my-articles/drafts" element={<ProtectedRoute><MyDraftArticleList /></ProtectedRoute>} />
         {/* Journal Protected Routes */}
         <Route path="/journal-dashboard" element={<ProtectedRoute><JournalDashboard /></ProtectedRoute>} />
         <Route path="/journal/author-dashboard" element={<ProtectedRoute><JournalAuthorDashboard /></ProtectedRoute>} />
@@ -405,6 +458,18 @@ function App() {
         <Route path="/ebook/reviewer-manager" element={<ProtectedRoute><EbookReviewerManagerPage /></ProtectedRoute>} />
  
 
+       <Route path="/ora/ebook/editor/screening" element={ <ProtectedRoute><OraEbookEditorScreeningPage /> </ProtectedRoute>}/>
+       <Route path="/ora/ebook/editor/screened" element={<OraEbookEditorScreenedPage />} />
+       <Route
+  path="/ebook/editor/assign-reviewers/:submissionId"
+  element={<EbookEditorAssignReviewersPage />}
+/>
+
+<Route
+  path="/oraebook/reviewer/pending"
+  element={<EbookReviewerPendingPage />}
+/>
+
        <Route path="/ebook/editor/screening" element={ <ProtectedRoute><EbookEditorScreeningPage /> </ProtectedRoute>}/>
        <Route path="/ebook/editor/screened" element={ <ProtectedRoute><EbookEditorScreenedPage /> </ProtectedRoute>}/>
        <Route path="/ebook/editor/reviews" element={ <ProtectedRoute><EbookEditorReviewsPage /> </ProtectedRoute>}/>
@@ -440,6 +505,31 @@ function App() {
         <Route path="/journal/auth/register" element={<JournalRegisterPage />} />
         //Ebooks
         <Route path="/ebooks" element={<Ebooks />} />
+        {/* // Ebook Author Registration */}
+        <Route path="/ebook/author/register" element={<AuthorRegister />} />
+        {/* ebook manuscripts */}
+        <Route path="/ebook/manuscripts" element={<ManuscriptPage />} />
+        <Route path="/ebook/manuscripts/edit/:id" element={<ManuscriptEditPage />} />
+        {/* show */}
+          <Route path="/ebook/manuscripts/show/:id" element={<ManuscriptShowPage />} />
+{/* Drafts */}
+        <Route path="/ebook/manuscripts/drafts" element={<DraftManuscriptPage />} />
+        /* Revision Required Manuscripts */
+        <Route path="/ebook/manuscripts/revisions" element={<RevisionRequiredManuscriptPage />} />
+
+
+        <Route path="/wiki/global-governance/dashboard" element={<GlobalGovernanceDashboardPage />} />
+<Route path="/wiki/global-governance/role-management" element={<RoleManagementPage />} />
+<Route path="/wiki/global-governance/global-actions" element={<GlobalActionsPage />} />
+<Route path="/wiki/global-governance/community-policies" element={<CommunityPoliciesPage />} />
+<Route path="/wiki/global-governance/review-queue" element={<ReviewQueuePage />} />
+<Route path="/wiki/global-governance/activity-logs" element={<GovernanceLogsPage />} />
+<Route path="/wiki/profile" element={<WikiProfilePage />} />
+{/* wiki/reports/content */}
+<Route path="wiki/moderation" element={<ReportedContentPage />} />
+<Route path="/wiki/reports/content" element={<WikiModerationDashboardPage />} />
+
+
         {/* 404 Not Found - This should be the LAST route */}
         <Route path="*" element={<h1>404 Not Found</h1>} />
       </Routes>

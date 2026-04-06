@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout.jsx";
-import ebookApi from "../../api/ebook.api";
+import ebookApi from "./mock/ebookMockApi.js";
 import StatusBadge from "./components/StatusBadge.jsx";
 
 export default function EbookSubmissionsPage() {
@@ -254,15 +254,25 @@ export default function EbookSubmissionsPage() {
                           </td>
                           
                           <td className="align-middle">
-                            <span>
+                            <span
+                              className={`badge ${getStatusColor(row.status)}`}
+                              style={{
+                                minWidth: 110,
+                                display: "inline-block",
+                                textAlign: "center",
+                                padding: "0.5rem 0.5rem",
+                                fontSize: "0.85rem",
+                                fontWeight: "500",
+                                borderRadius: "20px"
+                              }}
+                            >
                               {getStatusLabel(row.status)}
-                            
                             </span>
                           </td>
                           
                           <td className="align-middle">
-                            <span>
-                              {row.publication_year || '—' }
+                            <span className="badge bg-light text-dark px-3 py-2">
+                              {row.publication_year || new Date().getFullYear()}
                             </span>
                           </td>
                           

@@ -892,22 +892,36 @@ export const getArticleRevisions = async (articleId) => {
 };
 
 // GET popular articles
-export const getPopularArticles = async (limit = 10) => {
+export const getPopularArticles = async (limit = 10, status = null) => {
   const client = await pool.connect();
-  
+
   try {
-    console.log(`Fetching ${limit} popular articles...`);
-    
+    const params = [];
+    let where = `
+      WHERE COALESCE(a.is_deleted, false) = false
+    `;
+
+    if (status && status !== "all") {
+      params.push(status);
+      where += ` AND a.status = $${params.length}`;
+    } else {
+      // exclude archived by default, but include draft / under_review / published
+      where += ` AND a.status != 'archived'`;
+    }
+
+    params.push(limit);
+
     const result = await client.query(
       `
       SELECT 
         a.id,
         a.title,
         a.slug,
-        a.view_count,
+        COALESCE(a.view_count, 0) as view_count,
         a.created_at,
         a.updated_at,
         a.status,
+        a.is_featured,
         u.uuid as author_id,
         u.username as author_username,
         u.full_name as author_name,
@@ -915,45 +929,58 @@ export const getPopularArticles = async (limit = 10) => {
         wp.avatar_url as author_avatar,
         wp.reputation_points as author_reputation,
         (
-          SELECT COALESCE(json_agg(
-            json_build_object(
-              'id', c.id,
-              'name', c.name
-            )
-          ), '[]'::json)
+          SELECT COALESCE(
+            json_agg(
+              json_build_object(
+                'id', c.id,
+                'name', c.name
+              )
+            ),
+            '[]'::json
+          )
           FROM wiki_article_categories ac
           JOIN wiki_categories c ON ac.category_id = c.id
           WHERE ac.article_id = a.id
         ) as categories,
         (
-          SELECT COUNT(*) FROM wiki_revisions WHERE article_id = a.id
+          SELECT COUNT(*)
+          FROM wiki_revisions wr
+          WHERE wr.article_id = a.id
         ) as revision_count,
-        SUBSTRING(r.content, 1, 200) as excerpt
+        SUBSTRING(COALESCE(r.content, ''), 1, 220) as excerpt
       FROM wiki_articles a
       LEFT JOIN users u ON a.created_by = u.uuid
       LEFT JOIN wiki_profiles wp ON a.created_by = wp.user_id
       LEFT JOIN wiki_revisions r ON a.current_revision_id = r.id
-      WHERE a.status = 'published'
-      ORDER BY a.view_count DESC NULLS LAST
-      LIMIT $1
+      ${where}
+      ORDER BY 
+        COALESCE(a.view_count, 0) DESC,
+        a.updated_at DESC,
+        a.created_at DESC
+      LIMIT $${params.length}
       `,
-      [limit]
+      params
     );
 
-    console.log(`Found ${result.rows.length} popular articles`);
+    return result.rows.map((article, index) => {
+      const views = Number(article.view_count || 0);
 
-    // Add rank to each article
-    const articles = result.rows.map((article, index) => ({
-      ...article,
-      rank: index + 1,
-      view_count: article.view_count || 0,
-      categories: article.categories || []
-    }));
+      let trend = "normal";
+      if (views >= 1000) trend = "hot";
+      else if (views >= 250) trend = "rising";
 
-    return articles;
-  } catch (err) {
-    console.error("Error in getPopularArticles:", err);
-    throw err;
+      return {
+        ...article,
+        rank: index + 1,
+        view_count: views,
+        revision_count: Number(article.revision_count || 0),
+        categories: article.categories || [],
+        trend,
+      };
+    });
+  } catch (error) {
+    console.error("Error in getPopularArticles:", error);
+    throw error;
   } finally {
     client.release();
   }
@@ -1093,6 +1120,151 @@ wikimediaUploadedfilesize: parseFloat(wikimediaUploadedFilesize.rows[0]?.total) 
   } catch (err) {
     console.error("Error in getWikiStatistics:", err);
     throw err;
+  } finally {
+    client.release();
+  }
+};
+
+export const getRecentChanges = async (filters = {}, page = 1, limit = 20) => {
+  const client = await pool.connect();
+
+  try {
+    const offset = (page - 1) * limit;
+    const where = [];
+    const params = [];
+    let index = 1;
+
+    if (filters.user) {
+      where.push(`rc.user_id = $${index++}`);
+      params.push(filters.user);
+    }
+
+    if (filters.articleId) {
+      where.push(`rc.article_id = $${index++}`);
+      params.push(filters.articleId);
+    }
+
+    if (filters.changeType) {
+      where.push(`rc.change_type = $${index++}`);
+      params.push(filters.changeType);
+    }
+
+    const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+    const baseQuery = `
+      WITH rc AS (
+        -- article creation
+        SELECT
+          a.id::text as change_id,
+          a.id as article_id,
+          a.title as article_title,
+          a.slug as article_slug,
+          a.created_by as user_id,
+          COALESCE(wp.display_name, u.full_name, u.username) as user_name,
+          u.username,
+          wp.avatar_url as user_avatar,
+          'create' as change_type,
+          'Created article' as action,
+          NULL::integer as revision_id,
+          1::integer as version,
+          NULL::text as summary,
+          a.created_at as changed_at
+        FROM wiki_articles a
+        LEFT JOIN users u ON a.created_by = u.uuid
+        LEFT JOIN wiki_profiles wp ON a.created_by = wp.user_id
+
+        UNION ALL
+
+        -- revisions/edits
+        SELECT
+          CONCAT('rev-', r.id)::text as change_id,
+          a.id as article_id,
+          a.title as article_title,
+          a.slug as article_slug,
+          r.edited_by as user_id,
+          COALESCE(wp.display_name, u.full_name, u.username) as user_name,
+          u.username,
+          wp.avatar_url as user_avatar,
+          'edit' as change_type,
+          'Edited article' as action,
+          r.id as revision_id,
+          r.version,
+          r.summary,
+          r.created_at as changed_at
+        FROM wiki_revisions r
+        JOIN wiki_articles a ON a.id = r.article_id
+        LEFT JOIN users u ON r.edited_by = u.uuid
+        LEFT JOIN wiki_profiles wp ON r.edited_by = wp.user_id
+      )
+
+      SELECT
+        rc.*,
+        (
+          SELECT COALESCE(json_agg(
+            json_build_object(
+              'id', c.id,
+              'name', c.name
+            )
+          ), '[]'::json)
+          FROM wiki_article_categories ac
+          JOIN wiki_categories c ON c.id = ac.category_id
+          WHERE ac.article_id = rc.article_id
+        ) as categories
+      FROM rc
+      ${whereClause}
+      ORDER BY rc.changed_at DESC
+      LIMIT $${index++} OFFSET $${index++}
+    `;
+
+    params.push(limit, offset);
+
+    const countQuery = `
+      WITH rc AS (
+        SELECT
+          a.id::text as change_id,
+          a.id as article_id,
+          a.created_by as user_id,
+          'create' as change_type,
+          a.created_at as changed_at
+        FROM wiki_articles a
+
+        UNION ALL
+
+        SELECT
+          CONCAT('rev-', r.id)::text as change_id,
+          a.id as article_id,
+          r.edited_by as user_id,
+          'edit' as change_type,
+          r.created_at as changed_at
+        FROM wiki_revisions r
+        JOIN wiki_articles a ON a.id = r.article_id
+      )
+      SELECT COUNT(*) as total
+      FROM rc
+      ${whereClause}
+    `;
+
+    const countParams = params.slice(0, params.length - 2);
+
+    const [dataResult, countResult] = await Promise.all([
+      client.query(baseQuery, params),
+      client.query(countQuery, countParams),
+    ]);
+
+    const total = Number(countResult.rows[0]?.total || 0);
+
+    return {
+      data: dataResult.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  } catch (error) {
+    console.error("Error in getRecentChanges:", error);
+    throw error;
   } finally {
     client.release();
   }

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout.jsx";
-import ebookApi from "../../api/ebook.api";
+import ebookApi from "./mock/ebookMockApi.js";
 import StatusBadge from "./components/StatusBadge.jsx";
 
 const normalizeRoleName = (value) => (value || "").toString().trim().toUpperCase().replace(/\s+/g, "_");
@@ -20,7 +20,7 @@ const ROLE_TO_PANEL = {
 
 const PANEL_META = {
   admin: {
-    title: "Ebook administration overview",
+    title: "ORA eBook Publishing administration overview",
     subtitle: "Monitor every workflow area, jump to configuration tools, and supervise the full publishing operation.",
     links: [
       { label: "Admin tools", to: "/ebook/admin", style: "dark" },
@@ -29,7 +29,7 @@ const PANEL_META = {
     ],
   },
   author: {
-    title: "Author dashboard",
+    title: "ORA eBook Author dashboard",
     subtitle: "Use the stage queues below to move manuscripts from submission to revision, payment, proof approval, and publication.",
     links: [
       { label: "My submissions", to: "/ebook/my-submissions", style: "primary" },
@@ -41,7 +41,7 @@ const PANEL_META = {
     ],
   },
   editor: {
-    title: "Editor dashboard",
+    title: "ORA eBook Editor dashboard",
     subtitle: "Screen incoming manuscripts, manage reviewers, and keep editorial decisions moving.",
     links: [
       { label: "Screening queue", to: "/ebook/editor/screening", style: "primary" },
@@ -51,7 +51,7 @@ const PANEL_META = {
     ],
   },
   reviewer: {
-    title: "Reviewer dashboard",
+    title: "ORA eBook Reviewer dashboard",
     subtitle: "Review active assignments, submit recommendations, and track review progress.",
     links: [
       { label: "Reviewer workspace", to: "/ebook/reviewer", style: "primary" },
@@ -59,7 +59,7 @@ const PANEL_META = {
     ],
   },
   finance: {
-    title: "Finance dashboard",
+    title: "ORA eBook Finance dashboard",
     subtitle: "Review waiver requests, verify payment proof, and clear submissions for production.",
     links: [
       { label: "Finance queue", to: "/ebook/finance", style: "danger" },
@@ -67,7 +67,7 @@ const PANEL_META = {
     ],
   },
   production: {
-    title: "Production dashboard",
+    title: "ORA eBook Production dashboard",
     subtitle: "Validate files, prepare ISBN and DOI metadata, and release approved publications.",
     links: [
       { label: "Production queue", to: "/ebook/production", style: "success" },
@@ -75,7 +75,7 @@ const PANEL_META = {
     ],
   },
   reader: {
-    title: "Public reader dashboard",
+    title: "ORA eBook Reader dashboard",
     subtitle: "Browse published eBooks, open detail pages, and access downloadable public files.",
     links: [
       { label: "Open public catalog", to: "/ebook/publications", style: "primary" },

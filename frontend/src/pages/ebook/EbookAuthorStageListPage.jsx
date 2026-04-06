@@ -1,8 +1,7 @@
-// pages/ebook/EbookAuthorStageListPage.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout.jsx";
-import ebookApi from "../../api/ebook.api";
+import ebookApi from "./mock/ebookMockApi.js";
 import StatusBadge from "./components/StatusBadge.jsx";
 
 const STAGE_CONFIG = {
@@ -82,30 +81,34 @@ function getPrimaryAction(stage, row) {
       icon: "fa-pen",
     };
   }
+
   if (stage === "revisions") {
     return {
       label: "Open Revision",
       className: "btn btn-warning",
-      to: `/ebook/submissions/${row.submission_id}/review-comments`,
+      to: `/ebook/submissions/${row.submission_id}`,
       icon: "fa-code-branch",
     };
   }
+
   if (stage === "payments") {
     return {
       label: "Open Payment",
       className: "btn btn-danger",
-      to: `/ebook/submissions/${row.submission_id}/payment`,
+      to: `/ebook/submissions/${row.submission_id}`,
       icon: "fa-credit-card",
     };
   }
+
   if (stage === "proofs") {
     return {
       label: "Open Proof",
       className: "btn btn-success",
-      to: `/ebook/submissions/${row.submission_id}/proof-approval`,
+      to: `/ebook/submissions/${row.submission_id}`,
       icon: "fa-check-circle",
     };
   }
+
   return {
     label: "Open Detail",
     className: "btn btn-outline-primary",
@@ -117,10 +120,17 @@ function getPrimaryAction(stage, row) {
 function buildStats(rows = []) {
   return {
     total: rows.length,
-    drafts: rows.filter((r) => String(r.status || "").toLowerCase() === "draft").length,
-    revisions: rows.filter((r) => String(r.stage || "").toLowerCase() === "revisions").length,
-    payments: rows.filter((r) => r.payment_status || Number(r.amount_due || 0) > 0).length,
-    proofs: rows.filter((r) => !!r.proof_sent_to_author && !r.author_proof_approved).length,
+    drafts: rows.filter((r) => String(r.status || "").toLowerCase() === "draft")
+      .length,
+    revisions: rows.filter(
+      (r) => String(r.status || "").toLowerCase() === "revision_requested"
+    ).length,
+    payments: rows.filter(
+      (r) => r.payment_status || Number(r.amount_due || 0) > 0
+    ).length,
+    proofs: rows.filter(
+      (r) => !!r.proof_sent_to_author && !r.author_proof_approved
+    ).length,
   };
 }
 
@@ -162,6 +172,7 @@ const SummaryCard = ({ title, value, icon, tone = "primary" }) => {
     warning: { bg: "#fffaf0", text: "#c05621", border: "#fbd38d" },
     danger: { bg: "#fff5f5", text: "#c53030", border: "#feb2b2" },
     secondary: { bg: "#f7fafc", text: "#4a5568", border: "#e2e8f0" },
+    dark: { bg: "#f1f5f9", text: "#334155", border: "#cbd5e1" },
   };
 
   const theme = tones[tone] || tones.primary;
@@ -298,7 +309,8 @@ const SubmissionModal = ({ isOpen, onClose, submission, stage }) => {
                       <>
                         <StatusBadge value={submission.payment_status} />
                         <div className="mt-2 font-weight-bold text-dark">
-                          {submission.amount_due || 0} {submission.currency_code || "ETB"}
+                          {submission.amount_due || 0}{" "}
+                          {submission.currency_code || "ETB"}
                         </div>
                       </>
                     ) : (
@@ -312,7 +324,9 @@ const SubmissionModal = ({ isOpen, onClose, submission, stage }) => {
                     {submission.proof_sent_to_author ? (
                       <>
                         <StatusBadge
-                          value={submission.author_proof_approved ? "approved" : "pending"}
+                          value={
+                            submission.author_proof_approved ? "approved" : "pending"
+                          }
                         />
                         <div className="mt-2 text-muted">
                           {submission.author_proof_approved
@@ -409,8 +423,6 @@ const SubmissionModal = ({ isOpen, onClose, submission, stage }) => {
               </button>
 
               <div className="d-flex flex-wrap" style={{ gap: 10 }}>
-                 
-
                 {primaryAction && (
                   <Link
                     className={`${primaryAction.className} rounded-pill px-4`}
@@ -435,7 +447,7 @@ const SubmissionModal = ({ isOpen, onClose, submission, stage }) => {
           zIndex: 1040,
           backdropFilter: "blur(5px)",
         }}
-      ></div>
+      />
     </>
   );
 };
@@ -459,12 +471,14 @@ export default function EbookAuthorStageListPage({ stage = "all" }) {
   const load = async (query = "") => {
     setLoading(true);
     setError("");
+
     try {
       const result = await ebookApi.listMySubmissions({
         limit: 100,
         search: query,
         ...(config.query || {}),
       });
+
       setRows(Array.isArray(result?.rows) ? result.rows : []);
       setPage(1);
     } catch (err) {
@@ -505,6 +519,7 @@ export default function EbookAuthorStageListPage({ stage = "all" }) {
 
   const sortedRows = useMemo(() => {
     const list = [...rows];
+
     list.sort((a, b) => {
       const aVal = a?.[sortBy];
       const bVal = b?.[sortBy];
@@ -531,6 +546,7 @@ export default function EbookAuthorStageListPage({ stage = "all" }) {
       const bb = bVal ? new Date(bVal).getTime() : 0;
       return sortDir === "asc" ? aa - bb : bb - aa;
     });
+
     return list;
   }, [rows, sortBy, sortDir]);
 
@@ -545,7 +561,10 @@ export default function EbookAuthorStageListPage({ stage = "all" }) {
   }, [sortedRows, currentPage, pageSize]);
 
   const sortIcon = (column) => {
-    if (sortBy !== column) return <i className="fas fa-sort text-muted ml-1"></i>;
+    if (sortBy !== column) {
+      return <i className="fas fa-sort text-muted ml-1"></i>;
+    }
+
     return sortDir === "asc" ? (
       <i className="fas fa-sort-up text-primary ml-1"></i>
     ) : (
@@ -635,10 +654,16 @@ export default function EbookAuthorStageListPage({ stage = "all" }) {
       <div className="ebook-stage-page">
         <section className="content-header mb-4">
           <div className="hero-card p-4 p-md-5">
-            <div className="d-flex justify-content-between align-items-start flex-wrap" style={{ gap: 16 }}>
+            <div
+              className="d-flex justify-content-between align-items-start flex-wrap"
+              style={{ gap: 16 }}
+            >
               <div>
                 <div className="section-label">Author Workspace</div>
-                <h1 className="mb-2 font-weight-bold" style={{ color: "#1e293b" }}>
+                <h1
+                  className="mb-2 font-weight-bold"
+                  style={{ color: "#1e293b" }}
+                >
                   <i className={`fas ${config.icon} text-${config.color} mr-3`}></i>
                   {config.heading}
                 </h1>
@@ -656,6 +681,7 @@ export default function EbookAuthorStageListPage({ stage = "all" }) {
                   <i className="fas fa-folder-open mr-2"></i>
                   All Submissions
                 </Link>
+
                 <Link
                   className="btn btn-primary pill-btn px-4 shadow-sm"
                   to="/ebook/submissions/create"
@@ -729,11 +755,15 @@ export default function EbookAuthorStageListPage({ stage = "all" }) {
                     <div className="input-group-prepend">
                       <span
                         className="input-group-text bg-white border-right-0"
-                        style={{ borderRadius: "999px 0 0 999px", borderColor: "#dbe4ee" }}
+                        style={{
+                          borderRadius: "999px 0 0 999px",
+                          borderColor: "#dbe4ee",
+                        }}
                       >
                         <i className="fas fa-search text-muted"></i>
                       </span>
                     </div>
+
                     <input
                       className="form-control soft-input border-left-0"
                       placeholder="Search by title, abstract, or keywords..."
@@ -744,7 +774,10 @@ export default function EbookAuthorStageListPage({ stage = "all" }) {
                 </div>
 
                 <div className="col-lg-5">
-                  <div className="d-flex flex-wrap justify-content-lg-end" style={{ gap: 10 }}>
+                  <div
+                    className="d-flex flex-wrap justify-content-lg-end"
+                    style={{ gap: 10 }}
+                  >
                     <button className="btn btn-primary pill-btn px-4" type="submit">
                       <i className="fas fa-search mr-2"></i>
                       Search
@@ -768,19 +801,18 @@ export default function EbookAuthorStageListPage({ stage = "all" }) {
         </div>
 
         <div className="table-card">
-          <div
-            className="card-body border-bottom"
-            style={{ background: "#f8fafc", borderTopLeftRadius: 18, borderTopRightRadius: 18 }}
-          >
-            <div className="d-flex justify-content-between align-items-center flex-wrap" style={{ gap: 14 }}>
-              <div className="text-muted">
-                <i className="fas fa-database mr-2"></i>
-                Showing {rows.length ? (currentPage - 1) * pageSize + 1 : 0}–
-                {Math.min(currentPage * pageSize, sortedRows.length)} of {sortedRows.length}
+          <div className="card-header bg-white border-0 px-4 py-3">
+            <div className="d-flex align-items-center justify-content-between flex-wrap">
+              <div className="small text-muted">
+                Showing {sortedRows.length ? (currentPage - 1) * pageSize + 1 : 0}–
+                {Math.min(currentPage * pageSize, sortedRows.length)} of{" "}
+                {sortedRows.length}
                 {serverSearch && (
                   <>
                     {" "}results for{" "}
-                    <span className="font-weight-bold text-primary">"{serverSearch}"</span>
+                    <span className="font-weight-bold text-primary">
+                      "{serverSearch}"
+                    </span>
                   </>
                 )}
               </div>
@@ -838,7 +870,7 @@ export default function EbookAuthorStageListPage({ stage = "all" }) {
                   >
                     Last Updated {sortIcon("updated_at")}
                   </th>
-                  <th style={{ width: 110 }}>Action</th>
+                  <th style={{ width: 170 }}>Action</th>
                 </tr>
               </thead>
 
@@ -872,149 +904,132 @@ export default function EbookAuthorStageListPage({ stage = "all" }) {
                         </div>
                         <h5 className="mb-2">{config.empty}</h5>
                         <p className="text-muted mb-3">
-                          Start by creating a new ebook submission or adjusting your search.
+                          Start by creating a new ebook submission or adjusting your
+                          search.
                         </p>
-                        {stage === "all" && (
-                          <Link
-                            to="/ebook/submissions/create"
-                            className="btn btn-primary pill-btn px-4"
-                          >
-                            <i className="fas fa-plus mr-2"></i>
-                            Create Your First Submission
-                          </Link>
-                        )}
+                        <Link
+                          className="btn btn-primary pill-btn px-4"
+                          to="/ebook/submissions/create"
+                        >
+                          <i className="fas fa-plus mr-2"></i>
+                          New Submission
+                        </Link>
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  paginatedRows.map((row) => (
-                    <tr
-                      key={row.submission_id}
-                      style={{ cursor: "pointer" }}
-                      onClick={() => setSelectedSubmission(row)}
-                    >
-                      <td>
-                        <div className="font-weight-bold text-dark mb-1">
-                          {row.title || "Untitled"}
-                        </div>
-                        <small className="text-muted d-block">
-                          <i className="fas fa-tag mr-1"></i>
-                          {row.category || "No category"}
-                        </small>
-                        <small className="text-muted d-block">
-                          <i className="fas fa-language mr-1"></i>
-                          {row.language || "—"}
-                        </small>
-                      </td>
+                  paginatedRows.map((row) => {
+                    const primaryAction = getPrimaryAction(stage, row);
 
-                      <td>
-                        <StatusBadge value={row.status} />
-                      </td>
+                    return (
+                      <tr key={row.submission_id}>
+                        <td>
+                          <div className="font-weight-bold text-dark">
+                            {row.title || "Untitled submission"}
+                          </div>
+                          <div className="small text-muted">
+                            {row.subtitle || row.category || "—"}
+                          </div>
+                        </td>
 
-                      <td>
-                        {row.amount_due || row.payment_status ? (
-                          <>
-                            <StatusBadge value={row.payment_status || "pending"} />
-                            <small className="d-block text-muted mt-1">
-                              {row.amount_due || 0} {row.currency_code || "ETB"}
-                            </small>
-                          </>
-                        ) : (
-                          <span className="text-muted">—</span>
-                        )}
-                      </td>
+                        <td>
+                          <StatusBadge value={row.status} />
+                        </td>
 
-                      <td>
-                        {row.proof_sent_to_author ? (
-                          <>
+                        <td>
+                          {row.payment_status ? (
+                            <div>
+                              <StatusBadge value={row.payment_status} />
+                              <div className="small text-muted mt-1">
+                                {Number(row.amount_due || 0).toLocaleString()}{" "}
+                                {row.currency_code || "ETB"}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-muted">—</span>
+                          )}
+                        </td>
+
+                        <td>
+                          {row.proof_sent_to_author ? (
                             <StatusBadge
                               value={row.author_proof_approved ? "approved" : "pending"}
                             />
-                            <small className="d-block text-muted mt-1">
-                              {row.author_proof_approved ? "Approved" : "Waiting"}
-                            </small>
-                          </>
-                        ) : (
-                          <span className="text-muted">Not ready</span>
-                        )}
-                      </td>
-
-                      <td>
-                        <div className="d-flex align-items-center flex-wrap">
-                          <span
-                            className="badge badge-light mr-2"
-                            style={{
-                              borderRadius: 999,
-                              border: "1px solid #e2e8f0",
-                              padding: "0.45rem 0.75rem",
-                            }}
-                          >
-                            {row.file_count || 0}
-                          </span>
-                          {Array.isArray(row.file_roles) && row.file_roles.length > 0 && (
-                            <small className="text-muted text-truncate" style={{ maxWidth: 120 }}>
-                              {row.file_roles.join(", ")}
-                            </small>
+                          ) : (
+                            <span className="text-muted">Not ready</span>
                           )}
-                        </div>
-                      </td>
+                        </td>
 
-                      <td>
-                        <small className="text-muted d-block">
-                          <i className="far fa-clock mr-1"></i>
-                          {formatDate(row.updated_at || row.submitted_at || row.accepted_at)}
-                        </small>
-                      </td>
+                        <td>
+                          <span className="font-weight-bold">{row.file_count || 0}</span>
+                        </td>
 
-                      <td>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-primary pill-btn px-3"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedSubmission(row);
-                          }}
-                        >
-                          <i className="fas fa-eye mr-1"></i>
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                        <td>
+                          <div>{formatDate(row.updated_at || row.submitted_at)}</div>
+                        </td>
+
+                        <td>
+                          <div className="d-flex flex-wrap" style={{ gap: 8 }}>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-light"
+                              style={{ border: "1px solid #e2e8f0" }}
+                              onClick={() => setSelectedSubmission(row)}
+                            >
+                              <i className="fas fa-eye mr-1"></i>
+                              Quick View
+                            </button>
+
+                            <Link
+                              className={`btn btn-sm ${primaryAction.className}`}
+                              to={primaryAction.to}
+                            >
+                              <i className={`fas ${primaryAction.icon} mr-1`}></i>
+                              {primaryAction.label}
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
           </div>
 
-          <div className="card-footer bg-white border-0 py-3 px-4">
-            <div className="d-flex justify-content-between align-items-center flex-wrap" style={{ gap: 12 }}>
-              <div className="small text-muted">
-                Page {currentPage} of {totalPages}
-              </div>
+          {!loading && sortedRows.length > 0 && (
+            <div className="card-footer bg-white border-0 px-4 py-3">
+              <div className="d-flex justify-content-between align-items-center flex-wrap">
+                <div className="small text-muted">
+                  Page {currentPage} of {totalPages}
+                </div>
 
-              <div className="d-flex" style={{ gap: 10 }}>
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary pill-btn px-4"
-                  disabled={currentPage <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                >
-                  <i className="fas fa-chevron-left mr-2"></i>
-                  Previous
-                </button>
+                <div className="d-flex" style={{ gap: 8 }}>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    disabled={currentPage <= 1}
+                    onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                  >
+                    <i className="fas fa-chevron-left mr-1"></i>
+                    Prev
+                  </button>
 
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary pill-btn px-4"
-                  disabled={currentPage >= totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                >
-                  Next
-                  <i className="fas fa-chevron-right ml-2"></i>
-                </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    disabled={currentPage >= totalPages}
+                    onClick={() =>
+                      setPage((prev) => Math.min(totalPages, prev + 1))
+                    }
+                  >
+                    Next
+                    <i className="fas fa-chevron-right ml-1"></i>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         <SubmissionModal
