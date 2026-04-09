@@ -52,18 +52,7 @@ import systemSettingRoutes from "./routes/systemSetting.routes.js";
 import publisherExternalRoutes from "./routes/publisher.routes.js";
 import ebookRoutes from "./ebook/routes/ebook.routes.js";
 import ebookPublicRoutes from "./ebook/routes/ebookPublic.routes.js";
-<<<<<<< HEAD
-import repositoryAuthorRoutes from './repository/authors/routes/repositoryAuthor.routes.js';
-
-import ebookAuthorRoutes from "./ora_ebooks/routes/author.routes.js";
-import ebookManuscriptRoutes from "./ora_ebooks/routes/manuscript.routes.js";
-import publicRoutes from "./ebook/routes/public.routes.js";
-import editorReviewerRoutes from "./ora_ebooks/routes/editor-reviewer.routes.js";
-
-import reviewerRoutes from "./ora_ebooks/routes/reviewer.routes.js";
-=======
 import repositoryAuthorRoutes from "./repository/authors/routes/repositoryAuthor.routes.js";
->>>>>>> origin/tbranch
 
 dotenv.config();
 
@@ -161,19 +150,12 @@ app.use("/api/publisher", publisherExternalRoutes);
 // Ebook
 app.use("/api/ebook", ebookRoutes);
 app.use("/api/ebook-public", ebookPublicRoutes);
-<<<<<<< HEAD
 app.use("/api/library", libraryRoutes);
 app.use("/api/public", publicRoutes);
 
 // Repository Authors
 app.use('/api/repository-authors', repositoryAuthorRoutes);
 app.use("/api/ebook_authors", ebookAuthorRoutes);
-=======
-
-// Library
-// Only this mount should remain for all physical and digital library routes
-app.use("/api/library", libraryRoutes);
->>>>>>> origin/tbranch
 
 
 
