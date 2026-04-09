@@ -1,324 +1,151 @@
-import api from "./api.js";
 
-export const getMaterialTypes = () => api.get("/library/material-types");
-export const createMaterialType = (data) => api.post("/library/material-types", data);
-export const updateMaterialType = (id, data) => api.put(`/library/material-types/${id}`, data);
-export const deleteMaterialType = (id) => api.delete(`/library/material-types/${id}`);
+import api from './api.js';
 
-export const getLibraryCategories = () => api.get("/library/categories");
-export const createLibraryCategory = (data) => api.post("/library/categories", data);
-export const updateLibraryCategory = (id, data) => api.put(`/library/categories/${id}`, data);
-export const deleteLibraryCategory = (id) => api.delete(`/library/categories/${id}`);
-
-export const getPublishers = () => api.get("/library/publishers");
-export const createPublisher = (data) => api.post("/library/publishers", data);
-export const updatePublisher = (id, data) => api.put(`/library/publishers/${id}`, data);
-export const deletePublisher = (id) => api.delete(`/library/publishers/${id}`);
-
-export const getLanguages = () => api.get("/library/languages");
-export const createLanguage = (data) => api.post("/library/languages", data);
-export const updateLanguage = (id, data) => api.put(`/library/languages/${id}`, data);
-export const deleteLanguage = (id) => api.delete(`/library/languages/${id}`);
-
-export const getLibraryBranches = () => api.get("/library/branches");
-export const createLibraryBranch = (data) => api.post("/library/branches", data);
-export const updateLibraryBranch = (id, data) => api.put(`/library/branches/${id}`, data);
-export const deleteLibraryBranch = (id) => api.delete(`/library/branches/${id}`);
-
-export const getLibraryLocations = () => api.get("/library/locations");
-export const createLibraryLocation = (data) => api.post("/library/locations", data);
-export const updateLibraryLocation = (id, data) => api.put(`/library/locations/${id}`, data);
-export const deleteLibraryLocation = (id) => api.delete(`/library/locations/${id}`);
-
-export const getMemberTypes = () => api.get("/library/member-types");
-export const createMemberType = (data) => api.post("/library/member-types", data);
-export const updateMemberType = (id, data) => api.put(`/library/member-types/${id}`, data);
-export const deleteMemberType = (id) => api.delete(`/library/member-types/${id}`);
-
-export const getContributors = () => api.get("/library/contributors");
-export const createContributor = (data) => api.post("/library/contributors", data);
-export const updateContributor = (id, data) => api.put(`/library/contributors/${id}`, data);
-export const deleteContributor = (id) => api.delete(`/library/contributors/${id}`);
-
-export const getLibrarianDashboard = () => api.get("/library/dashboard/librarian");
-export const getManagerDashboard = () => api.get("/library/dashboard/manager");
-export const getCatalogerDashboard = () => api.get("/library/dashboard/cataloger");
-export const getAdminDashboard = () => api.get("/library/dashboard/admin");
-
-export const getDigitalCollections = () => api.get("/library/digital-collections");
-export const createDigitalCollection = (data) => api.post("/library/digital-collections", data);
-export const updateDigitalCollection = (id, data) => api.put(`/library/digital-collections/${id}`, data);
-export const deleteDigitalCollection = (id) => api.delete(`/library/digital-collections/${id}`);
-
-const toQuery = (params = {}) => {
-  const clean = Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "");
-  return Object.fromEntries(clean);
+const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
+const rowsWrap = (response) => {
+  const data = unwrap(response);
+  if (Array.isArray(data)) return { rows: data };
+  if (Array.isArray(data?.rows)) return { rows: data.rows, meta: data.meta };
+  if (Array.isArray(data?.data)) return { rows: data.data, meta: data.meta };
+  return data;
 };
 
-export const libraryApi = {
-  getMaterialTypes,
-  createMaterialType,
-  updateMaterialType,
-  deleteMaterialType,
-  getLibraryCategories,
-  createLibraryCategory,
-  updateLibraryCategory,
-  deleteLibraryCategory,
-  getPublishers,
-  createPublisher,
-  updatePublisher,
-  deletePublisher,
-  getLanguages,
-  createLanguage,
-  updateLanguage,
-  deleteLanguage,
-  getLibraryBranches,
-  createLibraryBranch,
-  updateLibraryBranch,
-  deleteLibraryBranch,
-  getLibraryLocations,
-  createLibraryLocation,
-  updateLibraryLocation,
-  deleteLibraryLocation,
-  getMemberTypes,
-  createMemberType,
-  updateMemberType,
-  deleteMemberType,
-  getContributors,
-  createContributor,
-  updateContributor,
-  deleteContributor,
-  getLibrarianDashboard,
-  getManagerDashboard,
-  getCatalogerDashboard,
-  getAdminDashboard,
-
-  getDigitalCollections,
-  createDigitalCollection,
-  updateDigitalCollection,
-  deleteDigitalCollection,
-
-  list: async (resource, params = {}) => {
-    const { data } = await api.get(`/library/${resource}`, { params: toQuery({ limit: 200, ...params }) });
-    return data;
-  },
-  get: async (resource, id) => {
-    const { data } = await api.get(`/library/${resource}/${id}`);
-    return data;
-  },
-  create: async (resource, payload) => {
-    const { data } = await api.post(`/library/${resource}`, payload);
-    return data;
-  },
-  update: async (resource, id, payload) => {
-    const { data } = await api.put(`/library/${resource}/${id}`, payload);
-    return data;
-  },
-  remove: async (resource, id) => {
-    const { data } = await api.delete(`/library/${resource}/${id}`);
-    return data;
-  },
-
-  submitAcquisitionRequest: async (requestId) => {
-    const { data } = await api.post(`/library/acquisition-requests/${requestId}/submit`);
-    return data;
-  },
-  approveAcquisitionRequest: async (requestId) => {
-    const { data } = await api.post(`/library/acquisition-requests/${requestId}/approve`);
-    return data;
-  },
-  rejectAcquisitionRequest: async (requestId, payload) => {
-    const { data } = await api.post(`/library/acquisition-requests/${requestId}/reject`, payload);
-    return data;
-  },
-  markAcquisitionRequestOrdered: async (requestId) => {
-    const { data } = await api.post(`/library/acquisition-requests/${requestId}/mark-ordered`);
-    return data;
-  },
-
-  receivePurchaseOrder: async (purchaseOrderId, payload = {}) => {
-    const { data } = await api.post(`/library/purchase-orders/${purchaseOrderId}/receive`, payload);
-    return data;
-  },
-  borrowLoan: async (payload) => {
-    const { data } = await api.post('/library/loans/borrow', payload);
-    return data;
-  },
-  returnLoan: async (loanId, payload = {}) => {
-    const { data } = await api.post(`/library/loans/${loanId}/return`, payload);
-    return data;
-  },
-  renewLoan: async (loanId, payload = {}) => {
-    const { data } = await api.post(`/library/loans/${loanId}/renew`, payload);
-    return data;
-  },
-  createHold: async (payload) => {
-    const { data } = await api.post('/library/holds', payload);
-    return data;
-  },
-  cancelHold: async (holdId, payload = {}) => {
-    const { data } = await api.post(`/library/holds/${holdId}/cancel`, payload);
-    return data;
-  },
-  fulfillHold: async (holdId, payload = {}) => {
-    const { data } = await api.post(`/library/holds/${holdId}/fulfill`, payload);
-    return data;
-  },
-  payFine: async (fineId, payload) => {
-    const { data } = await api.post(`/library/fines/${fineId}/pay`, payload);
-    return data;
-  },
-  waiveFine: async (fineId, payload) => {
-    const { data } = await api.post(`/library/fines/${fineId}/waive`, payload);
-    return data;
-  },
-  submitDigitalSubmission: async (submissionId) => {
-    const { data } = await api.post(`/library/digital-submissions/${submissionId}/submit`);
-    return data;
-  },
-  reviewDigitalSubmission: async (submissionId, payload) => {
-    const { data } = await api.post(`/library/digital-submissions/${submissionId}/review`, payload);
-    return data;
-  },
-  publishDigitalSubmission: async (submissionId) => {
-    const { data } = await api.post(`/library/digital-submissions/${submissionId}/publish`);
-    return data;
-  },
-
-
-
-
-  searchCatalog: async (params = {}) => {
-    const { data } = await api.get('/library/catalog/search', { params: toQuery(params) });
-    return data;
-  },
-  getCatalogMaterial: async (materialId) => {
-    const { data } = await api.get(`/library/catalog/${materialId}`);
-    return data;
-  },
-  getCatalogAvailability: async (materialId) => {
-    const { data } = await api.get(`/library/catalog/${materialId}/availability`);
-    return data;
-  },
-  getSubmissionWorkflow: async (submissionId) => {
-    const { data } = await api.get(`/library/digital-submissions/${submissionId}/workflow`);
-    return data;
-  },
-  resubmitDigitalSubmission: async (submissionId, payload = {}) => {
-    const { data } = await api.post(`/library/digital-submissions/${submissionId}/resubmit`, payload);
-    return data;
-  },
-  getUploaderDashboard: async () => {
-    const { data } = await api.get('/library/digital-submissions/uploader/dashboard');
-    return data;
-  },
-  listPublisherPackages: async (params = {}) => {
-    const { data } = await api.get('/publisher/packages', { params: toQuery(params) });
-    return data;
-  },
-  createPublisherPackage: async (payload = {}) => {
-    const form = new FormData();
-    Object.entries(payload || {}).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') form.append(key, value);
-    });
-    const { data } = await api.post('/publisher/packages', form, { headers: { 'Content-Type': 'multipart/form-data' } });
-    return data;
-  },
-  createPublisherResource: async (payload = {}) => {
-    const form = new FormData();
-    Object.entries(payload || {}).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') form.append(key, value);
-    });
-    const { data } = await api.post('/publisher/resources', form, { headers: { 'Content-Type': 'multipart/form-data' } });
-    return data;
-  },
-  getUsageReport: async () => {
-    const { data } = await api.get('/library/reports/usage');
-    return data;
-  },
-  getLoansReport: async () => {
-    const { data } = await api.get('/library/reports/loans');
-    return data;
-  },
-  getCatalogClassificationSuggestion: async (materialId) => {
-    const { data } = await api.get('/library/catalog-tools/classification/suggest', { params: { material_id: materialId } });
-    return data;
-  },
-  applyCatalogClassification: async (materialId, payload) => {
-    const { data } = await api.post(`/library/catalog-tools/materials/${materialId}/classify`, payload);
-    return data;
-  },
-  generateCopyBarcode: async (copyId, payload = {}) => {
-    const { data } = await api.post(`/library/catalog-tools/copies/${copyId}/generate-barcode`, payload);
-    return data;
-  },
-  generateMissingCopyBarcodes: async (payload = {}) => {
-    const { data } = await api.post('/library/catalog-tools/copies/generate-missing', payload);
-    return data;
-  },
-
-  createInventoryAudit: async (payload = {}) => {
-    const { data } = await api.post('/library/inventory/audit', payload);
-    return data;
-  },
-  getInventoryReport: async () => {
-    const { data } = await api.get('/library/inventory/report');
-    return data;
-  },
-  getCirculationSummary: async () => {
-    const { data } = await api.get('/library/circulation/summary');
-    return data;
-  },
-  getMyCirculationOverview: async () => {
-    const { data } = await api.get('/library/circulation/my/overview');
-    return data;
-  },
-  getMemberCirculationOverview: async (memberId) => {
-    const { data } = await api.get(`/library/circulation/member/${memberId}/overview`);
-    return data;
-  },
-
-  getDigitalCollectionResources: async (collectionId) => {
-    const { data } = await api.get(`/library/digital-collections/${collectionId}/resources`);
-    return data;
-  },
-  addDigitalCollectionResource: async (collectionId, payload) => {
-    const { data } = await api.post(`/library/digital-collections/${collectionId}/resources`, payload);
-    return data;
-  },
-  removeDigitalCollectionResource: async (collectionId, resourceId) => {
-    const { data } = await api.delete(`/library/digital-collections/${collectionId}/resources/${resourceId}`);
-    return data;
-  },
-  accessDigitalResource: async (resourceId) => {
-    const { data } = await api.get(`/library/digital-resources/${resourceId}/access`);
-    return data;
-  },
-  getReportSummary: async () => {
-    const { data } = await api.get('/library/reports/summary');
-    return data;
-  },
-  getOverdueLoans: async () => {
-    const { data } = await api.get('/library/reports/overdue-loans');
-    return data;
-  },
-  uploadSubmissionFile: async (submissionId, file, fileRole = 'main') => {
-    const form = new FormData();
-    form.append('file', file);
-    form.append('file_role', fileRole);
-    const { data } = await api.post(`/library/digital-submission-files/upload/${submissionId}`, form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return data;
-  },
-  uploadResourceFile: async (resourceId, file) => {
-    const form = new FormData();
-    form.append('file', file);
-    const { data } = await api.post(`/library/digital-resource-files/upload/${resourceId}`, form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return data;
-  },
+const request = async (configs) => {
+  let lastError;
+  for (const config of configs) {
+    try {
+      return await api.request(config);
+    } catch (error) {
+      lastError = error;
+      const status = error?.response?.status;
+      if (status && status !== 404) throw error;
+    }
+  }
+  throw lastError;
 };
 
+const resourcePaths = (resource) => [
+  `/library/resources/${resource}`,
+  `/library/portal/resources/${resource}`,
+  `/library/portal/crud/${resource}`,
+];
+
+const resourceRequest = async (method, resource, suffix = '', data, params) => {
+  const configs = resourcePaths(resource).map((url) => ({ method, url: `${url}${suffix}`, data, params }));
+  return request(configs);
+};
+
+const summaryRequest = async (paths) => request(paths.map((url) => ({ method: 'get', url })));
+
+const libraryApi = {
+  list: async (resource, params = {}) => rowsWrap(await resourceRequest('get', resource, '', undefined, params)),
+  get: async (resource, id) => unwrap(await resourceRequest('get', resource, `/${id}`)),
+  create: async (resource, payload) => unwrap(await resourceRequest('post', resource, '', payload)),
+  update: async (resource, id, payload) => unwrap(await request([
+    { method: 'patch', url: `/library/resources/${resource}/${id}`, data: payload },
+    { method: 'patch', url: `/library/portal/resources/${resource}/${id}`, data: payload },
+    { method: 'put', url: `/library/resources/${resource}/${id}`, data: payload },
+    { method: 'put', url: `/library/portal/resources/${resource}/${id}`, data: payload },
+    { method: 'patch', url: `/library/portal/crud/${resource}/${id}`, data: payload },
+    { method: 'put', url: `/library/portal/crud/${resource}/${id}`, data: payload },
+  ])),
+  remove: async (resource, id) => unwrap(await resourceRequest('delete', resource, `/${id}`)),
+
+  getCirculationSummary: async () => unwrap(await summaryRequest(['/library/librarian/summary', '/library/portal/librarian/summary', '/library/portal/summary/librarian'])),
+  getReportSummary: async () => unwrap(await summaryRequest(['/library/admin/dashboard', '/library/portal/admin/dashboard', '/library/portal/dashboard/admin'])),
+  getMyCirculationOverview: async () => unwrap(await summaryRequest(['/library/member/overview', '/library/portal/member/overview', '/library/portal/overview/member'])),
+  getOverdueLoans: async () => unwrap(await summaryRequest(['/library/reports/overdue-loans', '/library/portal/reports/overdue-loans', '/library/portal/overdue-loans'])),
+
+  searchCatalog: async (params = {}) => rowsWrap(await request([
+    { method: 'get', url: '/library/resources/materials', params },
+    { method: 'get', url: '/library/portal/resources/materials', params },
+    { method: 'get', url: '/library/physical-library', params },
+  ])),
+
+  borrowLoan: async (payload) => unwrap(await request([
+    { method: 'post', url: '/library/physical-library/borrow', data: payload },
+  ])),
+  returnLoan: async (loanId) => unwrap(await request([{ method: 'post', url: '/library/physical-library/return', data: { loan_id: loanId } }])),
+  renewLoan: async (loanId, payload = {}) => unwrap(await request([{ method: 'post', url: '/library/physical-library/renew', data: { loan_id: loanId, ...payload } }])),
+
+  createHold: async (payload) => unwrap(await request([{ method: 'post', url: '/library/physical-library/holds', data: payload }])),
+  cancelHold: async (holdId, payload = {}) => unwrap(await request([{ method: 'patch', url: `/library/physical-library/holds/${holdId}/cancel`, data: payload }])),
+  fulfillHold: async (holdId, payload = {}) => unwrap(await request([
+    { method: 'patch', url: `/library/holds/${holdId}/fulfill`, data: payload },
+    { method: 'patch', url: `/library/portal/holds/${holdId}/fulfill`, data: payload },
+    { method: 'patch', url: `/library/portal/hold-requests/${holdId}/fulfill`, data: payload },
+  ])),
+
+  createFine: async (payload) => unwrap(await request([{ method: 'post', url: '/library/physical-library/fines', data: payload }])),
+  payFine: async (fineId, payload) => unwrap(await request([
+    { method: 'post', url: `/library/fines/${fineId}/pay`, data: payload },
+    { method: 'post', url: `/library/portal/fines/${fineId}/pay`, data: payload },
+    { method: 'post', url: `/library/portal/fine-payments/${fineId}/pay`, data: payload },
+  ])),
+
+  addCopy: async (materialId, payload) => unwrap(await request([{ method: 'post', url: `/library/physical-library/${materialId}/copies`, data: payload }])),
+  updateCopy: async (copyId, payload) => unwrap(await request([{ method: 'patch', url: `/library/physical-library/copies/${copyId}`, data: payload }])),
+  removeCopy: async (copyId) => unwrap(await request([{ method: 'delete', url: `/library/physical-library/copies/${copyId}` }])),
+  markCopyMissing: async (copyId, payload = {}) => unwrap(await request([{ method: 'patch', url: `/library/physical-library/copies/${copyId}/missing`, data: payload }])),
+  markCopyDamaged: async (copyId, payload = {}) => unwrap(await request([{ method: 'patch', url: `/library/physical-library/copies/${copyId}/damaged`, data: payload }])),
+
+  getAdminDashboard: async () => unwrap(await summaryRequest(['/library/admin/dashboard', '/library/portal/admin/dashboard'])),
+};
+
+export const getMaterialTypes = () => libraryApi.list('material-types');
+export const createMaterialType = (data) => libraryApi.create('material-types', data);
+export const updateMaterialType = (id, data) => libraryApi.update('material-types', id, data);
+export const deleteMaterialType = (id) => libraryApi.remove('material-types', id);
+
+export const getLibraryCategories = () => libraryApi.list('categories');
+export const createLibraryCategory = (data) => libraryApi.create('categories', data);
+export const updateLibraryCategory = (id, data) => libraryApi.update('categories', id, data);
+export const deleteLibraryCategory = (id) => libraryApi.remove('categories', id);
+
+export const getPublishers = () => libraryApi.list('publishers');
+export const createPublisher = (data) => libraryApi.create('publishers', data);
+export const updatePublisher = (id, data) => libraryApi.update('publishers', id, data);
+export const deletePublisher = (id) => libraryApi.remove('publishers', id);
+
+export const getLanguages = () => libraryApi.list('languages');
+export const createLanguage = (data) => libraryApi.create('languages', data);
+export const updateLanguage = (id, data) => libraryApi.update('languages', id, data);
+export const deleteLanguage = (id) => libraryApi.remove('languages', id);
+
+export const getLibraryBranches = () => libraryApi.list('branches');
+export const createLibraryBranch = (data) => libraryApi.create('branches', data);
+export const updateLibraryBranch = (id, data) => libraryApi.update('branches', id, data);
+export const deleteLibraryBranch = (id) => libraryApi.remove('branches', id);
+
+export const getLibraryLocations = () => libraryApi.list('locations');
+export const createLibraryLocation = (data) => libraryApi.create('locations', data);
+export const updateLibraryLocation = (id, data) => libraryApi.update('locations', id, data);
+export const deleteLibraryLocation = (id) => libraryApi.remove('locations', id);
+
+export const getMemberTypes = () => libraryApi.list('member-types');
+export const createMemberType = (data) => libraryApi.create('member-types', data);
+export const updateMemberType = (id, data) => libraryApi.update('member-types', id, data);
+export const deleteMemberType = (id) => libraryApi.remove('member-types', id);
+
+export const getContributors = () => libraryApi.list('contributors');
+export const createContributor = (data) => libraryApi.create('contributors', data);
+export const updateContributor = (id, data) => libraryApi.update('contributors', id, data);
+export const deleteContributor = (id) => libraryApi.remove('contributors', id);
+
+export const getLibrarySubjects = () => libraryApi.list('subjects');
+export const createLibrarySubject = (data) => libraryApi.create('subjects', data);
+export const updateLibrarySubject = (id, data) => libraryApi.update('subjects', id, data);
+export const deleteLibrarySubject = (id) => libraryApi.remove('subjects', id);
+
+export const getLibrarianDashboard = () => libraryApi.getCirculationSummary();
+export const getManagerDashboard = () => libraryApi.getReportSummary();
+export const getCatalogerDashboard = () => libraryApi.getReportSummary();
+export const getAdminDashboard = () => libraryApi.getAdminDashboard();
+
+export const getDigitalCollections = () => libraryApi.list('digital-collections');
+export const createDigitalCollection = (data) => libraryApi.create('digital-collections', data);
+export const updateDigitalCollection = (id, data) => libraryApi.update('digital-collections', id, data);
+export const deleteDigitalCollection = (id) => libraryApi.remove('digital-collections', id);
+
+export { libraryApi };
 export default libraryApi;

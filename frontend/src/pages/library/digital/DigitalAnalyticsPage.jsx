@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import MainLayout from '../../../components/layout/MainLayout.jsx';
-import { formatDate, getRows, loadLibraryLookups, loadResource } from '../shared/libraryHelpers.js';
+import { formatDate, getRows, loadLibraryLookups, loadResource } from '../../../components/library/shared/libraryHelpers.js';
 
 export default function DigitalAnalyticsPage() {
   const [rows, setRows] = useState([]);

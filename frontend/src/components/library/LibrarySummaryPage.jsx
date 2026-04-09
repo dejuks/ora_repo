@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import MainLayout from "../layout/MainLayout.jsx";
 import libraryApi from "../../api/library.api";
-import { formatCurrency, formatDate, StatusBadge } from "../../pages/library/shared/libraryHelpers.js";
+import { formatCurrency, formatDate, StatusBadge } from "./shared/libraryHelpers.js";
 
 const cards = [
   { key: 'materials', label: 'Catalog Materials', color: 'bg-primary', icon: 'fas fa-book' },

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import MainLayout from '../../../components/layout/MainLayout.jsx';
 import libraryApi from '../../../api/library.api';
 import api from '../../../api/api.js';
-import { formatDate, getRows, loadResource, mapBy, StatusBadge } from '../shared/libraryHelpers.js';
+import { formatDate, getRows, loadResource, mapBy, StatusBadge } from '../../../components/library/shared/libraryHelpers.js';
 
 export default function DigitalResourcesPage() {
   const [rows, setRows] = useState([]);

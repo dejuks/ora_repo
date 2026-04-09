@@ -130,7 +130,7 @@ export default function SubmissionWorkflowPage() {
             <h1>Submission Revision Workflow</h1>
             <p className="text-muted mb-0">Review feedback, update metadata, upload corrected files, and resubmit.</p>
           </div>
-          <button type="button" className="btn btn-outline-secondary" onClick={() => navigate('/library/uploader/dashboard')}>
+          <button type="button" className="btn btn-outline-secondary" onClick={() => navigate('/library/digital/content-uploader/dashboard')}>
             Back to dashboard
           </button>
         </div>

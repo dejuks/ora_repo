@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import MainLayout from '../../../components/layout/MainLayout.jsx';
-import CrudModal from '../shared/CrudModal.jsx';
+import CrudModal from '../../../components/library/shared/CrudModal.jsx';
 import libraryApi from '../../../api/library.api';
-import { getRows, loadResource } from '../shared/libraryHelpers.js';
+import { getRows, loadResource } from '../../../components/library/shared/libraryHelpers.js';
 
 const emptyCollection = { name: '', slug: '', description: '', visibility: 'internal', is_active: true };
 const visibilityOptions = [

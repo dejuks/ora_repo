@@ -1,36 +1,22 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
-export default function PrivateRoute({
-  children,
-  allowedModules = [],
-  allowedRoles = [],
-}) {
+const DEV_BYPASS_ACCESS_CHECK = true;
+
+export default function PrivateRoute({ children }) {
+  const location = useLocation();
   const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user"));
 
-  if (!token || !user) {
-    return <Navigate to="/" replace />;
-  }
-
-  /* ✅ MODULE CHECK (UUID BASED) */
-  if (
-    allowedModules.length > 0 &&
-    !allowedModules.includes(user.module_id)
-  ) {
-    return <Navigate to="/unauthorized" replace />;
-  }
-
-  /* ✅ ROLE CHECK */
-  if (allowedRoles.length > 0) {
-    const userRoles = user.roles?.map(r => r.role_name) || [];
-
-    const hasRole = allowedRoles.some(role =>
-      userRoles.includes(role)
+  if (!token) {
+    return (
+      <Navigate
+        to={`/auth/login?redirect=${encodeURIComponent(location.pathname)}`}
+        replace
+      />
     );
+  }
 
-    if (!hasRole) {
-      return <Navigate to="/unauthorized" replace />;
-    }
+  if (DEV_BYPASS_ACCESS_CHECK) {
+    return children;
   }
 
   return children;

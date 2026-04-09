@@ -2,9 +2,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { logout } from "../../utils/auth.js";
 import ebookApi from "../../api/ebook.api";
-// import { buildEbookRoutes } from "./sidebar/ebookSidebar.js";
-// import { buildLibraryRoutes } from "./sidebar/librarySidebar.js";
-
+import { buildEbookRoutes } from "./sidebar/ebookSidebar.js";
+import { buildLibraryRoutes } from "./sidebar/librarySidebar.js";
+import { buildJournalRoutes } from "./sidebar/journalSidebar";
 /* ===============================
    MODULE UUIDS
 ================================ */
@@ -31,6 +31,8 @@ const ROLES = {
   ACQUISITION_OFFICER: "ACQUISITION_OFFICER",
   INVENTORY_MANAGER: "INVENTORY_MANAGER",
   CONTENT_UPLOADER: "CONTENT_UPLOADER",
+  DIGITAL_LIBRARIAN: "DIGITAL_LIBRARIAN",
+  DIGITAL_ADMIN: "DIGITAL_ADMIN",
   LIBRARY_MEMBER: "LIBRARY_MEMBER",
   EXTERNAL_PUBLISHER: "EXTERNAL_PUBLISHER",
 
@@ -45,7 +47,18 @@ const ROLES = {
   EBOOK_PUBLIC_READER: "EBOOK_PUBLIC_READER",
   // =====Repository====
   REPOSITORY_AUTHOR: "REPOSITORY_AUTHOR",
+
+  // Journal Authors
+  JOURNAL_AUTHOR:"JOURNAL_AUTHOR",
+  JOURNAL_EIC:"JOURNAL_EIC",
+  JOURNAL_MANAGER:"JOURNAL_MANAGER",
+  JOURNAL_EDITOR:"JOURNAL_EDITOR",
+  JOURNAL_REVIEWER:"JOURNAL_REVIEWER",
+  JOURNAL_ASSOCIATE_EDITOR:"JOURNAL_ASSOCIATE_EDITOR",
+
+
 };
+
 
 function normalizeRoleName(value) {
   if (!value) return "";
@@ -93,6 +106,24 @@ export default function Sidebar() {
 
   const moduleId = user?.module_id || user?.active_module_id || user?.module?.id;
   
+  useEffect(() => {
+  const handleClick = (e) => {
+    if (window.innerWidth <= 768) {
+      const sidebar = document.querySelector(".main-sidebar");
+
+      if (
+        sidebar &&
+        !sidebar.contains(e.target) &&
+        !e.target.closest(".nav-link")
+      ) {
+        document.body.classList.remove("sidebar-open");
+      }
+    }
+  };
+
+  document.addEventListener("click", handleClick);
+  return () => document.removeEventListener("click", handleClick);
+}, []);
   // Extract and normalize user roles
   const userRoleIds = user?.roles?.map((r) => r.role_id).filter(Boolean) || [];
   const userRoleNames = user?.roles
@@ -237,103 +268,11 @@ export default function Sidebar() {
       },
     ],
 
-    [MODULES.JOURNAL]: [
-      {
-        name: "Dashboard",
-        path: "/journal-dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR, ROLES.REVIEWER],
-      },
-      {
-        name: "Users & Roles",
-        icon: "fas fa-users",
-        roles: [ROLES.JOURNAL_MANAGER],
-        subMenu: [
-          { name: "All Users", path: "/journal/users", icon: "fas fa-user" },
-          { name: "Add New User", path: "/module/users/add", icon: "fas fa-user-tag" },
-        ],
-      },
-      {
-        name: "Journals",
-        icon: "fas fa-book",
-        roles: [ROLES.JOURNAL_MANAGER, ROLES.EDITOR],
-        subMenu: [
-          { name: "Add Journal", path: "/journal/create", icon: "fas fa-plus" },
-          { name: "Journal List", path: "/journal/list", icon: "fas fa-list" },
-        ],
-      },
-      {
-        name: "Author Dashboard",
-        path: "/journal/author-dashboard",
-        icon: "fas fa-tachometer-alt",
-        roles: [ROLES.JOURNAL_AUTHOR],
-      },
-      {
-        name: "Submissions",
-        icon: "fas fa-file-alt",
-        roles: [ROLES.JOURNAL_MANAGER, ROLES.JOURNAL_AUTHOR, ROLES.EDITOR],
-        subMenu: [
-          { name: "My Submissions", path: "/journal/manuscripts", icon: "fas fa-inbox", roles: [ROLES.JOURNAL_AUTHOR] },
-          { name: "New Submission", path: "/manuscripts/create", icon: "fas fa-paper-plane", roles: [ROLES.JOURNAL_AUTHOR] },
-          { name: "Incomplete Submissions", path: "/manuscript/draft-manuscript", icon: "fas fa-file", roles: [ROLES.JOURNAL_AUTHOR] },
-          { name: "Revisions", path: "/journal/manuscripts/revisions", icon: "fas fa-edit", roles: [ROLES.JOURNAL_AUTHOR] },
-        ],
-      },
-      {
-        name: "Editorial Oversight",
-        icon: "fas fa-user-shield",
-        roles: [ROLES.JOURNAL_EIC],
-        subMenu: [
-          { name: "All Submissions", path: "/journal/eic/submissions", icon: "fas fa-folder-open" },
-          { name: "Publication Payments", path: "/eic/payment-orders", icon: "fas fa-credit-card" },
-          // { name: "Final Decisions", path: "/journal/eic/final-decisions", icon: "fas fa-gavel" },
-          // { name: "Ethics & Compliance", path: "/journal/eic/ethics", icon: "fas fa-balance-scale" },
-          // { name: "Production Approval", path: "/journal/eic/production", icon: "fas fa-check-double" },
-          // { name: "Issue Scheduling", path: "/journal/eic/issues", icon: "fas fa-calendar-alt" },
-          // { name: "Editorial Reports", path: "/journal/eic/reports", icon: "fas fa-chart-line" },
-        ],
-      },
-      {
-        name: "Manuscript Handling",
-        icon: "fas fa-user-edit",
-        roles: [ROLES.JOURNAL_ASSOCIATE_EDITOR],
-        subMenu: [
-          { name: "Submitted Manuscripts", path: "/manuscript/ae/assigned-manuscripts", icon: "fas fa-folder-open" },
-          { name: "Initial Screening", path: "/manuscription/ae/screening", icon: "fas fa-search" },
-          // { name: "Review Evaluation", path: "/journal/ae/review-evaluation", icon: "fas fa-check-circle" },
-          { name: "Under Review", path: "/manuscript/ae/under-review", icon: "fas fa-hourglass-half" },
-          // { name: "Recommendations to EIC", path: "/journal/ae/recommendations", icon: "fas fa-gavel" },
-          // { name: "Ethics & Compliance", path: "/journal/ae/ethics", icon: "fas fa-balance-scale" },
-          // { name: "Production Tracking", path: "/journal/ae/production", icon: "fas fa-industry" },
-        ],
-      },
-      {
-        name: "Peer Review",
-        icon: "fas fa-user-check",
-        roles: [ROLES.JOURNAL_REFREE],
-        subMenu: [
-          { name: "Assigned Reviews", path: "/journal/reviewer/assigned", icon: "fas fa-inbox" },
-          // { name: "Review Workspace", path: "/journal/reviewer/workspace", icon: "fas fa-file-alt" },
-          // { name: "Submit Review Report", path: "/journal/reviewer/submit-review", icon: "fas fa-paper-plane" },
-          // { name: "Blind Review Files", path: "/journal/reviewer/files", icon: "fas fa-user-secret" },
-          // { name: "Ethics & COPE Compliance", path: "/journal/reviewer/ethics", icon: "fas fa-balance-scale" },
-          // { name: "Completed Reviews", path: "/journal/reviewer/completed", icon: "fas fa-check-circle" },
-        ],
-      },
-      {
-        name: "Profile & Declarations",
-        icon: "fas fa-id-card",
-        roles: [ROLES.JOURNAL_AUTHOR, ROLES.REVIEWER, ROLES.EDITOR, ROLES.JOURNAL_MANAGER],
-        subMenu: [
-          { name: "My Profile", path: "/journal/profile", icon: "fas fa-user" },
-          { name: "Ethics Declarations", path: "/journal/declarations", icon: "fas fa-shield-alt" },
-        ],
-      },
-    ],
+   [MODULES.JOURNAL]: buildJournalRoutes(ROLES),
 
-    // [MODULES.LIBRARY]: buildLibraryRoutes(),
+    [MODULES.LIBRARY]: buildLibraryRoutes(),
 
-    // [MODULES.EBOOK]: buildEbookRoutes(),
+    [MODULES.EBOOK]: buildEbookRoutes(),
 
     [MODULES.ORO_WIKI]: [
       {
@@ -519,24 +458,9 @@ export default function Sidebar() {
       icon: "fas fa-file-upload",
     },
     {
-      name: "Metadata Entry",
-      path: "/repository/author/submit/metadata",
-      icon: "fas fa-database",
-    },
-    {
-      name: "Authors & References",
-      path: "/repository/author/submit/authors",
-      icon: "fas fa-users",
-    },
-    {
       name: "Access & License",
       path: "/repository/author/submit/access",
       icon: "fas fa-lock-open",
-    },
-    {
-      name: "Preview & Submit",
-      path: "/repository/author/submit/review",
-      icon: "fas fa-eye",
     },
   ],
 },
@@ -832,8 +756,8 @@ export default function Sidebar() {
         ],
       },
     ],
-    // [MODULES.LIBRARY]: buildLibraryRoutes(ROLES),
-    // [MODULES.EBOOK]: buildEbookRoutes(ROLES),
+    [MODULES.LIBRARY]: buildLibraryRoutes(ROLES),
+    [MODULES.EBOOK]: buildEbookRoutes(ROLES),
   };
 
   const routes = moduleRoutes[moduleId]
@@ -857,7 +781,28 @@ const cleanedRoleNames = roleNames.filter(Boolean);
 
   return (
     <aside className="main-sidebar sidebar-modern elevation-4">
-      <style>{`
+      
+      <style>{` 
+      /* Mobile behavior */
+@media (max-width: 768px) {
+  .sidebar-modern {
+    transform: translateX(-100%);
+    position: fixed;
+  }
+
+  body.sidebar-open .sidebar-modern {
+    transform: translateX(0);
+  }
+
+  /* Overlay background */
+  body.sidebar-open::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 1020;
+  }
+}
         .sidebar-modern {
           background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
           border-right: 1px solid rgba(0, 0, 0, 0.05);
