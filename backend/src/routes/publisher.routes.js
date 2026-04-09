@@ -1,13 +1,13 @@
 import express from "express";
-import { authenticate } from "../middleware/auth.middleware.js";
-import { uploadDigitalFile } from "../library/middleware/libraryUpload.middleware.js";
-import { createPackage, createResource, listPackages } from "../controllers/publisherExternal.controller.js";
+import * as publisherExternalController from "../controllers/publisherExternal.controller.js";
 
 const router = express.Router();
-router.use(authenticate);
 
-router.get('/packages', listPackages);
-router.post('/packages', uploadDigitalFile.single('file'), createPackage);
-router.post('/resources', uploadDigitalFile.single('file'), createResource);
+router.get("/", publisherExternalController.index);
+router.get("/:id", publisherExternalController.show);
+router.post("/", publisherExternalController.store);
+router.put("/:id", publisherExternalController.update);
+router.patch("/:id", publisherExternalController.update);
+router.delete("/:id", publisherExternalController.destroy);
 
 export default router;

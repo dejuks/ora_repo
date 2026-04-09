@@ -1,123 +1,61 @@
-import express from "express";
-import libraryBranchRoutes from "./libraryBranch.routes.js";
-import libraryLocationRoutes from "./libraryLocation.routes.js";
-import materialTypeRoutes from "./materialType.routes.js";
-import libraryCategoryRoutes from "./libraryCategory.routes.js";
-import librarySubjectRoutes from "./librarySubject.routes.js";
-import languageRoutes from "./language.routes.js";
-import publisherRoutes from "./publisher.routes.js";
-import contributorRoutes from "./contributor.routes.js";
-import memberTypeRoutes from "./memberType.routes.js";
-import libraryMemberRoutes from "./libraryMember.routes.js";
-import memberStatusHistoryRoutes from "./memberStatusHistory.routes.js";
-import catalogMaterialRoutes from "./catalogMaterial.routes.js";
-import catalogRoutes from "./catalog.routes.js";
-import catalogMaterialContributorRoutes from "./catalogMaterialContributor.routes.js";
-import catalogMaterialSubjectRoutes from "./catalogMaterialSubject.routes.js";
-import materialCopyRoutes from "./materialCopy.routes.js";
-import circulationPolicyRoutes from "./circulationPolicy.routes.js";
-import circulationRoutes from "./circulation.routes.js";
-import loanRoutes from "./loan.routes.js";
-import loanRenewalRoutes from "./loanRenewal.routes.js";
-import holdRequestRoutes from "./holdRequest.routes.js";
-import fineRoutes from "./fine.routes.js";
-import finePaymentRoutes from "./finePayment.routes.js";
-import fineWaiverRoutes from "./fineWaiver.routes.js";
-import damageReportRoutes from "./damageReport.routes.js";
-import lostItemReportRoutes from "./lostItemReport.routes.js";
-import vendorRoutes from "./vendor.routes.js";
-import acquisitionRequestRoutes from "./acquisitionRequest.routes.js";
-import purchaseOrderRoutes from "./purchaseOrder.routes.js";
-import purchaseOrderItemRoutes from "./purchaseOrderItem.routes.js";
-import acquisitionReceiptRoutes from "./acquisitionReceipt.routes.js";
-import acquisitionReceiptItemRoutes from "./acquisitionReceiptItem.routes.js";
-import catalogingJobRoutes from "./catalogingJob.routes.js";
-import inventoryAuditRoutes from "./inventoryAudit.routes.js";
-import inventoryAuditItemRoutes from "./inventoryAuditItem.routes.js";
-import digitalResourceRoutes from "./digitalResource.routes.js";
-import digitalResourceFileRoutes from "./digitalResourceFile.routes.js";
-import digitalAccessRuleRoutes from "./digitalAccessRule.routes.js";
-import digitalCollectionRoutes from "./digitalCollection.routes.js";
-import digitalUsageLogRoutes from "./digitalUsageLog.routes.js";
-import digitalSubmissionRoutes from "./digitalSubmission.routes.js";
-import digitalSubmissionContributorRoutes from "./digitalSubmissionContributor.routes.js";
-import digitalSubmissionFileRoutes from "./digitalSubmissionFile.routes.js";
-import digitalSubmissionReviewRoutes from "./digitalSubmissionReview.routes.js";
-import digitalSubmissionStatusHistoryRoutes from "./digitalSubmissionStatusHistory.routes.js";
-import digitalSubmissionPublicationRoutes from "./digitalSubmissionPublication.routes.js";
-import libraryNotificationRoutes from "./libraryNotification.routes.js";
-import libraryAuditLogRoutes from "./libraryAuditLog.routes.js";
-import reportRoutes from "./report.routes.js";
-import libraryDashboardRoutes from "./libraryDashboard.routes.js";
-import maintenanceRoutes from "./maintenance.routes.js";
-import catalogerToolRoutes from "./catalogerTool.routes.js";
-import inventoryRoutes from "./inventory.routes.js";
-import { authenticate } from "../../middleware/auth.middleware.js";
-import { resolveLibraryPermission } from "../middleware/libraryAuthorize.middleware.js";
-import { libraryErrorHandler } from "../middleware/errorHandler.js";
 
-
+import express from 'express';
+import { authenticate } from '../../middleware/auth.middleware.js';
+import physicalLibraryRoutes from './physicalLibrary.routes.js';
+import digitalLibraryRoutes from './digitalLibrary.routes.js';
+import portalLibraryRoutes from './portalLibrary.routes.js';
+import {
+  adminDashboard,
+  librarianSummary,
+  memberOverview,
+  overdueLoans,
+  listResource,
+  getResource,
+  createResource,
+  updateResource,
+  removeResource,
+  fulfillHold,
+  payFine,
+} from '../controllers/portalLibrary.controller.js';
 
 const router = express.Router();
+<<<<<<< HEAD
 
 // Public OPAC access
 router.use('/catalog', catalogRoutes);
 
 // router.use(authenticate);
 // router.use(resolveLibraryPermission);
+=======
+router.use(authenticate);
+>>>>>>> origin/tbranch
 
-router.use('/branches', libraryBranchRoutes);
-router.use('/locations', libraryLocationRoutes);
-router.use('/material-types', materialTypeRoutes);
-router.use('/categories', libraryCategoryRoutes);
-router.use('/subjects', librarySubjectRoutes);
-router.use('/languages', languageRoutes);
-router.use('/publishers', publisherRoutes);
-router.use('/contributors', contributorRoutes);
-router.use('/member-types', memberTypeRoutes);
-router.use('/members', libraryMemberRoutes);
-router.use('/member-status-history', memberStatusHistoryRoutes);
-router.use('/materials', catalogMaterialRoutes);
-router.use('/material-contributors', catalogMaterialContributorRoutes);
-router.use('/material-subjects', catalogMaterialSubjectRoutes);
-router.use('/copies', materialCopyRoutes);
-router.use('/circulation-policies', circulationPolicyRoutes);
-router.use('/circulation', circulationRoutes);
-router.use('/loans', loanRoutes);
-router.use('/loan-renewals', loanRenewalRoutes);
-router.use('/holds', holdRequestRoutes);
-router.use('/fines', fineRoutes);
-router.use('/fine-payments', finePaymentRoutes);
-router.use('/fine-waivers', fineWaiverRoutes);
-router.use('/damage-reports', damageReportRoutes);
-router.use('/lost-item-reports', lostItemReportRoutes);
-router.use('/vendors', vendorRoutes);
-router.use('/acquisition-requests', acquisitionRequestRoutes);
-router.use('/purchase-orders', purchaseOrderRoutes);
-router.use('/purchase-order-items', purchaseOrderItemRoutes);
-router.use('/acquisition-receipts', acquisitionReceiptRoutes);
-router.use('/acquisition-receipt-items', acquisitionReceiptItemRoutes);
-router.use('/cataloging-jobs', catalogingJobRoutes);
-router.use('/inventory-audits', inventoryAuditRoutes);
-router.use('/inventory-audit-items', inventoryAuditItemRoutes);
-router.use('/digital-resources', digitalResourceRoutes);
-router.use('/digital-resource-files', digitalResourceFileRoutes);
-router.use('/digital-access-rules', digitalAccessRuleRoutes);
-router.use('/digital-collections', digitalCollectionRoutes);
-router.use('/digital-usage-logs', digitalUsageLogRoutes);
-router.use('/digital-submissions', digitalSubmissionRoutes);
-router.use('/digital-submission-contributors', digitalSubmissionContributorRoutes);
-router.use('/digital-submission-files', digitalSubmissionFileRoutes);
-router.use('/digital-submission-reviews', digitalSubmissionReviewRoutes);
-router.use('/digital-submission-status-history', digitalSubmissionStatusHistoryRoutes);
-router.use('/digital-submission-publications', digitalSubmissionPublicationRoutes);
-router.use('/notifications', libraryNotificationRoutes);
-router.use('/dashboard', libraryDashboardRoutes);
-router.use('/audit-logs', libraryAuditLogRoutes);
-router.use('/reports', reportRoutes);
-router.use('/maintenance', maintenanceRoutes);
-router.use('/catalog-tools', catalogerToolRoutes);
-router.use('/inventory', inventoryRoutes);
+// Canonical mounted routes
+router.use('/physical-library', physicalLibraryRoutes);
+router.use('/digital-library', digitalLibraryRoutes);
+router.use('/portal', portalLibraryRoutes);
 
-router.use(libraryErrorHandler);
+// Real top-level aliases used by frontend to avoid route-not-found errors
+router.get('/admin/dashboard', adminDashboard);
+router.get('/librarian/summary', librarianSummary);
+router.get('/member/overview', memberOverview);
+router.get('/reports/overdue-loans', overdueLoans);
+router.patch('/holds/:holdId/fulfill', fulfillHold);
+router.post('/fines/:fineId/pay', payFine);
+
+router.get('/resources/:resource', listResource);
+router.get('/resources/:resource/:id', getResource);
+router.post('/resources/:resource', createResource);
+router.patch('/resources/:resource/:id', updateResource);
+router.put('/resources/:resource/:id', updateResource);
+router.delete('/resources/:resource/:id', removeResource);
+
+// Legacy convenience aliases still supported
+router.get('/audit-logs', (req, res, next) => { req.params.resource = 'audit-logs'; return listResource(req, res, next); });
+router.get('/audit-logs/security-alerts', async (req, res) => {
+  req.params.resource = 'audit-logs';
+  req.query = { ...(req.query || {}), search: req.query?.search || 'error' };
+  return listResource(req, res);
+});
+
 export default router;

@@ -1,39 +1,65 @@
-import { createPublisherPackage, createPublisherResource, listPublisherPackages } from "../library/services/externalPublisher.service.js";
+import externalPublisherService from "../library/services/externalPublisher.service.js";
 
-export const listPackages = async (req, res, next) => {
+export const index = async (req, res, next) => {
   try {
-    const rows = await listPublisherPackages(req.query);
-    res.json({ rows });
+    const data = await externalPublisherService.index();
+    return res.status(200).json({
+      success: true,
+      message: "Publishers fetched successfully",
+      data,
+    });
   } catch (error) {
     next(error);
   }
 };
 
-export const createPackage = async (req, res, next) => {
+export const show = async (req, res, next) => {
   try {
-    const row = await createPublisherPackage({
-      payload: req.body,
-      file: req.file,
-      actorUserId: req.user?.uuid || null,
-      ipAddress: req.ip,
-      userAgent: req.get('user-agent') || null,
+    const data = await externalPublisherService.show(req.params.id);
+    return res.status(200).json({
+      success: true,
+      message: "Publisher fetched successfully",
+      data,
     });
-    res.status(201).json(row);
   } catch (error) {
     next(error);
   }
 };
 
-export const createResource = async (req, res, next) => {
+export const store = async (req, res, next) => {
   try {
-    const row = await createPublisherResource({
-      payload: req.body,
-      file: req.file,
-      actorUserId: req.user?.uuid || null,
-      ipAddress: req.ip,
-      userAgent: req.get('user-agent') || null,
+    const data = await externalPublisherService.store(req.body);
+    return res.status(201).json({
+      success: true,
+      message: "Publisher created successfully",
+      data,
     });
-    res.status(201).json(row);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const update = async (req, res, next) => {
+  try {
+    const data = await externalPublisherService.update(req.params.id, req.body);
+    return res.status(200).json({
+      success: true,
+      message: "Publisher updated successfully",
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const destroy = async (req, res, next) => {
+  try {
+    const data = await externalPublisherService.destroy(req.params.id);
+    return res.status(200).json({
+      success: true,
+      message: "Publisher deleted successfully",
+      data,
+    });
   } catch (error) {
     next(error);
   }

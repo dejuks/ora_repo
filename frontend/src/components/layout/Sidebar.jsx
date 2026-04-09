@@ -5,8 +5,11 @@ import ebookApi from "../../api/ebook.api";
 import { buildEbookRoutes } from "./sidebar/ebookSidebar.js";
 import { buildLibraryRoutes } from "./sidebar/librarySidebar.js";
 import { buildJournalRoutes } from "./sidebar/journalSidebar";
+<<<<<<< HEAD
 import { buildWikiRoutes } from "./sidebar/wikiSidebar";
 import { buildRepositoryRoutes } from "./sidebar/repositorySidebar.js";
+=======
+>>>>>>> origin/tbranch
 /* ===============================
    MODULE UUIDS
 ================================ */
@@ -33,6 +36,8 @@ const ROLES = {
   ACQUISITION_OFFICER: "ACQUISITION_OFFICER",
   INVENTORY_MANAGER: "INVENTORY_MANAGER",
   CONTENT_UPLOADER: "CONTENT_UPLOADER",
+  DIGITAL_LIBRARIAN: "DIGITAL_LIBRARIAN",
+  DIGITAL_ADMIN: "DIGITAL_ADMIN",
   LIBRARY_MEMBER: "LIBRARY_MEMBER",
   EXTERNAL_PUBLISHER: "EXTERNAL_PUBLISHER",
 
@@ -47,6 +52,7 @@ const ROLES = {
   EBOOK_PUBLIC_READER: "EBOOK_PUBLIC_READER",
   // =====Repository====
   REPOSITORY_AUTHOR: "REPOSITORY_AUTHOR",
+<<<<<<< HEAD
   //   const A = ROLES?.REPOSITORY_ADMIN;
   // const AU = ROLES?.REPOSITORY_AUTHOR;
   // const C = ROLES?.REPOSITORY_CURATOR;
@@ -62,6 +68,8 @@ REPOSITORY_CONTENT_REVIEWER: "REPOSITORY_CONTENT_REVIEWER",
 RESEARCHER_AUTHOR: "RESEARCHER_AUTHOR",
 REPOSITORY_PUBLIC_USER: "REPOSITORY_PUBLIC_USER",
 REPOSITORY_GUEST: "REPOSITORY_GUEST",
+=======
+>>>>>>> origin/tbranch
 
   // Journal Authors
   JOURNAL_AUTHOR:"JOURNAL_AUTHOR",
@@ -71,6 +79,7 @@ REPOSITORY_GUEST: "REPOSITORY_GUEST",
   JOURNAL_REVIEWER:"JOURNAL_REVIEWER",
   JOURNAL_ASSOCIATE_EDITOR:"JOURNAL_ASSOCIATE_EDITOR",
 
+<<<<<<< HEAD
   // WIKI ROLES
   ORO_WIKI_MANAGER: "ORO_WIKI_MANAGER",
   ORO_WIKI_EDITOR: "ORO_WIKI_EDITOR",
@@ -81,6 +90,8 @@ REPOSITORY_GUEST: "REPOSITORY_GUEST",
   ORO_WIKI_AUTHOR: "ORO_WIKI_AUTHOR",
   ORO_WIKI_ADMINISTRATOR: "ORO_WIKI_ADMINISTRATOR",
 
+=======
+>>>>>>> origin/tbranch
 
 };
 
@@ -299,7 +310,408 @@ export default function Sidebar() {
 
     [MODULES.EBOOK]: buildEbookRoutes(),
 
+<<<<<<< HEAD
   [MODULES.ORO_WIKI]: buildWikiRoutes(ROLES),
+=======
+    [MODULES.ORO_WIKI]: [
+      {
+        name: "Manager Dashboard",
+        path: "/wiki/dashboard",
+        icon: "fas fa-globe",
+        roles: [ROLES.ORO_WIKI_MANAGER],
+      },
+      {
+        name: "Content Management",
+        icon: "fas fa-file-alt",
+        roles: [ROLES.ORO_WIKI_MANAGER],
+        subMenu: [
+          { name: "All Articles", path: "/wiki/articles", icon: "fas fa-list" },
+          { name: "Recent Changes", path: "/wiki/recent-changes", icon: "fas fa-clock" },
+          { name: "Popular Articles", path: "/wiki/popular", icon: "fas fa-star" },
+          { name: "Random Article", path: "/wiki/random", icon: "fas fa-random" },
+          { name: "Check Vandalism", path: "/wiki/vandalism/check", icon: "fas fa-flag" },
+        ],
+      },
+      {
+        name: "Categories",
+        icon: "fas fa-folder",
+        roles: [ROLES.ORO_WIKI_MANAGER],
+        subMenu: [
+          { name: "All Categories", path: "/wiki/categories", icon: "fas fa-list" },
+          { name: "Create Category", path: "/wiki/categories/create", icon: "fas fa-plus" },
+        ],
+      },
+      {
+        name: "Media Library",
+        icon: "fas fa-photo-video",
+        roles: [ROLES.ORO_WIKI_MANAGER],
+        subMenu: [
+          { name: "All Media", path: "/wiki/media", icon: "fas fa-images" },
+          { name: "Upload Media", path: "/wiki/media/upload", icon: "fas fa-upload" },
+        ],
+      },
+      {
+        name: "Users & Roles",
+        icon: "fas fa-users",
+        roles: [ROLES.ORO_WIKI_MANAGER],
+        subMenu: [
+          { name: "All Users", path: "/wiki/users", icon: "fas fa-user" },
+          { name: "Roles", path: "/wiki/roles", icon: "fas fa-user-tag" },
+        ],
+      },
+      {
+        name: "Settings",
+        path: "/wiki/settings",
+        icon: "fas fa-cogs",
+        roles: [ROLES.ORO_WIKI_MANAGER],
+      },
+      {
+        name: "Reports",
+        path: "/wiki/reports",
+        icon: "fas fa-chart-bar",
+        roles: [ROLES.ORO_WIKI_MANAGER],
+      },
+      {
+        name: "Editor Dashboard",
+        path: "/wiki/dashboard",
+        icon: "fas fa-globe",
+        roles: [ROLES.ORO_WIKI_EDITOR],
+      },
+      {
+        name: "My Articles",
+        icon: "fas fa-file-alt",
+        roles: [ROLES.ORO_WIKI_EDITOR],
+        subMenu: [
+          { name: "All Articles", path: "/wiki/articles", icon: "fas fa-list" },
+          { name: "Create Article", path: "/wiki/articles/create", icon: "fas fa-plus" },
+          { name: "Drafts", path: "/wiki/articles/drafts", icon: "fas fa-edit" },
+        ],
+      },
+      {
+        name: "Media Library",
+        icon: "fas fa-photo-video",
+        roles: [ROLES.ORO_WIKI_EDITOR],
+        subMenu: [
+          { name: "All Media", path: "/wiki/media", icon: "fas fa-images" },
+          { name: "Upload Media", path: "/wiki/media/upload", icon: "fas fa-upload" },
+        ],
+      },
+      {
+        name: "Publisher Dashboard",
+        path: "/wiki/dashboard",
+        icon: "fas fa-globe",
+        roles: [ROLES.ORO_WIKI_PUBLISHER],
+      },
+      {
+        name: "Publishing",
+        icon: "fas fa-upload",
+        roles: [ROLES.ORO_WIKI_PUBLISHER],
+        subMenu: [
+          { name: "Publishing Queue", path: "/wiki/articles/publish", icon: "fas fa-upload" },
+          { name: "All Articles", path: "/wiki/articles", icon: "fas fa-list" },
+        ],
+      },
+      {
+        name: "Media Library",
+        icon: "fas fa-photo-video",
+        roles: [ROLES.ORO_WIKI_PUBLISHER],
+        subMenu: [
+          { name: "All Media", path: "/wiki/media", icon: "fas fa-images" },
+        ],
+      },
+      {
+        name: "Governance Dashboard",
+        path: "/wiki/dashboard",
+        icon: "fas fa-globe",
+        roles: [ROLES.ORO_WIKI_BUREAUCRAT],
+      },
+      {
+        name: "Users & Roles",
+        icon: "fas fa-users",
+        roles: [ROLES.ORO_WIKI_BUREAUCRAT],
+        subMenu: [
+          { name: "All Users", path: "/wiki/users", icon: "fas fa-user" },
+          { name: "Roles", path: "/wiki/roles", icon: "fas fa-user-tag" },
+        ],
+      },
+      {
+        name: "Reports",
+        path: "/wiki/reports",
+        icon: "fas fa-chart-bar",
+        roles: [ROLES.ORO_WIKI_BUREAUCRAT],
+      },
+      {
+        name: "Oversight Dashboard",
+        path: "/wiki/dashboard",
+        icon: "fas fa-globe",
+        roles: [ROLES.ORO_WIKI_OVERSIGHTER],
+      },
+      {
+        name: "Moderation",
+        path: "/wiki/moderation",
+        icon: "fas fa-shield-alt",
+        roles: [ROLES.ORO_WIKI_OVERSIGHTER],
+      },
+    ],
+
+      [MODULES.REPOSITORY]: [
+        {
+          name: "Admin Dashboard",
+          path: "/repository/admin/dashboard",
+          icon: "fas fa-tachometer-alt",
+          roles: [ROLES.REPOSITORY_ADMIN],
+        },
+        {
+          name: "All Submissions",
+          icon: "fas fa-inbox",
+          roles: [ROLES.REPOSITORY_ADMIN],
+          subMenu: [
+            { name: "Pending Review", path: "/repository/submissions/pending", icon: "fas fa-clock" },
+            { name: "Under Curation", path: "/repository/submissions/curation", icon: "fas fa-edit" },
+            { name: "Ready for Approval", path: "/repository/submissions/ready", icon: "fas fa-check-circle" },
+            { name: "Approved", path: "/repository/submissions/approved", icon: "fas fa-check" },
+            { name: "Rejected", path: "/repository/submissions/rejected", icon: "fas fa-times" },
+            { name: "All Items", path: "/repository/submissions/all", icon: "fas fa-list" },
+          ],
+        },
+        {
+  name: "My Repository",
+  path: "/repository/author/dashboard",
+  icon: "fas fa-home",
+  roles: [ROLES.REPOSITORY_AUTHOR],
+},
+
+{
+  name: "Submissions",
+  icon: "fas fa-upload",
+  roles: [ROLES.REPOSITORY_AUTHOR],
+  subMenu: [
+    {
+      name: "New Submission",
+      path: "/repository/manuscript/create",
+      icon: "fas fa-plus-circle",
+    },
+    {
+      name: "My Submission",
+      path: "/repository/author/submit/list",
+      icon: "fas fa-file-upload",
+    },
+    {
+      name: "Access & License",
+      path: "/repository/author/submit/access",
+      icon: "fas fa-lock-open",
+    },
+  ],
+},
+
+{
+  name: "My Deposits",
+  icon: "fas fa-folder",
+  roles: [ROLES.REPOSITORY_AUTHOR],
+  subMenu: [
+    {
+      name: "Drafts",
+      path: "/repository/author/deposits/drafts",
+      icon: "fas fa-edit",
+    },
+    {
+      name: "Under Review",
+      path: "/repository/author/deposits/review",
+      icon: "fas fa-hourglass-half",
+    },
+    {
+      name: "Returned for Revision",
+      path: "/repository/author/deposits/returned",
+      icon: "fas fa-redo",
+    },
+    {
+      name: "Approved",
+      path: "/repository/author/deposits/approved",
+      icon: "fas fa-check-circle",
+    },
+    {
+      name: "Rejected",
+      path: "/repository/author/deposits/rejected",
+      icon: "fas fa-times-circle",
+    },
+  ],
+},
+
+{
+  name: "My Profile",
+  icon: "fas fa-user",
+  roles: [ROLES.REPOSITORY_AUTHOR],
+  subMenu: [
+    {
+      name: "Profile Info",
+      path: "/repository/author/profile",
+      icon: "fas fa-id-card",
+    },
+    {
+      name: "My Publications",
+      path: "/repository/author/publications",
+      icon: "fas fa-book",
+    },
+  ],
+},
+        {
+          name: "Configuration",
+          icon: "fas fa-cogs",
+          roles: [ROLES.REPOSITORY_ADMIN],
+          subMenu: [
+            { name: "Repository Settings", path: "/repository/settings/general", icon: "fas fa-sliders-h" },
+            { name: "Policy Management", path: "/repository/settings/policies", icon: "fas fa-file-contract" },
+            { name: "Metadata Schemas", path: "/repository/settings/metadata", icon: "fas fa-database" },
+            { name: "Workflow Designer", path: "/repository/settings/workflow", icon: "fas fa-project-diagram" },
+            { name: "License Templates", path: "/repository/settings/licenses", icon: "fas fa-balance-scale" },
+          ],
+        },
+        {
+          name: "Analytics & Reports",
+          icon: "fas fa-chart-bar",
+          roles: [ROLES.REPOSITORY_ADMIN],
+          subMenu: [
+            { name: "Comprehensive Reports", path: "/repository/reports/analytics", icon: "fas fa-chart-line" },
+            { name: "Usage Statistics", path: "/repository/reports/usage", icon: "fas fa-chart-pie" },
+            { name: "Processing Times", path: "/repository/reports/timelines", icon: "fas fa-stopwatch" },
+            { name: "Data Exports", path: "/repository/reports/exports", icon: "fas fa-file-export" },
+          ],
+        },
+        {
+          name: "Curator Dashboard",
+          path: "/repository/curator/dashboard",
+          icon: "fas fa-tachometer-alt",
+          roles: [ROLES.REPOSITORY_CURATOR],
+        },
+        {
+          name: "Submission Queue",
+          icon: "fas fa-inbox",
+          roles: [ROLES.REPOSITORY_CURATOR],
+          subMenu: [
+            { name: "New (Unreviewed)", path: "/repository/curator/queue/new", icon: "fas fa-exclamation-circle" },
+            { name: "In Progress", path: "/repository/curator/queue/in-progress", icon: "fas fa-spinner" },
+            { name: "Ready for Approval", path: "/repository/curator/queue/ready", icon: "fas fa-check-circle" },
+            { name: "Returned Items", path: "/repository/curator/queue/returned", icon: "fas fa-undo" },
+          ],
+        },
+        {
+          name: "Collections",
+          icon: "fas fa-folder-open",
+          roles: [ROLES.REPOSITORY_CURATOR],
+          subMenu: [
+            { name: "By Author", path: "/repository/collections/author", icon: "fas fa-user-graduate" },
+            { name: "By Resource Type", path: "/repository/collections/type", icon: "fas fa-th-large" },
+          ],
+        },
+        {
+          name: "Reports",
+          icon: "fas fa-chart-bar",
+          roles: [ROLES.REPOSITORY_CURATOR],
+          subMenu: [
+            { name: "Submission Trends", path: "/repository/reports/trends", icon: "fas fa-chart-bar" },
+            { name: "Processing Times", path: "/repository/reports/timelines", icon: "fas fa-clock" },
+            { name: "Curator Performance", path: "/repository/reports/curator-performance", icon: "fas fa-user-check" },
+            { name: "My Analytics", path: "/repository/reports/my-analytics", icon: "fas fa-chart-pie" },
+          ],
+        },
+        {
+          name: "Reviewer Dashboard",
+          path: "/repository/reviewer/dashboard",
+          icon: "fas fa-tachometer-alt",
+          roles: [ROLES.REPOSITORY_CONTENT_REVIEWER],
+        },
+        {
+          name: "Review Queue",
+          icon: "fas fa-clipboard-list",
+          roles: [ROLES.REPOSITORY_CONTENT_REVIEWER],
+          subMenu: [
+            { name: "New Assignments", path: "/repository/reviewer/queue/new", icon: "fas fa-exclamation-circle" },
+            { name: "In Progress", path: "/repository/reviewer/queue/in-progress", icon: "fas fa-spinner" },
+            { name: "Completed", path: "/repository/reviewer/queue/completed", icon: "fas fa-check-circle" },
+            { name: "Scheduled", path: "/repository/reviewer/queue/scheduled", icon: "fas fa-calendar-alt" },
+          ],
+        },
+        {
+          name: "Review Tools",
+          icon: "fas fa-tools",
+          roles: [ROLES.REPOSITORY_CONTENT_REVIEWER],
+          subMenu: [
+            { name: "View Submission", path: "/repository/reviewer/tools/view", icon: "fas fa-eye" },
+            { name: "Review Form", path: "/repository/reviewer/tools/form", icon: "fas fa-file-alt" },
+            { name: "Similarity Check", path: "/repository/reviewer/tools/similarity", icon: "fas fa-search" },
+            { name: "Quality Assessment", path: "/repository/reviewer/tools/quality", icon: "fas fa-star" },
+            { name: "Private Notes", path: "/repository/reviewer/tools/notes", icon: "fas fa-sticky-note" },
+          ],
+        },
+        {
+          name: "My Repository",
+          path: "/repository/author/dashboard",
+          icon: "fas fa-home",
+          roles: [ROLES.RESEARCHER_AUTHOR],
+        },
+        {
+          name: "Submit",
+          icon: "fas fa-plus-circle",
+          roles: [ROLES.RESEARCHER_AUTHOR],
+          subMenu: [
+            { name: "Repository Items", path: "/repository/author/submit/list", icon: "fas fa-file-upload" },
+            { name: "Add New", path: "/repository/create", icon: "fas fa-folder-plus" },
+          ],
+        },
+        {
+          name: "My Deposits",
+          icon: "fas fa-folder",
+          roles: [ROLES.RESEARCHER_AUTHOR],
+          subMenu: [
+            { name: "Drafts", path: "/repository/author/deposits/drafts", icon: "fas fa-edit" },
+            { name: "Under Review", path: "/repository/author/deposits/review", icon: "fas fa-hourglass-half" },
+            { name: "Returned to Revision", path: "/repository/author/deposits/returned", icon: "fas fa-redo" },
+            { name: "Approved", path: "/repository/author/deposits/approved", icon: "fas fa-check" },
+            { name: "Embargoed", path: "#", icon: "fas fa-lock" },
+          ],
+        },
+        {
+          name: "Search",
+          path: "/repository/search",
+          icon: "fas fa-search",
+          roles: [ROLES.REPOSITORY_PUBLIC_USER, ROLES.REPOSITORY_GUEST],
+        },
+        {
+          name: "Browse",
+          icon: "fas fa-compass",
+          roles: [ROLES.REPOSITORY_PUBLIC_USER, ROLES.REPOSITORY_GUEST],
+          subMenu: [
+            { name: "By Collection", path: "/repository/browse/collections", icon: "fas fa-folder" },
+            { name: "By Author", path: "/repository/browse/authors", icon: "fas fa-user-graduate" },
+            { name: "By Subject", path: "/repository/browse/subjects", icon: "fas fa-tags" },
+            { name: "By Date", path: "/repository/browse/date", icon: "fas fa-calendar" },
+            { name: "By Department", path: "/repository/browse/department", icon: "fas fa-building" },
+          ],
+        },
+        {
+          name: "Featured",
+          icon: "fas fa-star",
+          roles: [ROLES.REPOSITORY_PUBLIC_USER, ROLES.REPOSITORY_GUEST],
+          subMenu: [
+            { name: "Recent Additions", path: "/repository/featured/recent", icon: "fas fa-clock" },
+            { name: "Most Viewed", path: "/repository/featured/popular", icon: "fas fa-fire" },
+            { name: "Most Downloaded", path: "/repository/featured/downloaded", icon: "fas fa-download" },
+            { name: "Editor's Picks", path: "/repository/featured/picks", icon: "fas fa-award" },
+          ],
+        },
+        {
+          name: "Tools",
+          icon: "fas fa-toolbox",
+          roles: [ROLES.REPOSITORY_PUBLIC_USER, ROLES.REPOSITORY_GUEST],
+          subMenu: [
+            { name: "Citation Generator", path: "/repository/tools/citation", icon: "fas fa-quote-right" },
+            { name: "Export Citations", path: "/repository/tools/export", icon: "fas fa-file-export" },
+            { name: "Save to List", path: "/repository/tools/savelist", icon: "fas fa-bookmark" },
+            { name: "Email Alert", path: "/repository/tools/alerts", icon: "fas fa-envelope" },
+          ],
+        },
+      ],
+>>>>>>> origin/tbranch
 
      [MODULES.REPOSITORY]: buildRepositoryRoutes(ROLES),
 

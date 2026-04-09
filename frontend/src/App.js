@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Users from "./pages/Users";
 import Roles from "./pages/Roles";
@@ -42,8 +42,7 @@ import ReadyToApprove from "./pages/repository/ReadyToApprove";
 import ReturnToRevision from "./pages/repository/ReturnToRevision";
 import DraftRepository from "./pages/repository/DraftRepository";
 import DepositsUnderReview from "./pages/repository/DepositsUnderReview";
-  import Ebooks from "./landing/pages/Ebooks.jsx";
-import DepositsReturned from "./pages/repository/DepositsReturned";
+  import DepositsReturned from "./pages/repository/DepositsReturned";
 import ApprovedDeposits from "./pages/repository/ApprovedDeposits";
 import RepositorySearch from "./pages/repository/RepositorySearch";
 import RepositoryShowAuthor from "./pages/repository/RepositoryShowAuthor";
@@ -136,24 +135,25 @@ import JournalLoginPage from "./pages/journals/authors/JournalLoginPage";
 import JournalRegisterPage from "./pages/journals/authors/JournalRegisterPage";
 
 // Library Imports
-import LibraryMemberDashboardPage from "./pages/library/member/dashboard.jsx";
-import LibraryContentUploaderDashboard from "./pages/library/uploader/dashboard.jsx";
-import LibraryInventoryManagerDashboard from "./pages/library/inventory/dashboard.jsx";
-import LibraryAcquisitionOfficerDashboard from "./pages/library/acquisition/dashboard.jsx";
-import LibraryCatalogerDashboard from "./pages/library/cataloger/dashboard.jsx";
-import LibraryLibrarianDashboard from "./pages/library/librarian/dashboard.jsx";
-import LibraryManagerDashboard from "./pages/library/manager/dashboard.jsx";
-import LibraryAdminDashboard from "./pages/library/admin/dashboard.jsx";
-import LibraryModuleRoutes from "./pages/library/LibraryModuleRoutes.jsx";
-import MaterialTypesPage from "./pages/library/settings/MaterialTypesPage.jsx";
-import CategoriesPage from "./pages/library/settings/CategoriesPage.jsx";
-import PublishersPage from "./pages/library/settings/PublishersPage.jsx";
-import LanguagesPage from "./pages/library/settings/LanguagesPage.jsx";
-import SubjectsPage from "./pages/library/settings/SubjectsPage.jsx";
-import LibraryAccountPage from "./pages/library/member/AccountPage.jsx";
-import LibraryLogsPage from "./pages/library/admin/LibraryLogsPage.jsx";
-import LibraryAdminUsersPage from "./pages/library/admin/LibraryAdminUsersPage.jsx";
-import InventoryReportsPage from "./pages/library/manager/InventoryReportsPage.jsx";
+import LibraryMemberDashboardPage from "./pages/library/physical/member/dashboard.jsx";
+import LibraryContentUploaderDashboard from "./pages/library/digital/content-uploader/dashboard.jsx";
+import LibraryInventoryManagerDashboard from "./pages/library/physical/inventory-manager/dashboard.jsx";
+import LibraryAcquisitionOfficerDashboard from "./pages/library/physical/acquisition-officer/dashboard.jsx";
+import LibraryCatalogerDashboard from "./pages/library/physical/cataloger/dashboard.jsx";
+import LibraryLibrarianDashboard from "./pages/library/physical/librarian/dashboard.jsx";
+import LibraryManagerDashboard from "./pages/library/physical/library-manager/dashboard.jsx";
+import LibraryAdminDashboard from "./pages/library/physical/system-administrator/dashboard.jsx";
+import LibraryModuleRoutes from "./components/library/LibraryModuleRoutes.jsx";
+import LibraryRoleRedirect from "./components/library/LibraryRoleRedirect.jsx";
+import MaterialTypesPage from "./pages/library/physical/system-administrator/material-types.jsx";
+import CategoriesPage from "./pages/library/physical/system-administrator/categories.jsx";
+import PublishersPage from "./pages/library/physical/system-administrator/publishers.jsx";
+import LanguagesPage from "./pages/library/physical/system-administrator/languages.jsx";
+import SubjectsPage from "./pages/library/physical/system-administrator/subjects.jsx";
+import LibraryAccountPage from "./pages/library/physical/member/account.jsx";
+import LibraryLogsPage from "./pages/library/physical/system-administrator/audit-logs.jsx";
+import LibraryAdminUsersPage from "./pages/library/physical/system-administrator/users.jsx";
+import InventoryReportsPage from "./pages/library/physical/library-manager/inventory-reports.jsx";
 
 // Ebook Imports
 import EbookDashboardPage from "./pages/ebook/EbookDashboardPage.jsx";
@@ -412,15 +412,58 @@ function App() {
         <Route path="/admin/groups/:uuid" element={<ProtectedRoute><AdminGroupDetails /></ProtectedRoute>} />
 
         {/* Library Protected Routes */}
-        <Route path="/library-dashboard" element={<ProtectedRoute><LibraryDashboard /></ProtectedRoute>} />
+        <Route path="/library-dashboard" element={<ProtectedRoute><LibraryRoleRedirect /></ProtectedRoute>} />
+
         <Route path="/library/member/dashboard" element={<ProtectedRoute><LibraryMemberDashboardPage /></ProtectedRoute>} />
-        <Route path="/library/uploader/dashboard" element={<ProtectedRoute><LibraryContentUploaderDashboard /></ProtectedRoute>} />
-        <Route path="/library/inventory/dashboard" element={<ProtectedRoute><LibraryInventoryManagerDashboard /></ProtectedRoute>} />
-        <Route path="/library/acquisition/dashboard" element={<ProtectedRoute><LibraryAcquisitionOfficerDashboard /></ProtectedRoute>} />
-        <Route path="/library/cataloger/dashboard" element={<ProtectedRoute><LibraryCatalogerDashboard /></ProtectedRoute>} />
-        <Route path="/library/librarian/dashboard" element={<ProtectedRoute><LibraryLibrarianDashboard /></ProtectedRoute>} />
-        <Route path="/library/manager/dashboard" element={<ProtectedRoute><LibraryManagerDashboard /></ProtectedRoute>} />
-        <Route path="/library/admin/dashboard" element={<ProtectedRoute><LibraryAdminDashboard /></ProtectedRoute>} />
+        <Route path="/library/opac" element={<ProtectedRoute><Navigate to="/library/physical/member/opac" replace /></ProtectedRoute>} />
+        <Route path="/library/my-loans" element={<ProtectedRoute><Navigate to="/library/physical/member/my-loans" replace /></ProtectedRoute>} />
+        <Route path="/library/my-holds" element={<ProtectedRoute><Navigate to="/library/physical/member/my-holds" replace /></ProtectedRoute>} />
+        <Route path="/library/my-fines" element={<ProtectedRoute><Navigate to="/library/physical/member/my-fines" replace /></ProtectedRoute>} />
+        <Route path="/library/member/digital" element={<ProtectedRoute><Navigate to="/library/digital/member/library" replace /></ProtectedRoute>} />
+        <Route path="/library/librarian/dashboard" element={<ProtectedRoute><Navigate to="/library/physical/librarian/dashboard" replace /></ProtectedRoute>} />
+        <Route path="/library/circulation/desk" element={<ProtectedRoute><Navigate to="/library/physical/librarian/circulation-desk" replace /></ProtectedRoute>} />
+        <Route path="/library/loans" element={<ProtectedRoute><Navigate to="/library/physical/librarian/loans" replace /></ProtectedRoute>} />
+        <Route path="/library/holds" element={<ProtectedRoute><Navigate to="/library/physical/librarian/holds" replace /></ProtectedRoute>} />
+        <Route path="/library/fines" element={<ProtectedRoute><Navigate to="/library/physical/librarian/fines" replace /></ProtectedRoute>} />
+        <Route path="/library/history" element={<ProtectedRoute><Navigate to="/library/physical/librarian/history" replace /></ProtectedRoute>} />
+        <Route path="/library/acquisition/dashboard" element={<ProtectedRoute><Navigate to="/library/physical/acquisition-officer/dashboard" replace /></ProtectedRoute>} />
+        <Route path="/library/acquisitions/requests" element={<ProtectedRoute><Navigate to="/library/physical/acquisition-officer/requests" replace /></ProtectedRoute>} />
+        <Route path="/library/acquisitions/orders" element={<ProtectedRoute><Navigate to="/library/physical/acquisition-officer/orders" replace /></ProtectedRoute>} />
+        <Route path="/library/acquisitions/deliveries" element={<ProtectedRoute><Navigate to="/library/physical/acquisition-officer/deliveries" replace /></ProtectedRoute>} />
+        <Route path="/library/acquisitions/approvals" element={<ProtectedRoute><Navigate to="/library/physical/acquisition-officer/approvals" replace /></ProtectedRoute>} />
+        <Route path="/library/vendors" element={<ProtectedRoute><Navigate to="/library/physical/acquisition-officer/vendors" replace /></ProtectedRoute>} />
+        <Route path="/library/inventory/dashboard" element={<ProtectedRoute><Navigate to="/library/physical/inventory-manager/dashboard" replace /></ProtectedRoute>} />
+        <Route path="/library/inventory/audits" element={<ProtectedRoute><Navigate to="/library/physical/inventory-manager/audits" replace /></ProtectedRoute>} />
+        <Route path="/library/inventory/missing" element={<ProtectedRoute><Navigate to="/library/physical/inventory-manager/missing-items" replace /></ProtectedRoute>} />
+        <Route path="/library/inventory/damaged" element={<ProtectedRoute><Navigate to="/library/physical/inventory-manager/damaged-items" replace /></ProtectedRoute>} />
+        <Route path="/library/inventory/tags" element={<ProtectedRoute><Navigate to="/library/physical/inventory-manager/tags" replace /></ProtectedRoute>} />
+        <Route path="/library/inventory/report" element={<ProtectedRoute><Navigate to="/library/physical/inventory-manager/report" replace /></ProtectedRoute>} />
+        <Route path="/library/manager/dashboard" element={<ProtectedRoute><Navigate to="/library/physical/library-manager/dashboard" replace /></ProtectedRoute>} />
+        <Route path="/library/policies" element={<ProtectedRoute><Navigate to="/library/physical/library-manager/policies" replace /></ProtectedRoute>} />
+        <Route path="/library/manager/usage-reports" element={<ProtectedRoute><Navigate to="/library/physical/library-manager/usage-reports" replace /></ProtectedRoute>} />
+        <Route path="/library/manager/loan-reports" element={<ProtectedRoute><Navigate to="/library/physical/library-manager/loan-reports" replace /></ProtectedRoute>} />
+        <Route path="/library/admin/dashboard" element={<ProtectedRoute><Navigate to="/library/physical/system-administrator/dashboard" replace /></ProtectedRoute>} />
+        <Route path="/library/users/create" element={<ProtectedRoute><Navigate to="/library/physical/system-administrator/create-user" replace /></ProtectedRoute>} />
+        <Route path="/library/roles" element={<ProtectedRoute><Navigate to="/library/physical/system-administrator/roles" replace /></ProtectedRoute>} />
+        <Route path="/library/admin/system-settings" element={<ProtectedRoute><Navigate to="/library/physical/system-administrator/system-settings" replace /></ProtectedRoute>} />
+        <Route path="/library/admin/security-alerts" element={<ProtectedRoute><Navigate to="/library/physical/system-administrator/security-alerts" replace /></ProtectedRoute>} />
+        <Route path="/library/uploader/dashboard" element={<ProtectedRoute><Navigate to="/library/digital/content-uploader/dashboard" replace /></ProtectedRoute>} />
+        <Route path="/library/digital" element={<ProtectedRoute><Navigate to="/library/digital/digital-librarian/resources" replace /></ProtectedRoute>} />
+        <Route path="/library/digital/new" element={<ProtectedRoute><Navigate to="/library/digital/digital-librarian/new-resource" replace /></ProtectedRoute>} />
+        <Route path="/library/digital/metadata" element={<ProtectedRoute><Navigate to="/library/digital/digital-librarian/metadata" replace /></ProtectedRoute>} />
+        <Route path="/library/digital/access" element={<ProtectedRoute><Navigate to="/library/digital/digital-librarian/access" replace /></ProtectedRoute>} />
+        <Route path="/library/digital/approvals" element={<ProtectedRoute><Navigate to="/library/digital/digital-librarian/approvals" replace /></ProtectedRoute>} />
+        <Route path="/library/digital/collections" element={<ProtectedRoute><Navigate to="/library/digital/digital-librarian/collections" replace /></ProtectedRoute>} />
+        <Route path="/library/digital/analytics" element={<ProtectedRoute><Navigate to="/library/digital/digital-librarian/analytics" replace /></ProtectedRoute>} />
+        <Route path="/library/digital/publisher-packages" element={<ProtectedRoute><Navigate to="/library/digital/external-publisher/packages" replace /></ProtectedRoute>} />
+        <Route path="/library/physical/member/dashboard" element={<ProtectedRoute><LibraryMemberDashboardPage /></ProtectedRoute>} />
+        <Route path="/library/digital/content-uploader/dashboard" element={<ProtectedRoute><LibraryContentUploaderDashboard /></ProtectedRoute>} />
+        <Route path="/library/physical/inventory-manager/dashboard" element={<ProtectedRoute><LibraryInventoryManagerDashboard /></ProtectedRoute>} />
+        <Route path="/library/physical/acquisition-officer/dashboard" element={<ProtectedRoute><LibraryAcquisitionOfficerDashboard /></ProtectedRoute>} />
+        <Route path="/library/physical/cataloger/dashboard" element={<ProtectedRoute><LibraryCatalogerDashboard /></ProtectedRoute>} />
+        <Route path="/library/physical/librarian/dashboard" element={<ProtectedRoute><LibraryLibrarianDashboard /></ProtectedRoute>} />
+        <Route path="/library/physical/library-manager/dashboard" element={<ProtectedRoute><LibraryManagerDashboard /></ProtectedRoute>} />
+        <Route path="/library/physical/system-administrator/dashboard" element={<ProtectedRoute><LibraryAdminDashboard /></ProtectedRoute>} />
         <Route path="/library/settings/material-types" element={<ProtectedRoute><MaterialTypesPage /></ProtectedRoute>} />
         <Route path="/library/settings/categories" element={<ProtectedRoute><CategoriesPage /></ProtectedRoute>} />
         <Route path="/library/settings/publishers" element={<ProtectedRoute><PublishersPage /></ProtectedRoute>} />
@@ -428,7 +471,7 @@ function App() {
         <Route path="/library/settings/subjects" element={<ProtectedRoute><SubjectsPage /></ProtectedRoute>} />
         <Route path="/library/audit-logs" element={<ProtectedRoute><LibraryLogsPage /></ProtectedRoute>} />
         <Route path="/library/admin/users" element={<ProtectedRoute><LibraryAdminUsersPage /></ProtectedRoute>} />
-        <Route path="/library/manager/inventory-reports" element={<ProtectedRoute><InventoryReportsPage /></ProtectedRoute>} />
+        <Route path="/library/physical/library-manager/inventory-reports" element={<ProtectedRoute><InventoryReportsPage /></ProtectedRoute>} />
         <Route path="/library/account" element={<ProtectedRoute><LibraryAccountPage /></ProtectedRoute>} />
         <Route path="/library/*" element={<ProtectedRoute><LibraryModuleRoutes /></ProtectedRoute>} />
 
@@ -503,6 +546,7 @@ function App() {
         {/* Journal Auth Routes */}
         <Route path="/journal/auth/login" element={<JournalLoginPage />} />
         <Route path="/journal/auth/register" element={<JournalRegisterPage />} />
+<<<<<<< HEAD
         //Ebooks
         <Route path="/ebooks" element={<Ebooks />} />
         {/* // Ebook Author Registration */}
@@ -530,6 +574,8 @@ function App() {
 <Route path="/wiki/reports/content" element={<WikiModerationDashboardPage />} />
 
 
+=======
+>>>>>>> origin/tbranch
         {/* 404 Not Found - This should be the LAST route */}
         <Route path="*" element={<h1>404 Not Found</h1>} />
       </Routes>
