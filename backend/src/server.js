@@ -51,7 +51,7 @@ import libraryRoutes from "./library/routes/library.routes.js";
 import systemSettingRoutes from "./routes/systemSetting.routes.js";
 import publisherExternalRoutes from "./routes/publisher.routes.js";
 import ebookRoutes from "./ebook/routes/ebook.routes.js";
-import ebookPublicRoutes from "./ebook/routes/ebookPublic.routes.js";
+import ebookPublicRoutes from "./ora_ebooks/routes/public.routes.js";
 import repositoryAuthorRoutes from './repository/authors/routes/repositoryAuthor.routes.js';
 
 import ebookAuthorRoutes from "./ora_ebooks/routes/author.routes.js";
