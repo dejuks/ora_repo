@@ -51,7 +51,7 @@ import libraryRoutes from "./library/routes/library.routes.js";
 import systemSettingRoutes from "./routes/systemSetting.routes.js";
 import publisherExternalRoutes from "./routes/publisher.routes.js";
 import ebookRoutes from "./ebook/routes/ebook.routes.js";
-import ebookPublicRoutes from "./ebook/routes/ebookPublic.routes.js";
+// import ebookPublicRoutes from "./ebook/routes/ebookPublic.routes.js";
 import repositoryAuthorRoutes from "./repository/authors/routes/repositoryAuthor.routes.js";
 
 dotenv.config();
@@ -149,19 +149,19 @@ app.use("/api/publisher", publisherExternalRoutes);
 
 // Ebook
 app.use("/api/ebook", ebookRoutes);
-app.use("/api/ebook-public", ebookPublicRoutes);
+// app.use("/api/ebook-public", ebookPublicRoutes);
 app.use("/api/library", libraryRoutes);
-app.use("/api/public", publicRoutes);
+// app.use("/api/public", publicRoutes);
 
 // Repository Authors
 app.use('/api/repository-authors', repositoryAuthorRoutes);
-app.use("/api/ebook_authors", ebookAuthorRoutes);
+// app.use("/api/ebook_authors", ebookAuthorRoutes);
 
 
 
-app.use("/api/ebook/manuscripts", ebookManuscriptRoutes);
-app.use("/api/oraebook/reviewer", reviewerRoutes);
-app.use("/api/oraebook", reviewerRoutes);
+// app.use("/api/ebook/manuscripts", ebookManuscriptRoutes);
+// app.use("/api/oraebook/reviewer", reviewerRoutes);
+// app.use("/api/oraebook", reviewerRoutes);
 /* =======================
    DEFAULT ROUTE
 ======================= */

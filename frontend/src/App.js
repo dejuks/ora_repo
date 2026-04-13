@@ -42,7 +42,7 @@ import ReadyToApprove from "./pages/repository/ReadyToApprove";
 import ReturnToRevision from "./pages/repository/ReturnToRevision";
 import DraftRepository from "./pages/repository/DraftRepository";
 import DepositsUnderReview from "./pages/repository/DepositsUnderReview";
-  import DepositsReturned from "./pages/repository/DepositsReturned";
+import DepositsReturned from "./pages/repository/DepositsReturned";
 import ApprovedDeposits from "./pages/repository/ApprovedDeposits";
 import RepositorySearch from "./pages/repository/RepositorySearch";
 import RepositoryShowAuthor from "./pages/repository/RepositoryShowAuthor";
@@ -242,8 +242,14 @@ function App() {
         <Route path="/manuscript/:id" element={<JournalDetailPage />} />
         <Route path="/journal/article/:id" element={<JournalArticleDetail />} />
         <Route path="/journal/author" element={<JournalAuthPage />} />
-        <Route path="/journal/author-login" element={<JournalAuthorLoginPage />} />
-        <Route path="/manuscripts/contribute" element={<ManuscriptContributePage />} />
+        <Route
+          path="/journal/author-login"
+          element={<JournalAuthorLoginPage />}
+        />
+        <Route
+          path="/manuscripts/contribute"
+          element={<ManuscriptContributePage />}
+        />
         <Route path="/repository" element={<Repository />} />
         <Route path="/ebooks" element={<EbookLanding />} />
         <Route path="/library" element={<LibraryPage />} />
@@ -252,29 +258,44 @@ function App() {
         <Route path="/ora" element={<Landing />} />
         <Route path="/auth" element={<Login />} />
         <Route path="/auth/login" element={<Login />} />
-
         {/* Public Repository Routes */}
         <Route path="/repository/public" element={<PublicRepository />} />
-        <Route path="/repository/item/:uuid" element={<RepositoryItemDetail />} />
+        <Route
+          path="/repository/item/:uuid"
+          element={<RepositoryItemDetail />}
+        />
         <Route path="/public/login" element={<PublicLogin />} />
         <Route path="/register" element={<PublicRegister />} />
         {/* repository/submissions/pending */}
-        <Route path="repository/submissions/pending" element={<RepositoryPendingSubmissionsPage />} />
+        <Route
+          path="repository/submissions/pending"
+          element={<RepositoryPendingSubmissionsPage />}
+        />
         {/* repository/submissions/curation */}
-        <Route path="repository/submissions/curation" element={<RepositoryCurationSubmissionsPage />} />
+        <Route
+          path="repository/submissions/curation"
+          element={<RepositoryCurationSubmissionsPage />}
+        />
         {/* repository/submissions/ready */}
-        <Route path="repository/submissions/ready" element={<RepositoryReadySubmissionsPage />} />
+        <Route
+          path="repository/submissions/ready"
+          element={<RepositoryReadySubmissionsPage />}
+        />
         {/* //epository/submissions/approved */}
-        <Route path="repository/submissions/approved" element={<RepositoryApprovedSubmissionsPage />} />
+        <Route
+          path="repository/submissions/approved"
+          element={<RepositoryApprovedSubmissionsPage />}
+        />
         {/* repository/submissions/rejected */}
-        <Route path="repository/submissions/rejected" element={<RepositoryRejectedSubmissionsPage />} />
+        <Route
+          path="repository/submissions/rejected"
+          element={<RepositoryRejectedSubmissionsPage />}
+        />
         <Route path="/public/dashboard" element={<PublicDashboard />} />
-        
         {/* Public Layout with Nested Routes */}
         <Route path="/repository/public" element={<PublicLayout />}>
           <Route path="search" element={<PublicSearch />} />
         </Route>
-
         {/* Wiki Public Routes */}
         <Route path="/wiki/articles" element={<ArticleList />} />
         <Route path="/wiki/recent-changes" element={<RecentChangesPage />} />
@@ -283,299 +304,1741 @@ function App() {
         <Route path="/wiki/article/:slug" element={<WikiArticlePage />} />
         <Route path="/wiki/register" element={<RegisterPage />} />
         <Route path="/wiki/login" element={<WikiLoginPage />} />
-
         {/* Researcher Public Routes */}
         <Route path="/researcher/register" element={<ResearcherRegister />} />
         <Route path="/researcher" element={<PublicHome />} />
         <Route path="/researcher/login" element={<ResearcherLogin />} />
-        <Route path="/researcher/profile/:userId" element={<ResearcherProfile />} />
-
+        <Route
+          path="/researcher/profile/:userId"
+          element={<ResearcherProfile />}
+        />
         {/* Ebook Public Routes */}
-        <Route path="/ebook/author-register" element={<PublicEbookAuthorRegisterPage />} />
+        <Route
+          path="/ebook/author-register"
+          element={<PublicEbookAuthorRegisterPage />}
+        />
         <Route path="/ebook/publications" element={<EbookPublicationsPage />} />
-        <Route path="/ebook/publications/:slug" element={<EbookPublicPublicationDetailPage />} />
-
+        <Route
+          path="/ebook/publications/:slug"
+          element={<EbookPublicPublicationDetailPage />}
+        />
         {/* Protected Routes */}
-        <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+        <Route
+          path="/users"
+          element={
+            <ProtectedRoute>
+              <Users />
+            </ProtectedRoute>
+          }
+        />
         {/* //wiki/settings */}
-        <Route path="/wiki/settings" element={<ProtectedRoute><WikiSettingsPage /></ProtectedRoute>} />
+        <Route
+          path="/wiki/settings"
+          element={
+            <ProtectedRoute>
+              <WikiSettingsPage />
+            </ProtectedRoute>
+          }
+        />
         {/* // WIKI/REPORTS */}
-        <Route path="/wiki/reports" element={<ProtectedRoute><WikiReportsPage /></ProtectedRoute>} />
+        <Route
+          path="/wiki/reports"
+          element={
+            <ProtectedRoute>
+              <WikiReportsPage />
+            </ProtectedRoute>
+          }
+        />
         {/* //wikipedia user routes */}
-        <Route path="/wiki/users" element={<ProtectedRoute><UserList /></ProtectedRoute>} />
-
-        <Route path="/roles" element={<ProtectedRoute><Roles /></ProtectedRoute>} />
-        <Route path="/permissions" element={<ProtectedRoute><Permissions /></ProtectedRoute>} />
-        <Route path="/role-permissions" element={<ProtectedRoute><RolePermissions /></ProtectedRoute>} />
-        <Route path="/user-roles/:uuid" element={<ProtectedRoute><UserRoles /></ProtectedRoute>} />
-        <Route path="/modules" element={<ProtectedRoute><Modules /></ProtectedRoute>} />
-        <Route path="/admin-dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        
+        <Route
+          path="/wiki/users"
+          element={
+            <ProtectedRoute>
+              <UserList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/roles"
+          element={
+            <ProtectedRoute>
+              <Roles />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/permissions"
+          element={
+            <ProtectedRoute>
+              <Permissions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/role-permissions"
+          element={
+            <ProtectedRoute>
+              <RolePermissions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/user-roles/:uuid"
+          element={
+            <ProtectedRoute>
+              <UserRoles />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/modules"
+          element={
+            <ProtectedRoute>
+              <Modules />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin-dashboard"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
         {/* Wiki Protected Routes */}
-        <Route path="/wiki/dashboard" element={<ProtectedRoute><WikiDashboard /></ProtectedRoute>} />
-        <Route path="/wiki/profile/edit" element={<ProtectedRoute><WikiProfileEdit /></ProtectedRoute>} />
-        <Route path="/wiki/articles/create" element={<ProtectedRoute><ArticleCreate /></ProtectedRoute>} />
-        <Route path="/wiki/articles/new" element={<ProtectedRoute><CreateArticlePage /></ProtectedRoute>} />
-        <Route path="/wiki/articles/edit/:id" element={<ProtectedRoute><ArticleEdit /></ProtectedRoute>} />
-        <Route path="/wiki/articles/drafts" element={<ProtectedRoute><ArticleDraftList /></ProtectedRoute>} />
-        <Route path="/wiki/categories" element={<ProtectedRoute><WikiCategoryList /></ProtectedRoute>} />
-        <Route path="/wiki/categories/create" element={<ProtectedRoute><WikiCategoryForm /></ProtectedRoute>} />
-        <Route path="/wiki/categories/edit/:id" element={<ProtectedRoute><WikiCategoryForm /></ProtectedRoute>} />
-        <Route path="/wiki/media/upload" element={<ProtectedRoute><WikiMediaUploadPage /></ProtectedRoute>} />
-        <Route path="/wiki/media" element={<ProtectedRoute><WikiMediaGalleryPage /></ProtectedRoute>} />
-        <Route path="/wiki/vandalism/check" element={<ProtectedRoute><VandalismCheck /></ProtectedRoute>} />
-{/* /wiki/my-articles */}
-        <Route path="/wiki/my-articles" element={<ProtectedRoute><MyArticleList /></ProtectedRoute>} />
-        <Route path="/wiki/my-articles/drafts" element={<ProtectedRoute><MyDraftArticleList /></ProtectedRoute>} />
+        <Route
+          path="/wiki/dashboard"
+          element={
+            <ProtectedRoute>
+              <WikiDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wiki/profile/edit"
+          element={
+            <ProtectedRoute>
+              <WikiProfileEdit />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wiki/articles/create"
+          element={
+            <ProtectedRoute>
+              <ArticleCreate />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wiki/articles/new"
+          element={
+            <ProtectedRoute>
+              <CreateArticlePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wiki/articles/edit/:id"
+          element={
+            <ProtectedRoute>
+              <ArticleEdit />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wiki/articles/drafts"
+          element={
+            <ProtectedRoute>
+              <ArticleDraftList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wiki/categories"
+          element={
+            <ProtectedRoute>
+              <WikiCategoryList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wiki/categories/create"
+          element={
+            <ProtectedRoute>
+              <WikiCategoryForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wiki/categories/edit/:id"
+          element={
+            <ProtectedRoute>
+              <WikiCategoryForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wiki/media/upload"
+          element={
+            <ProtectedRoute>
+              <WikiMediaUploadPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wiki/media"
+          element={
+            <ProtectedRoute>
+              <WikiMediaGalleryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wiki/vandalism/check"
+          element={
+            <ProtectedRoute>
+              <VandalismCheck />
+            </ProtectedRoute>
+          }
+        />
+        {/* /wiki/my-articles */}
+        <Route
+          path="/wiki/my-articles"
+          element={
+            <ProtectedRoute>
+              <MyArticleList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wiki/my-articles/drafts"
+          element={
+            <ProtectedRoute>
+              <MyDraftArticleList />
+            </ProtectedRoute>
+          }
+        />
         {/* Journal Protected Routes */}
-        <Route path="/journal-dashboard" element={<ProtectedRoute><JournalDashboard /></ProtectedRoute>} />
-        <Route path="/journal/author-dashboard" element={<ProtectedRoute><JournalAuthorDashboard /></ProtectedRoute>} />
-        <Route path="/journal/users" element={<ProtectedRoute><JournalUserList /></ProtectedRoute>} />
-        <Route path="/journal/list" element={<ProtectedRoute><JournalList /></ProtectedRoute>} />
-        <Route path="/journal/add" element={<ProtectedRoute><JournalForm /></ProtectedRoute>} />
-        <Route path="/journal/edit/:id" element={<ProtectedRoute><JournalEdit /></ProtectedRoute>} />
-        <Route path="/journal/profile" element={<ProtectedRoute><JournalProfile /></ProtectedRoute>} />
-        <Route path="/journal/workflow-stages" element={<ProtectedRoute><WorkflowStages /></ProtectedRoute>} />
-
+        <Route
+          path="/journal-dashboard"
+          element={
+            <ProtectedRoute>
+              <JournalDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/journal/author-dashboard"
+          element={
+            <ProtectedRoute>
+              <JournalAuthorDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/journal/users"
+          element={
+            <ProtectedRoute>
+              <JournalUserList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/journal/list"
+          element={
+            <ProtectedRoute>
+              <JournalList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/journal/add"
+          element={
+            <ProtectedRoute>
+              <JournalForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/journal/edit/:id"
+          element={
+            <ProtectedRoute>
+              <JournalEdit />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/journal/profile"
+          element={
+            <ProtectedRoute>
+              <JournalProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/journal/workflow-stages"
+          element={
+            <ProtectedRoute>
+              <WorkflowStages />
+            </ProtectedRoute>
+          }
+        />
         {/* Manuscript Protected Routes */}
-        <Route path="/journal/manuscripts" element={<ProtectedRoute><ManuscriptList /></ProtectedRoute>} />
-        <Route path="/manuscripts/:id" element={<ProtectedRoute><AuthorManuscriptView /></ProtectedRoute>} />
-        <Route path="/manuscripts/create" element={<ProtectedRoute><ManuscriptCreate /></ProtectedRoute>} />
-        <Route path="/manuscripts/edit/:id" element={<ProtectedRoute><ManuscriptEdit /></ProtectedRoute>} />
-        <Route path="/journal/manuscripts/show/:id" element={<ProtectedRoute><ManuscriptShow /></ProtectedRoute>} />
-        <Route path="/manuscript/draft-manuscript" element={<ProtectedRoute><DraftManuscripts /></ProtectedRoute>} />
-        <Route path="/journal/manuscripts/revisions" element={<ProtectedRoute><RevisionRequiredManuscription /></ProtectedRoute>} />
-        <Route path="/journal/manuscripts-status" element={<ProtectedRoute><ManuscriptStatuses /></ProtectedRoute>} />
-
+        <Route
+          path="/journal/manuscripts"
+          element={
+            <ProtectedRoute>
+              <ManuscriptList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manuscripts/:id"
+          element={
+            <ProtectedRoute>
+              <AuthorManuscriptView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manuscripts/create"
+          element={
+            <ProtectedRoute>
+              <ManuscriptCreate />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manuscripts/edit/:id"
+          element={
+            <ProtectedRoute>
+              <ManuscriptEdit />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/journal/manuscripts/show/:id"
+          element={
+            <ProtectedRoute>
+              <ManuscriptShow />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manuscript/draft-manuscript"
+          element={
+            <ProtectedRoute>
+              <DraftManuscripts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/journal/manuscripts/revisions"
+          element={
+            <ProtectedRoute>
+              <RevisionRequiredManuscription />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/journal/manuscripts-status"
+          element={
+            <ProtectedRoute>
+              <ManuscriptStatuses />
+            </ProtectedRoute>
+          }
+        />
         {/* EIC Protected Routes */}
-        <Route path="/journal/eic/submissions" element={<ProtectedRoute><EICCompletedReviews /></ProtectedRoute>} />
-        <Route path="/eic/decision/:id" element={<ProtectedRoute><EICMakeDecision /></ProtectedRoute>} />
-        <Route path="/eic/manuscripts/:id" element={<ProtectedRoute><EICManuscriptDetails /></ProtectedRoute>} />
-        <Route path="/eic/payment-orders" element={<ProtectedRoute><EICPaymentOrders /></ProtectedRoute>} />
-
+        <Route
+          path="/journal/eic/submissions"
+          element={
+            <ProtectedRoute>
+              <EICCompletedReviews />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/eic/decision/:id"
+          element={
+            <ProtectedRoute>
+              <EICMakeDecision />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/eic/manuscripts/:id"
+          element={
+            <ProtectedRoute>
+              <EICManuscriptDetails />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/eic/payment-orders"
+          element={
+            <ProtectedRoute>
+              <EICPaymentOrders />
+            </ProtectedRoute>
+          }
+        />
         {/* AE Protected Routes */}
-        <Route path="/manuscript/ae/assigned-manuscripts" element={<ProtectedRoute><ManuscriptListAE /></ProtectedRoute>} />
-        <Route path="/manuscription/ae/screening" element={<ProtectedRoute><InitialScreeningListAE /></ProtectedRoute>} />
-        <Route path="/manuscript/ae/under-review" element={<ProtectedRoute><UnderReviewAE /></ProtectedRoute>} />
-        
+        <Route
+          path="/manuscript/ae/assigned-manuscripts"
+          element={
+            <ProtectedRoute>
+              <ManuscriptListAE />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manuscription/ae/screening"
+          element={
+            <ProtectedRoute>
+              <InitialScreeningListAE />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manuscript/ae/under-review"
+          element={
+            <ProtectedRoute>
+              <UnderReviewAE />
+            </ProtectedRoute>
+          }
+        />
         {/* Reviewer Protected Routes */}
-        <Route path="/journal/reviewer/assigned" element={<ProtectedRoute><AssignedReviews /></ProtectedRoute>} />
-        <Route path="/reviewer/assigned/:id" element={<ProtectedRoute><AssignedReviewDetails /></ProtectedRoute>} />
-
+        <Route
+          path="/journal/reviewer/assigned"
+          element={
+            <ProtectedRoute>
+              <AssignedReviews />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reviewer/assigned/:id"
+          element={
+            <ProtectedRoute>
+              <AssignedReviewDetails />
+            </ProtectedRoute>
+          }
+        />
         {/* Repository Protected Routes */}
         {/* Author account create */}
         <Route path="/repository/author/create" element={<CreateAccount />} />
-
-        <Route path="/repository/admin/dashboard" element={<ProtectedRoute><RepositoryDashboard /></ProtectedRoute>} />
-        <Route path="/repository/author/dashboard" element={<ProtectedRoute><RepositoryDashboard /></ProtectedRoute>} />
-        <Route path="/repository/author/submit/list" element={<ProtectedRoute><RepositoryList /></ProtectedRoute>} />
-        <Route path="/repository/manuscript/create" element={<ProtectedRoute><RepositoryCreate /></ProtectedRoute>} />
-        <Route path="/repository/show/:uuid" element={<ProtectedRoute><RepositoryShow /></ProtectedRoute>} />
-        <Route path="/repository/author/show/:uuid" element={<ProtectedRoute><RepositoryShowAuthor /></ProtectedRoute>} />
-        <Route path="/repository/edit/:uuid" element={<ProtectedRoute><RepositoryEdit /></ProtectedRoute>} />
-        <Route path="/repository/search" element={<ProtectedRoute><RepositorySearch /></ProtectedRoute>} />
-        <Route path="/repository/author/deposits/drafts" element={<ProtectedRoute><DraftRepository /></ProtectedRoute>} />
-        <Route path="/repository/author/deposits/review" element={<ProtectedRoute><DepositsUnderReview /></ProtectedRoute>} />
-        <Route path="/repository/author/deposits/returned" element={<ProtectedRoute><DepositsReturned /></ProtectedRoute>} />
-        <Route path="/repository/author/deposits/approved" element={<ProtectedRoute><ApprovedDeposits /></ProtectedRoute>} />
-
-<Route
-  path="/repository/author/submit/access"
-  element={<AccessLicense />}
-/>
+        <Route
+          path="/repository/admin/dashboard"
+          element={
+            <ProtectedRoute>
+              <RepositoryDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/author/dashboard"
+          element={
+            <ProtectedRoute>
+              <RepositoryDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/author/submit/list"
+          element={
+            <ProtectedRoute>
+              <RepositoryList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/manuscript/create"
+          element={
+            <ProtectedRoute>
+              <RepositoryCreate />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/show/:uuid"
+          element={
+            <ProtectedRoute>
+              <RepositoryShow />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/author/show/:uuid"
+          element={
+            <ProtectedRoute>
+              <RepositoryShowAuthor />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/edit/:uuid"
+          element={
+            <ProtectedRoute>
+              <RepositoryEdit />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/search"
+          element={
+            <ProtectedRoute>
+              <RepositorySearch />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/author/deposits/drafts"
+          element={
+            <ProtectedRoute>
+              <DraftRepository />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/author/deposits/review"
+          element={
+            <ProtectedRoute>
+              <DepositsUnderReview />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/author/deposits/returned"
+          element={
+            <ProtectedRoute>
+              <DepositsReturned />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/author/deposits/approved"
+          element={
+            <ProtectedRoute>
+              <ApprovedDeposits />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/author/submit/access"
+          element={<AccessLicense />}
+        />
         {/* Repository Curator Protected Routes */}
-        <Route path="/repository/curator/dashboard" element={<ProtectedRoute><CuratorDashboard /></ProtectedRoute>} />
-        <Route path="/repository/curator/queue/new" element={<ProtectedRoute><CuratorRepositoryList /></ProtectedRoute>} />
-        <Route path="/repository/curator/review/:uuid" element={<ProtectedRoute><CuratorRepositoryReview /></ProtectedRoute>} />
-        <Route path="/repository/curator/queue/in-progress" element={<ProtectedRoute><InProgress /></ProtectedRoute>} />
-        <Route path="/repository/curator/queue/ready" element={<ProtectedRoute><ReadyToApprove /></ProtectedRoute>} />
-        <Route path="/repository/curator/queue/returned" element={<ProtectedRoute><ReturnToRevision /></ProtectedRoute>} />
-        <Route path="/repository/curator/tools" element={<ProtectedRoute><CuratorTool /></ProtectedRoute>} />
-        <Route path="/repository/collections/author" element={<ProtectedRoute><CollectionsByAuthor /></ProtectedRoute>} />
-        <Route path="/repository/collections/type" element={<ProtectedRoute><CollectionsByType /></ProtectedRoute>} />
-        <Route path="/repository/reports/trends" element={<ProtectedRoute><RepositoryTrends /></ProtectedRoute>} />
-        <Route path="/repository/reports/curator-performance" element={<ProtectedRoute><CuratorPerformanceReport /></ProtectedRoute>} />
-
+        <Route
+          path="/repository/curator/dashboard"
+          element={
+            <ProtectedRoute>
+              <CuratorDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/curator/queue/new"
+          element={
+            <ProtectedRoute>
+              <CuratorRepositoryList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/curator/review/:uuid"
+          element={
+            <ProtectedRoute>
+              <CuratorRepositoryReview />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/curator/queue/in-progress"
+          element={
+            <ProtectedRoute>
+              <InProgress />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/curator/queue/ready"
+          element={
+            <ProtectedRoute>
+              <ReadyToApprove />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/curator/queue/returned"
+          element={
+            <ProtectedRoute>
+              <ReturnToRevision />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/curator/tools"
+          element={
+            <ProtectedRoute>
+              <CuratorTool />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/collections/author"
+          element={
+            <ProtectedRoute>
+              <CollectionsByAuthor />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/collections/type"
+          element={
+            <ProtectedRoute>
+              <CollectionsByType />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/reports/trends"
+          element={
+            <ProtectedRoute>
+              <RepositoryTrends />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/reports/curator-performance"
+          element={
+            <ProtectedRoute>
+              <CuratorPerformanceReport />
+            </ProtectedRoute>
+          }
+        />
         {/* Repository Reviewer Protected Routes */}
-        <Route path="/repository/reviewer/dashboard" element={<ProtectedRoute><ReviewerDashboard /></ProtectedRoute>} />
-        <Route path="/repository/reviewer/queue/new" element={<ProtectedRoute><ReviewerQueueNew /></ProtectedRoute>} />
-        <Route path="/repository/reviewer/review/:uuid" element={<ProtectedRoute><ReviewerItemDetail /></ProtectedRoute>} />
-
+        <Route
+          path="/repository/reviewer/dashboard"
+          element={
+            <ProtectedRoute>
+              <ReviewerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/reviewer/queue/new"
+          element={
+            <ProtectedRoute>
+              <ReviewerQueueNew />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/repository/reviewer/review/:uuid"
+          element={
+            <ProtectedRoute>
+              <ReviewerItemDetail />
+            </ProtectedRoute>
+          }
+        />
         {/* Researcher Protected Routes */}
-        <Route path="/researcher/dashboard" element={<ProtectedRoute><ResearcherDashboard /></ProtectedRoute>} />
-        <Route path="/researcher/onboarding" element={<ProtectedRoute><ProfileOnboarding /></ProtectedRoute>} />
-        <Route path="/researcher/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
-        <Route path="/researcher/groups/create" element={<ProtectedRoute><GroupForm /></ProtectedRoute>} />
-        <Route path="/researcher/groups/edit/:uuid" element={<ProtectedRoute><GroupForm /></ProtectedRoute>} />
-        <Route path="/research-network/groups" element={<ProtectedRoute><AdminGroups /></ProtectedRoute>} />
-        <Route path="/admin/groups/:uuid" element={<ProtectedRoute><AdminGroupDetails /></ProtectedRoute>} />
-
+        <Route
+          path="/researcher/dashboard"
+          element={
+            <ProtectedRoute>
+              <ResearcherDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/researcher/onboarding"
+          element={
+            <ProtectedRoute>
+              <ProfileOnboarding />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/researcher/groups"
+          element={
+            <ProtectedRoute>
+              <Groups />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/researcher/groups/create"
+          element={
+            <ProtectedRoute>
+              <GroupForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/researcher/groups/edit/:uuid"
+          element={
+            <ProtectedRoute>
+              <GroupForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/research-network/groups"
+          element={
+            <ProtectedRoute>
+              <AdminGroups />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/groups/:uuid"
+          element={
+            <ProtectedRoute>
+              <AdminGroupDetails />
+            </ProtectedRoute>
+          }
+        />
         {/* Library Protected Routes */}
-        <Route path="/library-dashboard" element={<ProtectedRoute><LibraryRoleRedirect /></ProtectedRoute>} />
-
-        <Route path="/library/member/dashboard" element={<ProtectedRoute><LibraryMemberDashboardPage /></ProtectedRoute>} />
-        <Route path="/library/opac" element={<ProtectedRoute><Navigate to="/library/physical/member/opac" replace /></ProtectedRoute>} />
-        <Route path="/library/my-loans" element={<ProtectedRoute><Navigate to="/library/physical/member/my-loans" replace /></ProtectedRoute>} />
-        <Route path="/library/my-holds" element={<ProtectedRoute><Navigate to="/library/physical/member/my-holds" replace /></ProtectedRoute>} />
-        <Route path="/library/my-fines" element={<ProtectedRoute><Navigate to="/library/physical/member/my-fines" replace /></ProtectedRoute>} />
-        <Route path="/library/member/digital" element={<ProtectedRoute><Navigate to="/library/digital/member/library" replace /></ProtectedRoute>} />
-        <Route path="/library/librarian/dashboard" element={<ProtectedRoute><Navigate to="/library/physical/librarian/dashboard" replace /></ProtectedRoute>} />
-        <Route path="/library/circulation/desk" element={<ProtectedRoute><Navigate to="/library/physical/librarian/circulation-desk" replace /></ProtectedRoute>} />
-        <Route path="/library/loans" element={<ProtectedRoute><Navigate to="/library/physical/librarian/loans" replace /></ProtectedRoute>} />
-        <Route path="/library/holds" element={<ProtectedRoute><Navigate to="/library/physical/librarian/holds" replace /></ProtectedRoute>} />
-        <Route path="/library/fines" element={<ProtectedRoute><Navigate to="/library/physical/librarian/fines" replace /></ProtectedRoute>} />
-        <Route path="/library/history" element={<ProtectedRoute><Navigate to="/library/physical/librarian/history" replace /></ProtectedRoute>} />
-        <Route path="/library/acquisition/dashboard" element={<ProtectedRoute><Navigate to="/library/physical/acquisition-officer/dashboard" replace /></ProtectedRoute>} />
-        <Route path="/library/acquisitions/requests" element={<ProtectedRoute><Navigate to="/library/physical/acquisition-officer/requests" replace /></ProtectedRoute>} />
-        <Route path="/library/acquisitions/orders" element={<ProtectedRoute><Navigate to="/library/physical/acquisition-officer/orders" replace /></ProtectedRoute>} />
-        <Route path="/library/acquisitions/deliveries" element={<ProtectedRoute><Navigate to="/library/physical/acquisition-officer/deliveries" replace /></ProtectedRoute>} />
-        <Route path="/library/acquisitions/approvals" element={<ProtectedRoute><Navigate to="/library/physical/acquisition-officer/approvals" replace /></ProtectedRoute>} />
-        <Route path="/library/vendors" element={<ProtectedRoute><Navigate to="/library/physical/acquisition-officer/vendors" replace /></ProtectedRoute>} />
-        <Route path="/library/inventory/dashboard" element={<ProtectedRoute><Navigate to="/library/physical/inventory-manager/dashboard" replace /></ProtectedRoute>} />
-        <Route path="/library/inventory/audits" element={<ProtectedRoute><Navigate to="/library/physical/inventory-manager/audits" replace /></ProtectedRoute>} />
-        <Route path="/library/inventory/missing" element={<ProtectedRoute><Navigate to="/library/physical/inventory-manager/missing-items" replace /></ProtectedRoute>} />
-        <Route path="/library/inventory/damaged" element={<ProtectedRoute><Navigate to="/library/physical/inventory-manager/damaged-items" replace /></ProtectedRoute>} />
-        <Route path="/library/inventory/tags" element={<ProtectedRoute><Navigate to="/library/physical/inventory-manager/tags" replace /></ProtectedRoute>} />
-        <Route path="/library/inventory/report" element={<ProtectedRoute><Navigate to="/library/physical/inventory-manager/report" replace /></ProtectedRoute>} />
-        <Route path="/library/manager/dashboard" element={<ProtectedRoute><Navigate to="/library/physical/library-manager/dashboard" replace /></ProtectedRoute>} />
-        <Route path="/library/policies" element={<ProtectedRoute><Navigate to="/library/physical/library-manager/policies" replace /></ProtectedRoute>} />
-        <Route path="/library/manager/usage-reports" element={<ProtectedRoute><Navigate to="/library/physical/library-manager/usage-reports" replace /></ProtectedRoute>} />
-        <Route path="/library/manager/loan-reports" element={<ProtectedRoute><Navigate to="/library/physical/library-manager/loan-reports" replace /></ProtectedRoute>} />
-        <Route path="/library/admin/dashboard" element={<ProtectedRoute><Navigate to="/library/physical/system-administrator/dashboard" replace /></ProtectedRoute>} />
-        <Route path="/library/users/create" element={<ProtectedRoute><Navigate to="/library/physical/system-administrator/create-user" replace /></ProtectedRoute>} />
-        <Route path="/library/roles" element={<ProtectedRoute><Navigate to="/library/physical/system-administrator/roles" replace /></ProtectedRoute>} />
-        <Route path="/library/admin/system-settings" element={<ProtectedRoute><Navigate to="/library/physical/system-administrator/system-settings" replace /></ProtectedRoute>} />
-        <Route path="/library/admin/security-alerts" element={<ProtectedRoute><Navigate to="/library/physical/system-administrator/security-alerts" replace /></ProtectedRoute>} />
-        <Route path="/library/uploader/dashboard" element={<ProtectedRoute><Navigate to="/library/digital/content-uploader/dashboard" replace /></ProtectedRoute>} />
-        <Route path="/library/digital" element={<ProtectedRoute><Navigate to="/library/digital/digital-librarian/resources" replace /></ProtectedRoute>} />
-        <Route path="/library/digital/new" element={<ProtectedRoute><Navigate to="/library/digital/digital-librarian/new-resource" replace /></ProtectedRoute>} />
-        <Route path="/library/digital/metadata" element={<ProtectedRoute><Navigate to="/library/digital/digital-librarian/metadata" replace /></ProtectedRoute>} />
-        <Route path="/library/digital/access" element={<ProtectedRoute><Navigate to="/library/digital/digital-librarian/access" replace /></ProtectedRoute>} />
-        <Route path="/library/digital/approvals" element={<ProtectedRoute><Navigate to="/library/digital/digital-librarian/approvals" replace /></ProtectedRoute>} />
-        <Route path="/library/digital/collections" element={<ProtectedRoute><Navigate to="/library/digital/digital-librarian/collections" replace /></ProtectedRoute>} />
-        <Route path="/library/digital/analytics" element={<ProtectedRoute><Navigate to="/library/digital/digital-librarian/analytics" replace /></ProtectedRoute>} />
-        <Route path="/library/digital/publisher-packages" element={<ProtectedRoute><Navigate to="/library/digital/external-publisher/packages" replace /></ProtectedRoute>} />
-        <Route path="/library/physical/member/dashboard" element={<ProtectedRoute><LibraryMemberDashboardPage /></ProtectedRoute>} />
-        <Route path="/library/digital/content-uploader/dashboard" element={<ProtectedRoute><LibraryContentUploaderDashboard /></ProtectedRoute>} />
-        <Route path="/library/physical/inventory-manager/dashboard" element={<ProtectedRoute><LibraryInventoryManagerDashboard /></ProtectedRoute>} />
-        <Route path="/library/physical/acquisition-officer/dashboard" element={<ProtectedRoute><LibraryAcquisitionOfficerDashboard /></ProtectedRoute>} />
-        <Route path="/library/physical/cataloger/dashboard" element={<ProtectedRoute><LibraryCatalogerDashboard /></ProtectedRoute>} />
-        <Route path="/library/physical/librarian/dashboard" element={<ProtectedRoute><LibraryLibrarianDashboard /></ProtectedRoute>} />
-        <Route path="/library/physical/library-manager/dashboard" element={<ProtectedRoute><LibraryManagerDashboard /></ProtectedRoute>} />
-        <Route path="/library/physical/system-administrator/dashboard" element={<ProtectedRoute><LibraryAdminDashboard /></ProtectedRoute>} />
-        <Route path="/library/settings/material-types" element={<ProtectedRoute><MaterialTypesPage /></ProtectedRoute>} />
-        <Route path="/library/settings/categories" element={<ProtectedRoute><CategoriesPage /></ProtectedRoute>} />
-        <Route path="/library/settings/publishers" element={<ProtectedRoute><PublishersPage /></ProtectedRoute>} />
-        <Route path="/library/settings/languages" element={<ProtectedRoute><LanguagesPage /></ProtectedRoute>} />
-        <Route path="/library/settings/subjects" element={<ProtectedRoute><SubjectsPage /></ProtectedRoute>} />
-        <Route path="/library/audit-logs" element={<ProtectedRoute><LibraryLogsPage /></ProtectedRoute>} />
-        <Route path="/library/admin/users" element={<ProtectedRoute><LibraryAdminUsersPage /></ProtectedRoute>} />
-        <Route path="/library/physical/library-manager/inventory-reports" element={<ProtectedRoute><InventoryReportsPage /></ProtectedRoute>} />
-        <Route path="/library/account" element={<ProtectedRoute><LibraryAccountPage /></ProtectedRoute>} />
-        <Route path="/library/*" element={<ProtectedRoute><LibraryModuleRoutes /></ProtectedRoute>} />
-
+        <Route
+          path="/library-dashboard"
+          element={
+            <ProtectedRoute>
+              <LibraryRoleRedirect />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/member/dashboard"
+          element={
+            <ProtectedRoute>
+              <LibraryMemberDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/opac"
+          element={
+            <ProtectedRoute>
+              <Navigate to="/library/physical/member/opac" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/my-loans"
+          element={
+            <ProtectedRoute>
+              <Navigate to="/library/physical/member/my-loans" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/my-holds"
+          element={
+            <ProtectedRoute>
+              <Navigate to="/library/physical/member/my-holds" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/my-fines"
+          element={
+            <ProtectedRoute>
+              <Navigate to="/library/physical/member/my-fines" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/member/digital"
+          element={
+            <ProtectedRoute>
+              <Navigate to="/library/digital/member/library" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/librarian/dashboard"
+          element={
+            <ProtectedRoute>
+              <Navigate to="/library/physical/librarian/dashboard" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/circulation/desk"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/librarian/circulation-desk"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/loans"
+          element={
+            <ProtectedRoute>
+              <Navigate to="/library/physical/librarian/loans" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/holds"
+          element={
+            <ProtectedRoute>
+              <Navigate to="/library/physical/librarian/holds" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/fines"
+          element={
+            <ProtectedRoute>
+              <Navigate to="/library/physical/librarian/fines" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/history"
+          element={
+            <ProtectedRoute>
+              <Navigate to="/library/physical/librarian/history" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/acquisition/dashboard"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/acquisition-officer/dashboard"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/acquisitions/requests"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/acquisition-officer/requests"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/acquisitions/orders"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/acquisition-officer/orders"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/acquisitions/deliveries"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/acquisition-officer/deliveries"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/acquisitions/approvals"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/acquisition-officer/approvals"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/vendors"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/acquisition-officer/vendors"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/inventory/dashboard"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/inventory-manager/dashboard"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/inventory/audits"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/inventory-manager/audits"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/inventory/missing"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/inventory-manager/missing-items"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/inventory/damaged"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/inventory-manager/damaged-items"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/inventory/tags"
+          element={
+            <ProtectedRoute>
+              <Navigate to="/library/physical/inventory-manager/tags" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/inventory/report"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/inventory-manager/report"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/manager/dashboard"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/library-manager/dashboard"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/policies"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/library-manager/policies"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/manager/usage-reports"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/library-manager/usage-reports"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/manager/loan-reports"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/library-manager/loan-reports"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/admin/dashboard"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/system-administrator/dashboard"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/users/create"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/system-administrator/create-user"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/roles"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/system-administrator/roles"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/admin/system-settings"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/system-administrator/system-settings"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/admin/security-alerts"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/physical/system-administrator/security-alerts"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/uploader/dashboard"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/digital/content-uploader/dashboard"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/digital"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/digital/digital-librarian/resources"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/digital/new"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/digital/digital-librarian/new-resource"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/digital/metadata"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/digital/digital-librarian/metadata"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/digital/access"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/digital/digital-librarian/access"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/digital/approvals"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/digital/digital-librarian/approvals"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/digital/collections"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/digital/digital-librarian/collections"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/digital/analytics"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/digital/digital-librarian/analytics"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/digital/publisher-packages"
+          element={
+            <ProtectedRoute>
+              <Navigate
+                to="/library/digital/external-publisher/packages"
+                replace
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/physical/member/dashboard"
+          element={
+            <ProtectedRoute>
+              <LibraryMemberDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/digital/content-uploader/dashboard"
+          element={
+            <ProtectedRoute>
+              <LibraryContentUploaderDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/physical/inventory-manager/dashboard"
+          element={
+            <ProtectedRoute>
+              <LibraryInventoryManagerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/physical/acquisition-officer/dashboard"
+          element={
+            <ProtectedRoute>
+              <LibraryAcquisitionOfficerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/physical/cataloger/dashboard"
+          element={
+            <ProtectedRoute>
+              <LibraryCatalogerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/physical/librarian/dashboard"
+          element={
+            <ProtectedRoute>
+              <LibraryLibrarianDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/physical/library-manager/dashboard"
+          element={
+            <ProtectedRoute>
+              <LibraryManagerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/physical/system-administrator/dashboard"
+          element={
+            <ProtectedRoute>
+              <LibraryAdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/settings/material-types"
+          element={
+            <ProtectedRoute>
+              <MaterialTypesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/settings/categories"
+          element={
+            <ProtectedRoute>
+              <CategoriesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/settings/publishers"
+          element={
+            <ProtectedRoute>
+              <PublishersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/settings/languages"
+          element={
+            <ProtectedRoute>
+              <LanguagesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/settings/subjects"
+          element={
+            <ProtectedRoute>
+              <SubjectsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/audit-logs"
+          element={
+            <ProtectedRoute>
+              <LibraryLogsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/admin/users"
+          element={
+            <ProtectedRoute>
+              <LibraryAdminUsersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/physical/library-manager/inventory-reports"
+          element={
+            <ProtectedRoute>
+              <InventoryReportsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/account"
+          element={
+            <ProtectedRoute>
+              <LibraryAccountPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library/*"
+          element={
+            <ProtectedRoute>
+              <LibraryModuleRoutes />
+            </ProtectedRoute>
+          }
+        />
         {/* Ebook Protected Routes */}
-        <Route path="/ebook/dashboard" element={<ProtectedRoute><EbookDashboardPage /></ProtectedRoute>} />
-        <Route path="/ebook/workflow-overview" element={<ProtectedRoute><EbookWorkflowOverviewPage /></ProtectedRoute>} />
-        <Route path="/ebook/submissions" element={<ProtectedRoute><EbookSubmissionsPage /></ProtectedRoute>} />
-        <Route path="/ebook/submissions/create" element={<ProtectedRoute><EbookSubmissionCreatePage /></ProtectedRoute>} />
-        <Route path="/ebook/submissions/:id/edit" element={<ProtectedRoute><EbookSubmissionEditPage /></ProtectedRoute>} />
-        <Route path="/ebook/submissions/:id" element={<ProtectedRoute><EbookSubmissionDetailPage /></ProtectedRoute>} />
-        <Route path="/ebook/my-submissions" element={<ProtectedRoute><EbookAuthorMySubmissionsPage /></ProtectedRoute>} />
-        <Route path="/ebook/drafts" element={<ProtectedRoute><EbookAuthorMySubmissionsPage stage="drafts" /></ProtectedRoute>} />
-        <Route path="/ebook/my-revisions" element={<ProtectedRoute><EbookAuthorRevisionQueuePage /></ProtectedRoute>} />
-        <Route path="/ebook/my-payments" element={<ProtectedRoute><EbookAuthorPaymentsQueuePage /></ProtectedRoute>} />
-        <Route path="/ebook/my-proofs" element={<ProtectedRoute><EbookAuthorProofQueuePage /></ProtectedRoute>} />
-        <Route path="/ebook/my-rejected" element={<ProtectedRoute><EbookAuthorRejectedQueuePage /></ProtectedRoute>} />
-        <Route path="/ebook/submissions/:id/payment" element={<ProtectedRoute><EbookAuthorPaymentPage /></ProtectedRoute>} />
-        <Route path="/ebook/submissions/:id/proof-approval" element={<ProtectedRoute><EbookAuthorProofApprovalPage /></ProtectedRoute>} />
-        <Route path="/ebook/submissions/:id/review-comments" element={<ProtectedRoute><EbookAuthorReviewCommentsPage /></ProtectedRoute>} />
-        <Route path="/ebook/reviewer" element={<ProtectedRoute><EbookReviewerPage filter="all" /></ProtectedRoute>} />
-        <Route path="/ebook/reviewer/pending" element={<ProtectedRoute><EbookReviewerPage filter="pending" /></ProtectedRoute>} />
-        <Route path="/ebook/reviewer/accepted" element={<ProtectedRoute><EbookReviewerPage filter="accepted" /></ProtectedRoute>} />
-        <Route path="/ebook/reviewer/rejected" element={<ProtectedRoute><EbookReviewerPage filter="rejected" /></ProtectedRoute>} />
-        <Route path="/ebook/reviewer/completed" element={<ProtectedRoute><EbookReviewerPage filter="completed" /></ProtectedRoute>} />
-        <Route path="/ebook/reviewer/overdue" element={<ProtectedRoute><EbookReviewerPage filter="overdue" /></ProtectedRoute>} />
-        <Route path="/ebook/review-assignments/:id" element={<ProtectedRoute><EbookReviewDetailPage /></ProtectedRoute>} />
-        <Route path="/ebook/reviewer-manager" element={<ProtectedRoute><EbookReviewerManagerPage /></ProtectedRoute>} />
- 
-
-       <Route path="/ora/ebook/editor/screening" element={ <ProtectedRoute><OraEbookEditorScreeningPage /> </ProtectedRoute>}/>
-       <Route path="/ora/ebook/editor/screened" element={<OraEbookEditorScreenedPage />} />
-       <Route
-  path="/ebook/editor/assign-reviewers/:submissionId"
-  element={<EbookEditorAssignReviewersPage />}
-/>
-
-<Route
-  path="/oraebook/reviewer/pending"
-  element={<EbookReviewerPendingPage />}
-/>
-
-       <Route path="/ebook/editor/screening" element={ <ProtectedRoute><EbookEditorScreeningPage /> </ProtectedRoute>}/>
-       <Route path="/ebook/editor/screened" element={ <ProtectedRoute><EbookEditorScreenedPage /> </ProtectedRoute>}/>
-       <Route path="/ebook/editor/reviews" element={ <ProtectedRoute><EbookEditorReviewsPage /> </ProtectedRoute>}/>
-       <Route path="/ebook/editor/decision" element={ <ProtectedRoute><EbookEditorDecisionPage /> </ProtectedRoute>}/>
-       <Route path="/ebook/editor/handoff" element={ <ProtectedRoute><EbookEditorHandoffPage /> </ProtectedRoute>}/>
-
-
-        <Route path="/ebook/editor-queue" element={<ProtectedRoute><EbookEditorQueuePage /></ProtectedRoute>} />
-        <Route path="/ebook/finance" element={<ProtectedRoute><EbookFinancePage /></ProtectedRoute>} />
-        <Route path="/ebook/finance/pending-payments" element={<ProtectedRoute><EbookFinancePendingPaymentsPage /></ProtectedRoute>} />
-        <Route path="/ebook/finance/calculate-bpc" element={<ProtectedRoute><EbookFinanceCalculateBpcPage /></ProtectedRoute>} />
-        <Route path="/ebook/finance/publishing-fees" element={<ProtectedRoute><EbookFinancePublishingFeesPage /></ProtectedRoute>} />
-        <Route path="/ebook/finance/invoices" element={<ProtectedRoute><EbookFinanceInvoicesPage /></ProtectedRoute>} />
-        <Route path="/ebook/finance/verify-payment" element={<ProtectedRoute><EbookFinanceVerifyPaymentPage /></ProtectedRoute>} />
-        <Route path="/ebook/finance/payment-history" element={<ProtectedRoute><EbookFinancePaymentHistoryPage /></ProtectedRoute>} />
-        <Route path="/ebook/finance/waivers" element={<ProtectedRoute><EbookFinanceWaiversPage /></ProtectedRoute>} />
-        <Route path="/ebook/finance/reports" element={<ProtectedRoute><EbookFinanceReportsPage /></ProtectedRoute>} />
-        <Route path="/ebook/finance/ready-for-production" element={<ProtectedRoute><EbookFinanceReadyForProductionPage /></ProtectedRoute>} />
-        <Route path="/ebook/production" element={<ProtectedRoute><EbookProductionPage /></ProtectedRoute>} />
-        <Route path="/ebook/management/publications" element={<ProtectedRoute><EbookPublicationsPage /></ProtectedRoute>} />
-        <Route path="/ebook/admin" element={<ProtectedRoute><EbookAdminPage /></ProtectedRoute>} />
-
+        <Route
+          path="/ebook/dashboard"
+          element={
+            <ProtectedRoute>
+              <EbookDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/workflow-overview"
+          element={
+            <ProtectedRoute>
+              <EbookWorkflowOverviewPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/submissions"
+          element={
+            <ProtectedRoute>
+              <EbookSubmissionsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/submissions/create"
+          element={
+            <ProtectedRoute>
+              <EbookSubmissionCreatePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/submissions/:id/edit"
+          element={
+            <ProtectedRoute>
+              <EbookSubmissionEditPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/submissions/:id"
+          element={
+            <ProtectedRoute>
+              <EbookSubmissionDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/my-submissions"
+          element={
+            <ProtectedRoute>
+              <EbookAuthorMySubmissionsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/drafts"
+          element={
+            <ProtectedRoute>
+              <EbookAuthorMySubmissionsPage stage="drafts" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/my-revisions"
+          element={
+            <ProtectedRoute>
+              <EbookAuthorRevisionQueuePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/my-payments"
+          element={
+            <ProtectedRoute>
+              <EbookAuthorPaymentsQueuePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/my-proofs"
+          element={
+            <ProtectedRoute>
+              <EbookAuthorProofQueuePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/my-rejected"
+          element={
+            <ProtectedRoute>
+              <EbookAuthorRejectedQueuePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/submissions/:id/payment"
+          element={
+            <ProtectedRoute>
+              <EbookAuthorPaymentPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/submissions/:id/proof-approval"
+          element={
+            <ProtectedRoute>
+              <EbookAuthorProofApprovalPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/submissions/:id/review-comments"
+          element={
+            <ProtectedRoute>
+              <EbookAuthorReviewCommentsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/reviewer"
+          element={
+            <ProtectedRoute>
+              <EbookReviewerPage filter="all" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/reviewer/pending"
+          element={
+            <ProtectedRoute>
+              <EbookReviewerPage filter="pending" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/reviewer/accepted"
+          element={
+            <ProtectedRoute>
+              <EbookReviewerPage filter="accepted" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/reviewer/rejected"
+          element={
+            <ProtectedRoute>
+              <EbookReviewerPage filter="rejected" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/reviewer/completed"
+          element={
+            <ProtectedRoute>
+              <EbookReviewerPage filter="completed" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/reviewer/overdue"
+          element={
+            <ProtectedRoute>
+              <EbookReviewerPage filter="overdue" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/review-assignments/:id"
+          element={
+            <ProtectedRoute>
+              <EbookReviewDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/reviewer-manager"
+          element={
+            <ProtectedRoute>
+              <EbookReviewerManagerPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ora/ebook/editor/screening"
+          element={
+            <ProtectedRoute>
+              <OraEbookEditorScreeningPage />{" "}
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ora/ebook/editor/screened"
+          element={<OraEbookEditorScreenedPage />}
+        />
+        <Route
+          path="/ebook/editor/assign-reviewers/:submissionId"
+          element={<EbookEditorAssignReviewersPage />}
+        />
+        <Route
+          path="/oraebook/reviewer/pending"
+          element={<EbookReviewerPendingPage />}
+        />
+        <Route
+          path="/ebook/editor/screening"
+          element={
+            <ProtectedRoute>
+              <EbookEditorScreeningPage />{" "}
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/editor/screened"
+          element={
+            <ProtectedRoute>
+              <EbookEditorScreenedPage />{" "}
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/editor/reviews"
+          element={
+            <ProtectedRoute>
+              <EbookEditorReviewsPage />{" "}
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/editor/decision"
+          element={
+            <ProtectedRoute>
+              <EbookEditorDecisionPage />{" "}
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/editor/handoff"
+          element={
+            <ProtectedRoute>
+              <EbookEditorHandoffPage />{" "}
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/editor-queue"
+          element={
+            <ProtectedRoute>
+              <EbookEditorQueuePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/finance"
+          element={
+            <ProtectedRoute>
+              <EbookFinancePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/finance/pending-payments"
+          element={
+            <ProtectedRoute>
+              <EbookFinancePendingPaymentsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/finance/calculate-bpc"
+          element={
+            <ProtectedRoute>
+              <EbookFinanceCalculateBpcPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/finance/publishing-fees"
+          element={
+            <ProtectedRoute>
+              <EbookFinancePublishingFeesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/finance/invoices"
+          element={
+            <ProtectedRoute>
+              <EbookFinanceInvoicesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/finance/verify-payment"
+          element={
+            <ProtectedRoute>
+              <EbookFinanceVerifyPaymentPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/finance/payment-history"
+          element={
+            <ProtectedRoute>
+              <EbookFinancePaymentHistoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/finance/waivers"
+          element={
+            <ProtectedRoute>
+              <EbookFinanceWaiversPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/finance/reports"
+          element={
+            <ProtectedRoute>
+              <EbookFinanceReportsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/finance/ready-for-production"
+          element={
+            <ProtectedRoute>
+              <EbookFinanceReadyForProductionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/production"
+          element={
+            <ProtectedRoute>
+              <EbookProductionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/management/publications"
+          element={
+            <ProtectedRoute>
+              <EbookPublicationsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ebook/admin"
+          element={
+            <ProtectedRoute>
+              <EbookAdminPage />
+            </ProtectedRoute>
+          }
+        />
         {/* Finance Dashboard */}
-        <Route path="/finance-dashboard" element={<ProtectedRoute><FinanceDashboard /></ProtectedRoute>} />
-
+        <Route
+          path="/finance-dashboard"
+          element={
+            <ProtectedRoute>
+              <FinanceDashboard />
+            </ProtectedRoute>
+          }
+        />
         {/* Other Dashboards */}
-        <Route path="/book-dashboard" element={<ProtectedRoute><BookDashboard /></ProtectedRoute>} />
-        <Route path="/wikipedia-dashboard" element={<ProtectedRoute><WikipediaDashboard /></ProtectedRoute>} />
-        <Route path="/researcher-dashboard" element={<ProtectedRoute><ResearchersDashboard /></ProtectedRoute>} />
-
+        <Route
+          path="/book-dashboard"
+          element={
+            <ProtectedRoute>
+              <BookDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wikipedia-dashboard"
+          element={
+            <ProtectedRoute>
+              <WikipediaDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/researcher-dashboard"
+          element={
+            <ProtectedRoute>
+              <ResearchersDashboard />
+            </ProtectedRoute>
+          }
+        />
         {/* Journal Auth Routes */}
         <Route path="/journal/auth/login" element={<JournalLoginPage />} />
-        <Route path="/journal/auth/register" element={<JournalRegisterPage />} />
-<<<<<<< HEAD
-        //Ebooks
-        <Route path="/ebooks" element={<Ebooks />} />
+        <Route
+          path="/journal/auth/register"
+          element={<JournalRegisterPage />}
+        />
+        {/* //Ebooks */}
+        {/* <Route path="/ebooks" element={<Ebook />} /> */}
         {/* // Ebook Author Registration */}
         <Route path="/ebook/author/register" element={<AuthorRegister />} />
         {/* ebook manuscripts */}
         <Route path="/ebook/manuscripts" element={<ManuscriptPage />} />
-        <Route path="/ebook/manuscripts/edit/:id" element={<ManuscriptEditPage />} />
+        <Route
+          path="/ebook/manuscripts/edit/:id"
+          element={<ManuscriptEditPage />}
+        />
         {/* show */}
-          <Route path="/ebook/manuscripts/show/:id" element={<ManuscriptShowPage />} />
-{/* Drafts */}
-        <Route path="/ebook/manuscripts/drafts" element={<DraftManuscriptPage />} />
+        <Route
+          path="/ebook/manuscripts/show/:id"
+          element={<ManuscriptShowPage />}
+        />
+        {/* Drafts */}
+        <Route
+          path="/ebook/manuscripts/drafts"
+          element={<DraftManuscriptPage />}
+        />
         /* Revision Required Manuscripts */
-        <Route path="/ebook/manuscripts/revisions" element={<RevisionRequiredManuscriptPage />} />
-
-
-        <Route path="/wiki/global-governance/dashboard" element={<GlobalGovernanceDashboardPage />} />
-<Route path="/wiki/global-governance/role-management" element={<RoleManagementPage />} />
-<Route path="/wiki/global-governance/global-actions" element={<GlobalActionsPage />} />
-<Route path="/wiki/global-governance/community-policies" element={<CommunityPoliciesPage />} />
-<Route path="/wiki/global-governance/review-queue" element={<ReviewQueuePage />} />
-<Route path="/wiki/global-governance/activity-logs" element={<GovernanceLogsPage />} />
-<Route path="/wiki/profile" element={<WikiProfilePage />} />
-{/* wiki/reports/content */}
-<Route path="wiki/moderation" element={<ReportedContentPage />} />
-<Route path="/wiki/reports/content" element={<WikiModerationDashboardPage />} />
-
-
-=======
->>>>>>> origin/tbranch
+        <Route
+          path="/ebook/manuscripts/revisions"
+          element={<RevisionRequiredManuscriptPage />}
+        />
+        <Route
+          path="/wiki/global-governance/dashboard"
+          element={<GlobalGovernanceDashboardPage />}
+        />
+        <Route
+          path="/wiki/global-governance/role-management"
+          element={<RoleManagementPage />}
+        />
+        <Route
+          path="/wiki/global-governance/global-actions"
+          element={<GlobalActionsPage />}
+        />
+        <Route
+          path="/wiki/global-governance/community-policies"
+          element={<CommunityPoliciesPage />}
+        />
+        <Route
+          path="/wiki/global-governance/review-queue"
+          element={<ReviewQueuePage />}
+        />
+        <Route
+          path="/wiki/global-governance/activity-logs"
+          element={<GovernanceLogsPage />}
+        />
+        <Route path="/wiki/profile" element={<WikiProfilePage />} />
+        {/* wiki/reports/content */}
+        <Route path="wiki/moderation" element={<ReportedContentPage />} />
+        <Route
+          path="/wiki/reports/content"
+          element={<WikiModerationDashboardPage />}
+        />
         {/* 404 Not Found - This should be the LAST route */}
         <Route path="*" element={<h1>404 Not Found</h1>} />
       </Routes>

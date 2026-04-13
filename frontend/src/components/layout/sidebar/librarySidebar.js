@@ -1,20 +1,3 @@
-<<<<<<< HEAD
-export function buildLibraryRoutes(ROLES) {
-  const A = ROLES?.LIBRARY_ADMIN || "LIBRARY_ADMIN";
-  const M = ROLES?.LIBRARY_MANAGER || "LIBRARY_MANAGER";
-  const L = ROLES?.LIBRARIAN || "LIBRARIAN";
-  const C = ROLES?.CATALOGER || "CATALOGER";
-  const ACQ = ROLES?.ACQUISITION_OFFICER || "ACQUISITION_OFFICER";
-  const INV = ROLES?.INVENTORY_MANAGER || "INVENTORY_MANAGER";
-  const UP = ROLES?.CONTENT_UPLOADER || "CONTENT_UPLOADER";
-  const MEM = ROLES?.LIBRARY_MEMBER || "LIBRARY_MEMBER";
-  const PUB = ROLES?.EXTERNAL_PUBLISHER || "EXTERNAL_PUBLISHER";
-
-  return [
-    {
-      name: "Dashboard", 
-      path: "/library/dashboard",
-=======
 export function buildLibraryRoutes(ROLES = {}) {
   const A = ROLES.LIBRARY_ADMIN;
   const M = ROLES.LIBRARY_MANAGER;
@@ -29,12 +12,10 @@ export function buildLibraryRoutes(ROLES = {}) {
   const DADMIN = ROLES.DIGITAL_ADMIN || ROLES.LIBRARY_ADMIN;
 
   const roles = (...values) => values.filter(Boolean);
-
   return [
     {
       name: "Dashboard",
       path: "/library-dashboard",
->>>>>>> origin/tbranch
       icon: "fas fa-book",
       roles: roles(A, M, L, C, ACQ, INV, DL, UP, MEM, PUB, DADMIN),
       sectionTitle: "Main Navigation",

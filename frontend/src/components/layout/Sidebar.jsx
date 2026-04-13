@@ -5,11 +5,7 @@ import ebookApi from "../../api/ebook.api";
 import { buildEbookRoutes } from "./sidebar/ebookSidebar.js";
 import { buildLibraryRoutes } from "./sidebar/librarySidebar.js";
 import { buildJournalRoutes } from "./sidebar/journalSidebar";
-<<<<<<< HEAD
-import { buildWikiRoutes } from "./sidebar/wikiSidebar";
-import { buildRepositoryRoutes } from "./sidebar/repositorySidebar.js";
-=======
->>>>>>> origin/tbranch
+import {buildRepositoryRoutes} from "./sidebar/repositorySidebar.js";
 /* ===============================
    MODULE UUIDS
 ================================ */
@@ -52,24 +48,6 @@ const ROLES = {
   EBOOK_PUBLIC_READER: "EBOOK_PUBLIC_READER",
   // =====Repository====
   REPOSITORY_AUTHOR: "REPOSITORY_AUTHOR",
-<<<<<<< HEAD
-  //   const A = ROLES?.REPOSITORY_ADMIN;
-  // const AU = ROLES?.REPOSITORY_AUTHOR;
-  // const C = ROLES?.REPOSITORY_CURATOR;
-  // const R = ROLES?.REPOSITORY_CONTENT_REVIEWER;
-  // const RA = ROLES?.RESEARCHER_AUTHOR;
-  // const PU = ROLES?.REPOSITORY_PUBLIC_USER;
-  // const G = ROLES?.REPOSITORY_GUEST;
-
-  REPOSITORY_ADMIN: "REPOSITORY_ADMIN",
-  REPOSITORY_AUTHOR: "REPOSITORY_AUTHOR",
-  REPOSITORY_CURATOR: "REPOSITORY_CURATOR",
-REPOSITORY_CONTENT_REVIEWER: "REPOSITORY_CONTENT_REVIEWER",
-RESEARCHER_AUTHOR: "RESEARCHER_AUTHOR",
-REPOSITORY_PUBLIC_USER: "REPOSITORY_PUBLIC_USER",
-REPOSITORY_GUEST: "REPOSITORY_GUEST",
-=======
->>>>>>> origin/tbranch
 
   // Journal Authors
   JOURNAL_AUTHOR:"JOURNAL_AUTHOR",
@@ -79,7 +57,6 @@ REPOSITORY_GUEST: "REPOSITORY_GUEST",
   JOURNAL_REVIEWER:"JOURNAL_REVIEWER",
   JOURNAL_ASSOCIATE_EDITOR:"JOURNAL_ASSOCIATE_EDITOR",
 
-<<<<<<< HEAD
   // WIKI ROLES
   ORO_WIKI_MANAGER: "ORO_WIKI_MANAGER",
   ORO_WIKI_EDITOR: "ORO_WIKI_EDITOR",
@@ -90,8 +67,6 @@ REPOSITORY_GUEST: "REPOSITORY_GUEST",
   ORO_WIKI_AUTHOR: "ORO_WIKI_AUTHOR",
   ORO_WIKI_ADMINISTRATOR: "ORO_WIKI_ADMINISTRATOR",
 
-=======
->>>>>>> origin/tbranch
 
 };
 
@@ -310,9 +285,6 @@ export default function Sidebar() {
 
     [MODULES.EBOOK]: buildEbookRoutes(),
 
-<<<<<<< HEAD
-  [MODULES.ORO_WIKI]: buildWikiRoutes(ROLES),
-=======
     [MODULES.ORO_WIKI]: [
       {
         name: "Manager Dashboard",
@@ -711,7 +683,6 @@ export default function Sidebar() {
           ],
         },
       ],
->>>>>>> origin/tbranch
 
      [MODULES.REPOSITORY]: buildRepositoryRoutes(ROLES),
 

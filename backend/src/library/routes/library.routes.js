@@ -19,16 +19,7 @@ import {
 } from '../controllers/portalLibrary.controller.js';
 
 const router = express.Router();
-<<<<<<< HEAD
-
-// Public OPAC access
-router.use('/catalog', catalogRoutes);
-
-// router.use(authenticate);
-// router.use(resolveLibraryPermission);
-=======
 router.use(authenticate);
->>>>>>> origin/tbranch
 
 // Canonical mounted routes
 router.use('/physical-library', physicalLibraryRoutes);
