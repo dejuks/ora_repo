@@ -15,7 +15,8 @@ router.use(authenticate);
 
 router.get("/pending", getReviewerPendingAssignmentsHandler);
 router.post("/pending/:assignmentId/respond", respondToAssignmentHandler);
-
+// http://localhost:5000/api/ebook/manuscripts/24393ce0-5cbb-49d3-8c39-f0fdb099e13d/screen
+router.post("/manuscripts/:manuscriptId/screen", respondToAssignmentHandler);
 router.get("/review-assignments", getReviewerAssignmentsHandler);
 router.get("/review-assignments/:assignmentId", getReviewerAssignmentByIdHandler);
 router.post("/review-assignments/:assignmentId/respond", respondToAssignmentHandler);

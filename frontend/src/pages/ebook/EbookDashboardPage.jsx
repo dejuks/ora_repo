@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout.jsx";
-import ebookApi from "./mock/ebookMockApi.js";
+import ebookApi from "../../api/ebookApi.js";
 import StatusBadge from "./components/StatusBadge.jsx";
 
 const normalizeRoleName = (value) => (value || "").toString().trim().toUpperCase().replace(/\s+/g, "_");
@@ -29,15 +29,15 @@ const PANEL_META = {
     ],
   },
   author: {
-    title: "ORA eBook Author dashboard",
-    subtitle: "Use the stage queues below to move manuscripts from submission to revision, payment, proof approval, and publication.",
+    title: "My eBook Dashboard",
+    subtitle: "Manage your submitted manuscripts, track revisions, payments, and published works.",
     links: [
-      { label: "My submissions", to: "/ebook/my-submissions", style: "primary" },
-      { label: "Revision requests", to: "/ebook/my-revisions", style: "warning" },
+      { label: "My Submissions", to: "/ebook/my-submissions", style: "primary" },
+      { label: "Revision Requests", to: "/ebook/my-revisions", style: "warning" },
       { label: "Payments", to: "/ebook/my-payments", style: "danger" },
-      { label: "Proof approvals", to: "/ebook/my-proofs", style: "success" },
-      { label: "Rejected by editor", to: "/ebook/my-rejected", style: "dark" },
-      { label: "Create submission", to: "/ebook/submissions/create", style: "outline-secondary" },
+      { label: "Proof Approvals", to: "/ebook/my-proofs", style: "success" },
+      { label: "Published Works", to: "/ebook/my-published", style: "info" },
+      { label: "Create New Submission", to: "/ebook/submissions/create", style: "outline-secondary" },
     ],
   },
   editor: {
@@ -75,19 +75,15 @@ const PANEL_META = {
     ],
   },
   reader: {
-    title: "ORA eBook Reader dashboard",
-    subtitle: "Browse published eBooks, open detail pages, and access downloadable public files.",
+    title: "My Reading Dashboard",
+    subtitle: "Browse and access eBooks you've downloaded or saved to your library.",
     links: [
-      { label: "Open public catalog", to: "/ebook/publications", style: "primary" },
+      { label: "My Library", to: "/ebook/my-library", style: "primary" },
+      { label: "Browse Catalog", to: "/ebook/publications", style: "outline-secondary" },
+      { label: "Reading History", to: "/ebook/history", style: "outline-info" },
     ],
   },
 };
-
-const ADMIN_LINK_GROUPS = [
-  { title: "Author tools", items: [{ label: "My submissions", to: "/ebook/my-submissions" }, { label: "Revision requests", to: "/ebook/my-revisions" }, { label: "Payments", to: "/ebook/my-payments" }, { label: "Proof approvals", to: "/ebook/my-proofs" }, { label: "Rejected by editor", to: "/ebook/my-rejected" }] },
-  { title: "Editorial tools", items: [{ label: "Screening queue", to: "/ebook/editor/screening" }, { label: "Review monitoring", to: "/ebook/editor/reviews" }, { label: "Accepted handoff", to: "/ebook/editor/handoff" }, { label: "Reviewer manager", to: "/ebook/reviewer-manager" }] },
-  { title: "Operations", items: [{ label: "Finance", to: "/ebook/finance" }, { label: "Production", to: "/ebook/production" }, { label: "Publications", to: "/ebook/management/publications" }] },
-];
 
 function prettifyKey(key) {
   return String(key || "").replaceAll("_", " ").replace(/\b\w/g, (m) => m.toUpperCase());
@@ -110,70 +106,204 @@ function StageQueueCard({ title, value, description, to, buttonLabel, tone }) {
 
 export default function EbookDashboardPage() {
   const user = JSON.parse(localStorage.getItem("user") || "null");
+  const userId = user?.id || user?.user_id || user?.uuid;
+  
   const roleNames = user?.roles?.map((r) => normalizeRoleName(r.role_name || r.name || r.code)) || [];
   const panel = useMemo(() => roleNames.map((role) => ROLE_TO_PANEL[role]).find(Boolean) || "author", [roleNames.join(",")]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [data, setData] = useState(null);
-  const [authorQueues, setAuthorQueues] = useState({ revisions: 0, payments: 0, proofs: 0, rejected: 0 });
+  const [authorQueues, setAuthorQueues] = useState({ 
+    revisions: 0, 
+    payments: 0, 
+    proofs: 0, 
+    rejected: 0,
+    published: 0 
+  });
   const [editorQueues, setEditorQueues] = useState({ screening: 0, reviews: 0, handoff: 0, overdue: 0 });
+  const [mySubmissions, setMySubmissions] = useState([]);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       setError("");
       try {
-        const loader = {
-          admin: ebookApi.getEditorDashboard,
-          author: ebookApi.getAuthorDashboard,
-          editor: ebookApi.getEditorDashboard,
-          reviewer: ebookApi.getReviewerDashboard,
-          finance: ebookApi.getFinanceDashboard,
-          production: ebookApi.getProductionDashboard,
-          reader: async () => ({ summary: {}, publications: [] }),
-        }[panel] || ebookApi.getAuthorDashboard;
-        const result = await loader();
-        setData(result);
+        // For authors - get only their own submissions
         if (panel === "author") {
-          const [revisions, payments, proofs, rejected] = await Promise.all([
-            ebookApi.listMySubmissions({ stage: "revisions", limit: 100 }),
-            ebookApi.listMySubmissions({ stage: "payments", limit: 100 }),
-            ebookApi.listMySubmissions({ stage: "proofs", limit: 100 }),
-            ebookApi.listMySubmissions({ status: "rejected", limit: 100 }),
-          ]);
+          // Get user's own submissions
+          const mySubs = await ebookApi.listMySubmissions({ 
+            author_id: userId,
+            limit: 100 
+          });
+          
+          const submissions = mySubs?.rows || [];
+          setMySubmissions(submissions);
+          
+          // Calculate queue counts from user's own submissions
+          const revisions = submissions.filter(s => s.stage === "revisions" || s.status === "revision_requested").length;
+          const payments = submissions.filter(s => s.stage === "payments" || s.status === "payment_pending").length;
+          const proofs = submissions.filter(s => s.stage === "proofs" || s.status === "proof_pending").length;
+          const rejected = submissions.filter(s => s.status === "rejected").length;
+          const published = submissions.filter(s => s.status === "published" || s.stage === "published").length;
+          
           setAuthorQueues({
-            revisions: revisions?.rows?.length || 0,
-            payments: payments?.rows?.length || 0,
-            proofs: proofs?.rows?.length || 0,
-            rejected: rejected?.rows?.length || 0,
+            revisions,
+            payments,
+            proofs,
+            rejected,
+            published
+          });
+          
+          setData({ 
+            summary: {
+              total_submissions: submissions.length,
+              published_works: published,
+              pending_revisions: revisions,
+              under_review: submissions.filter(s => s.status === "under_review").length,
+            },
+            submissions: submissions 
+          });
+        } 
+        // For readers - get their downloaded/purchased books
+        else if (panel === "reader") {
+          const myLibrary = await ebookApi.getMyLibrary({ user_id: userId });
+          const readingHistory = await ebookApi.getReadingHistory({ user_id: userId });
+          
+          setData({ 
+            summary: {
+              books_in_library: myLibrary?.rows?.length || 0,
+              recently_read: readingHistory?.recent?.length || 0,
+              total_downloads: myLibrary?.total_downloads || 0,
+            },
+            library: myLibrary?.rows || [],
+            history: readingHistory?.recent || []
           });
         }
-        if (panel === "editor") {
-          const [screening, reviews, handoff] = await Promise.all([
-            ebookApi.getEditorQueue({ stage: "screening" }),
-            ebookApi.getEditorQueue({ stage: "reviews" }),
-            ebookApi.getEditorQueue({ stage: "handoff" }),
-          ]);
+        // For editors - get assigned manuscripts only
+        else if (panel === "editor") {
+          const assignedManuscripts = await ebookApi.getEditorAssignments({ 
+            editor_id: userId,
+            limit: 100 
+          });
+          
+          const screening = assignedManuscripts?.filter(m => m.stage === "screening") || [];
+          const reviews = assignedManuscripts?.filter(m => m.stage === "reviews") || [];
+          const handoff = assignedManuscripts?.filter(m => m.stage === "handoff") || [];
+          
           setEditorQueues({
-            screening: screening?.rows?.length || 0,
-            reviews: reviews?.rows?.length || 0,
-            handoff: handoff?.rows?.length || 0,
-            overdue: reviews?.summary?.overdue || 0,
+            screening: screening.length,
+            reviews: reviews.length,
+            handoff: handoff.length,
+            overdue: reviews.filter(r => r.is_overdue).length,
+          });
+          
+          setData({ 
+            summary: {
+              assigned_manuscripts: assignedManuscripts.length,
+              screening_queue: screening.length,
+              under_review: reviews.length,
+              ready_for_handoff: handoff.length,
+            },
+            submissions: assignedManuscripts 
           });
         }
+        // For reviewers - get their review assignments only
+        else if (panel === "reviewer") {
+          const myAssignments = await ebookApi.getReviewerAssignments({ 
+            reviewer_id: userId,
+            limit: 100 
+          });
+          
+          setData({ 
+            summary: {
+              pending_reviews: myAssignments?.filter(a => a.status === "pending").length || 0,
+              completed_reviews: myAssignments?.filter(a => a.status === "completed").length || 0,
+              total_assigned: myAssignments?.length || 0,
+            },
+            assignments: myAssignments || [] 
+          });
+        }
+        // For finance - get their assigned finance items
+        else if (panel === "finance") {
+          const myFinanceItems = await ebookApi.getFinanceItems({ 
+            finance_officer_id: userId,
+            limit: 100 
+          });
+          
+          setData({ 
+            summary: {
+              pending_verification: myFinanceItems?.filter(f => f.status === "pending").length || 0,
+              approved: myFinanceItems?.filter(f => f.status === "approved").length || 0,
+              total_processed: myFinanceItems?.length || 0,
+            },
+            finances: myFinanceItems || [] 
+          });
+        }
+        // For production - get their assigned production items
+        else if (panel === "production") {
+          const myProductionItems = await ebookApi.getProductionItems({ 
+            production_manager_id: userId,
+            limit: 100 
+          });
+          
+          setData({ 
+            summary: {
+              in_production: myProductionItems?.filter(p => p.status === "in_progress").length || 0,
+              completed: myProductionItems?.filter(p => p.status === "completed").length || 0,
+              total_assigned: myProductionItems?.length || 0,
+            },
+            production: myProductionItems || [] 
+          });
+        }
+        // For admin - can see everything
+        else if (panel === "admin") {
+          const allSubmissions = await ebookApi.getAllSubmissions({ limit: 100 });
+          setData({ 
+            summary: {
+              total_submissions: allSubmissions?.rows?.length || 0,
+              total_authors: allSubmissions?.unique_authors || 0,
+              total_published: allSubmissions?.rows?.filter(s => s.status === "published").length || 0,
+            },
+            submissions: allSubmissions?.rows || [] 
+          });
+        }
+        // Default fallback
+        else {
+          const result = await ebookApi.getAuthorDashboard({ author_id: userId });
+          setData(result);
+        }
+        
       } catch (err) {
-        setError(err?.response?.data?.message || "Failed to load eBook dashboard.");
+        console.error("Dashboard error:", err);
+        setError(err?.response?.data?.message || "Failed to load dashboard data.");
       } finally {
         setLoading(false);
       }
     };
-    load();
-  }, [panel]);
+    
+    if (userId) {
+      load();
+    } else {
+      setError("User not authenticated. Please log in.");
+      setLoading(false);
+    }
+  }, [panel, userId]);
 
   const summary = data?.summary || {};
-  const rows = data?.submissions || data?.assignments || data?.finances || data?.production || [];
   const meta = PANEL_META[panel] || PANEL_META.author;
+  
+  // Get the appropriate rows based on panel type
+  const getRows = () => {
+    if (panel === "author") return data?.submissions || [];
+    if (panel === "reader") return data?.library || [];
+    if (panel === "reviewer") return data?.assignments || [];
+    if (panel === "finance") return data?.finances || [];
+    if (panel === "production") return data?.production || [];
+    return data?.submissions || [];
+  };
+  
+  const rows = getRows();
   const summaryEntries = Object.entries(summary).slice(0, 8);
 
   return (
@@ -184,6 +314,11 @@ export default function EbookDashboardPage() {
             <div>
               <h1 className="mb-2">{meta.title}</h1>
               <p className="text-muted mb-0">{meta.subtitle}</p>
+              {user?.name && (
+                <small className="text-muted d-block mt-1">
+                  Welcome back, {user.name || user.full_name}
+                </small>
+              )}
             </div>
             <div className="d-flex flex-wrap" style={{ gap: 8 }}>
               {meta.links.map((item) => (
@@ -199,71 +334,167 @@ export default function EbookDashboardPage() {
       {error ? <div className="alert alert-danger">{error}</div> : null}
 
       {loading ? (
-        <div className="card"><div className="card-body">Loading dashboard...</div></div>
+        <div className="card"><div className="card-body">Loading your dashboard...</div></div>
       ) : (
         <>
+          {/* Author-specific queue cards */}
           {panel === "author" ? (
             <div className="row mb-3">
-              <StageQueueCard title="My submissions" value={summary.total_submissions ?? rows.length ?? 0} description="View all manuscripts and open detailed workflow history." to="/ebook/my-submissions" buttonLabel="Open submissions" tone="primary" />
-              <StageQueueCard title="Revision requests" value={authorQueues.revisions} description="Manuscripts waiting for revised files and resubmission." to="/ebook/my-revisions" buttonLabel="Handle revisions" tone="warning" />
-              <StageQueueCard title="Payments & waivers" value={authorQueues.payments} description="Accepted manuscripts waiting for payment proof or waiver action." to="/ebook/my-payments" buttonLabel="Open payments" tone="danger" />
-              <StageQueueCard title="Proof approvals" value={authorQueues.proofs} description="Final proofs ready for your confirmation before release." to="/ebook/my-proofs" buttonLabel="Review proofs" tone="success" />
-              <StageQueueCard title="Rejected by editor" value={authorQueues.rejected} description="Submissions closed by editorial decision for your review and record." to="/ebook/my-rejected" buttonLabel="Open rejected" tone="dark" />
+              <StageQueueCard 
+                title="My Submissions" 
+                value={summary.total_submissions || 0} 
+                description="All manuscripts you have submitted" 
+                to="/ebook/my-submissions" 
+                buttonLabel="View All" 
+                tone="primary" 
+              />
+              <StageQueueCard 
+                title="Published Works" 
+                value={authorQueues.published} 
+                description="Your eBooks that are published and available" 
+                to="/ebook/my-published" 
+                buttonLabel="View Published" 
+                tone="success" 
+              />
+              <StageQueueCard 
+                title="Revision Requests" 
+                value={authorQueues.revisions} 
+                description="Manuscripts waiting for your revisions" 
+                to="/ebook/my-revisions" 
+                buttonLabel="Handle Revisions" 
+                tone="warning" 
+              />
+              <StageQueueCard 
+                title="Pending Payments" 
+                value={authorQueues.payments} 
+                description="Accepted manuscripts awaiting payment" 
+                to="/ebook/my-payments" 
+                buttonLabel="View Payments" 
+                tone="danger" 
+              />
+              <StageQueueCard 
+                title="Proof Approvals" 
+                value={authorQueues.proofs} 
+                description="Final proofs ready for your confirmation" 
+                to="/ebook/my-proofs" 
+                buttonLabel="Review Proofs" 
+                tone="info" 
+              />
             </div>
           ) : null}
+
+          {/* Reader-specific queue cards */}
           {panel === "reader" ? (
             <div className="row mb-3">
-              <StageQueueCard title="Public catalog" value={rows.length ?? 0} description="Open the published eBook catalog and browse released titles." to="/ebook/publications" buttonLabel="Browse catalog" tone="primary" />
+              <StageQueueCard 
+                title="My Library" 
+                value={summary.books_in_library || 0} 
+                description="Books you have downloaded or purchased" 
+                to="/ebook/my-library" 
+                buttonLabel="Browse Library" 
+                tone="primary" 
+              />
+              <StageQueueCard 
+                title="Recently Read" 
+                value={summary.recently_read || 0} 
+                description="Continue reading where you left off" 
+                to="/ebook/history" 
+                buttonLabel="Continue Reading" 
+                tone="info" 
+              />
+              <StageQueueCard 
+                title="Browse Catalog" 
+                value="Explore" 
+                description="Discover new eBooks from our collection" 
+                to="/ebook/publications" 
+                buttonLabel="Browse All" 
+                tone="success" 
+              />
             </div>
           ) : null}
+
+          {/* Editor-specific queue cards */}
           {panel === "editor" ? (
             <div className="row mb-3">
-              <StageQueueCard title="Editorial screening" value={editorQueues.screening} description="New or returned manuscripts waiting for screening and next-step routing." to="/ebook/editor/screening" buttonLabel="Open screening" tone="primary" />
-              <StageQueueCard title="Under review" value={editorQueues.reviews} description="Track reviewer assignments, submissions, and overdue items." to="/ebook/editor/reviews" buttonLabel="Monitor reviews" tone="warning" />
-              <StageQueueCard title="Accepted handoff" value={editorQueues.handoff} description="Accepted manuscripts moving to finance clearance and production handoff." to="/ebook/editor/handoff" buttonLabel="Open handoff" tone="success" />
-              <StageQueueCard title="Overdue reviewers" value={editorQueues.overdue} description="Assignments that need follow-up from the editor or reviewer manager." to="/ebook/reviewer-manager" buttonLabel="Follow up" tone="danger" />
+              <StageQueueCard 
+                title="Screening Queue" 
+                value={editorQueues.screening} 
+                description="Manuscripts assigned to you for screening" 
+                to="/ebook/editor/screening" 
+                buttonLabel="Open Screening" 
+                tone="primary" 
+              />
+              <StageQueueCard 
+                title="Under Review" 
+                value={editorQueues.reviews} 
+                description="Manuscripts you are monitoring" 
+                to="/ebook/editor/reviews" 
+                buttonLabel="Monitor Reviews" 
+                tone="warning" 
+              />
+              <StageQueueCard 
+                title="Ready for Handoff" 
+                value={editorQueues.handoff} 
+                description="Accepted manuscripts ready for production" 
+                to="/ebook/editor/handoff" 
+                buttonLabel="Process Handoff" 
+                tone="success" 
+              />
+              <StageQueueCard 
+                title="Overdue Reviews" 
+                value={editorQueues.overdue} 
+                description="Reviews that need follow-up" 
+                to="/ebook/reviewer-manager" 
+                buttonLabel="Follow Up" 
+                tone="danger" 
+              />
             </div>
           ) : null}
 
-          <div className="row mb-3">
-            {summaryEntries.length ? summaryEntries.map(([key, value], index) => (
-              <div className="col-md-6 col-xl-3 mb-3" key={key}>
-                <div className={`card h-100 card-outline ${index % 2 === 0 ? "card-primary" : "card-info"}`}>
-                  <div className="card-body">
-                    <div className="text-muted text-sm mb-2">{prettifyKey(key)}</div>
-                    <div className="d-flex align-items-center justify-content-between">
-                      <h2 className="mb-0">{value ?? 0}</h2>
-                      <span className="badge badge-light">Live</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )) : (
-              <div className="col-12"><div className="alert alert-light border">No summary metrics are available for this dashboard yet.</div></div>
-            )}
-          </div>
-
-          {panel === "admin" ? (
-            <div className="row mb-4">
-              {ADMIN_LINK_GROUPS.map((group) => (
-                <div className="col-lg-4 mb-3" key={group.title}>
-                  <div className="card h-100 card-outline card-secondary">
-                    <div className="card-header"><h3 className="card-title mb-0">{group.title}</h3></div>
-                    <div className="card-body d-flex flex-column" style={{ gap: 10 }}>
-                      {group.items.map((item) => (
-                        <Link key={item.to} className="btn btn-outline-primary text-left" to={item.to}>{item.label}</Link>
-                      ))}
+          {/* Summary Metrics Cards */}
+          {summaryEntries.length > 0 ? (
+            <div className="row mb-3">
+              {summaryEntries.map(([key, value], index) => (
+                <div className="col-md-6 col-xl-3 mb-3" key={key}>
+                  <div className={`card h-100 card-outline ${index % 2 === 0 ? "card-primary" : "card-info"}`}>
+                    <div className="card-body">
+                      <div className="text-muted text-sm mb-2">{prettifyKey(key)}</div>
+                      <div className="d-flex align-items-center justify-content-between">
+                        <h2 className="mb-0">{value ?? 0}</h2>
+                        <span className="badge badge-light">
+                          {panel === "author" ? "Your data" : "Live"}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-          ) : null}
+          ) : (
+            <div className="row mb-3">
+              <div className="col-12">
+                <div className="alert alert-info border">
+                  No data available yet. Start by creating your first submission!
+                </div>
+              </div>
+            </div>
+          )}
 
+          {/* Recent Items Table - Shows only user's data */}
           <div className="card card-outline card-secondary">
             <div className="card-header d-flex justify-content-between align-items-center flex-wrap">
-              <h3 className="card-title mb-0">Recent workflow items</h3>
-              <small className="text-muted">Latest records for the current role workspace</small>
+              <h3 className="card-title mb-0">
+                {panel === "author" && "My Recent Submissions"}
+                {panel === "reader" && "Recent Books in My Library"}
+                {panel === "editor" && "My Assigned Manuscripts"}
+                {panel === "reviewer" && "My Review Assignments"}
+                {panel === "finance" && "My Finance Items"}
+                {panel === "production" && "My Production Items"}
+                {(!panel || panel === "admin") && "Recent Activity"}
+              </h3>
+              <small className="text-muted">
+                Showing only items you have access to
+              </small>
             </div>
             <div className="card-body table-responsive p-0">
               <table className="table table-hover mb-0">
@@ -271,36 +502,84 @@ export default function EbookDashboardPage() {
                   <tr>
                     <th>Title / Item</th>
                     <th>Status</th>
-                    <th>Owner</th>
-                    <th>Open</th>
+                    <th>Date</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {!rows.length ? (
-                    <tr><td colSpan="4" className="text-center text-muted py-4">No records found.</td></tr>
-                  ) : rows.map((row) => (
-                    <tr key={row.submission_id || row.assignment_id || row.finance_id || row.production_id || row.id}>
-                      <td>
-                        <div className="font-weight-bold">{row.title || row.invoice_number || row.repository_path || "Workflow item"}</div>
-                        <small className="text-muted">{row.author_name || row.reviewer_name || row.slug || "-"}</small>
-                      </td>
-                      <td><StatusBadge value={row.status || row.payment_status || row.submission_status} /></td>
-                      <td>{row.author_name || row.reviewer_name || row.editor_name || "-"}</td>
-                      <td>
-                        {row.assignment_id ? (
-                          <Link className="btn btn-sm btn-outline-primary" to={`/ebook/review-assignments/${row.assignment_id}`}>Open</Link>
-                        ) : row.submission_id ? (
-                          <Link className="btn btn-sm btn-outline-primary" to={`/ebook/submissions/${row.submission_id}`}>Open</Link>
-                        ) : (
-                          "-"
-                        )}
+                    <tr>
+                      <td colSpan="4" className="text-center text-muted py-4">
+                        {panel === "author" && "You haven't submitted any eBooks yet. Click 'Create New Submission' to get started!"}
+                        {panel === "reader" && "Your library is empty. Browse the catalog to add books!"}
+                        {panel === "editor" && "No manuscripts assigned to you yet."}
+                        {panel === "reviewer" && "No review assignments at this time."}
+                        {(!panel || panel === "admin") && "No recent activity to display."}
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    rows.slice(0, 10).map((row, idx) => (
+                      <tr key={row.submission_id || row.id || row.assignment_id || idx}>
+                        <td>
+                          <div className="font-weight-bold">
+                            {row.title || row.book_title || row.invoice_number || "Workflow item"}
+                          </div>
+                          <small className="text-muted">
+                            {row.author_name || row.authors?.join(", ") || "You"}
+                          </small>
+                        </td>
+                        <td>
+                          <StatusBadge value={row.status || row.payment_status || row.submission_status || "draft"} />
+                        </td>
+                        <td>
+                          <small>
+                            {row.created_at 
+                              ? new Date(row.created_at).toLocaleDateString() 
+                              : row.date || "Recent"}
+                          </small>
+                        </td>
+                        <td>
+                          {row.submission_id ? (
+                            <Link className="btn btn-sm btn-outline-primary" to={`/ebook/submissions/${row.submission_id}`}>
+                              View
+                            </Link>
+                          ) : row.id ? (
+                            <Link className="btn btn-sm btn-outline-primary" to={`/ebook/items/${row.id}`}>
+                              Open
+                            </Link>
+                          ) : (
+                            <button className="btn btn-sm btn-outline-secondary" disabled>
+                              View
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
+
+          {/* Quick Stats Card for Authors */}
+          {panel === "author" && authorQueues.published > 0 && (
+            <div className="card mt-3 bg-success bg-opacity-10">
+              <div className="card-body">
+                <div className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h5 className="mb-1">🎉 Congratulations!</h5>
+                    <p className="mb-0 text-muted">
+                      You have {authorQueues.published} published eBook{authorQueues.published !== 1 ? 's' : ''} 
+                      {authorQueues.published > 0 && ". Share your work with readers worldwide!"}
+                    </p>
+                  </div>
+                  <Link to="/ebook/my-published" className="btn btn-success">
+                    View Published Works
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </MainLayout>

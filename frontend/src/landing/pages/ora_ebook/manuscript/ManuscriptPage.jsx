@@ -22,6 +22,7 @@ const ManuscriptPage = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [userRoles, setUserRoles] = useState([]);
 
   const BASE = `${API}/ebook/manuscripts`;
 
@@ -35,16 +36,48 @@ const ManuscriptPage = () => {
     }
 
     setUser(storedUser);
+    
+    // Extract user roles
+    const roles = storedUser?.roles?.map(r => r.role_name || r.name || r.code) || [];
+    setUserRoles(roles);
+    
     loadData(token);
   }, []);
 
   const loadData = async (token) => {
     try {
       setLoading(true);
-      const res = await axios.get(BASE, {
+      
+      // Get user's roles to determine what data to fetch
+      const roles = userRoles.length > 0 ? userRoles : [];
+      const isAdmin = roles.some(r => r.toUpperCase().includes("ADMIN"));
+      const isEditor = roles.some(r => r.toUpperCase().includes("EDITOR"));
+      const isReviewer = roles.some(r => r.toUpperCase().includes("REVIEWER"));
+      
+      let endpoint = BASE;
+      let params = {};
+      
+      // Different endpoints based on role
+      if (isAdmin) {
+        // Admin sees all manuscripts
+        endpoint = `${BASE}/all`;
+      } else if (isEditor) {
+        // Editor sees manuscripts assigned to them
+        endpoint = `${BASE}/assigned-to-me`;
+      } else if (isReviewer) {
+        // Reviewer sees manuscripts assigned for review
+        endpoint = `${BASE}/for-review`;
+      } else {
+        // Author sees only their own manuscripts
+        endpoint = `${BASE}/my-manuscripts`;
+      }
+      
+      const res = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
+        params: params
       });
-      setList(Array.isArray(res.data) ? res.data : []);
+      
+      setList(Array.isArray(res.data) ? res.data : res.data?.rows || []);
     } catch (err) {
       console.error(err);
       alert(err?.response?.data?.error || "Failed to load manuscripts");
@@ -60,6 +93,17 @@ const ManuscriptPage = () => {
   };
 
   const openCreateModal = () => {
+    // Only authors can create new manuscripts
+    const isAuthor = userRoles.some(r => 
+      r.toUpperCase().includes("AUTHOR") || 
+      r.toUpperCase() === "PUBLIC_READER"
+    );
+    
+    if (!isAuthor && !userRoles.some(r => r.toUpperCase().includes("ADMIN"))) {
+      alert("Only authors can create new manuscripts");
+      return;
+    }
+    
     resetForm();
     setShowPanel(true);
   };
@@ -86,11 +130,25 @@ const ManuscriptPage = () => {
 
     Object.keys(form).forEach((key) => formData.append(key, form[key]));
     if (file) formData.append("file", file);
+    
+    // Add author ID to associate manuscript with current user
+    if (user?.id) {
+      formData.append("author_id", user.id);
+    }
 
     try {
       setSubmitting(true);
 
       if (editId) {
+        // Check if user has permission to edit this manuscript
+        const manuscript = list.find(m => m.id === editId);
+        const canEdit = await canUserModify(manuscript);
+        
+        if (!canEdit) {
+          alert("You don't have permission to edit this manuscript");
+          return;
+        }
+        
         await axios.put(`${BASE}/${editId}`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
@@ -118,7 +176,32 @@ const ManuscriptPage = () => {
     }
   };
 
-  const handleEdit = (m) => {
+  const canUserModify = async (manuscript) => {
+    if (!manuscript) return false;
+    
+    const token = localStorage.getItem("token");
+    const isAdmin = userRoles.some(r => r.toUpperCase().includes("ADMIN"));
+    
+    // Admin can modify anything
+    if (isAdmin) return true;
+    
+    // Check if user is the author
+    if (manuscript.author_id === user?.id) return true;
+    
+    // Check if user is assigned editor
+    if (manuscript.editor_id === user?.id) return true;
+    
+    return false;
+  };
+
+  const handleEdit = async (m) => {
+    const canEdit = await canUserModify(m);
+    
+    if (!canEdit) {
+      alert("You don't have permission to edit this manuscript");
+      return;
+    }
+    
     setForm({
       title: m.title || "",
       abstract: m.abstract || "",
@@ -133,6 +216,14 @@ const ManuscriptPage = () => {
   };
 
   const handleDelete = async (id) => {
+    const manuscript = list.find(m => m.id === id);
+    const canDelete = await canUserModify(manuscript);
+    
+    if (!canDelete) {
+      alert("You don't have permission to delete this manuscript");
+      return;
+    }
+    
     if (!window.confirm("Delete this manuscript?")) return;
 
     const token = localStorage.getItem("token");
@@ -141,6 +232,7 @@ const ManuscriptPage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       loadData(token);
+      alert("Deleted successfully");
     } catch (err) {
       console.error(err);
       alert(err?.response?.data?.error || "Delete failed");
@@ -155,25 +247,44 @@ const ManuscriptPage = () => {
         return "bg-primary";
       case "revision_required":
         return "bg-warning text-dark";
+      case "under_review":
+        return "bg-info";
       case "approved":
         return "bg-success";
+      case "rejected":
+        return "bg-danger";
       default:
         return "bg-dark";
     }
+  };
+
+  const getRoleDisplay = () => {
+    if (userRoles.some(r => r.toUpperCase().includes("ADMIN"))) return "Administrator";
+    if (userRoles.some(r => r.toUpperCase().includes("EDITOR"))) return "Editor";
+    if (userRoles.some(r => r.toUpperCase().includes("REVIEWER"))) return "Reviewer";
+    return "Author";
   };
 
   const stats = useMemo(() => {
     const total = list.length;
     const drafts = list.filter((m) => m.status === "draft").length;
     const submitted = list.filter((m) => m.status === "submitted").length;
+    const underReview = list.filter((m) => m.status === "under_review").length;
     const approved = list.filter((m) => m.status === "approved").length;
+    const rejected = list.filter((m) => m.status === "rejected").length;
 
-    return { total, drafts, submitted, approved };
+    return { total, drafts, submitted, underReview, approved, rejected };
   }, [list]);
+
+  // Determine if user can create new manuscripts
+  const canCreate = userRoles.some(r => 
+    r.toUpperCase().includes("AUTHOR") || 
+    r.toUpperCase().includes("ADMIN")
+  );
 
   return (
     <MainLayout>
-      <div  style={{ background: "#f4f7fb", minHeight: "100vh" }}>
+      <div style={{ background: "#f4f7fb", minHeight: "100vh" }}>
         <section className="content-header pb-0">
           <div className="container-fluid">
             <div
@@ -193,22 +304,35 @@ const ManuscriptPage = () => {
                       <span className="font-weight-bold">ORA eBook Publishing</span>
                     </div>
 
-                    <h1 className="mb-2 font-weight-bold">Manuscripts Workspace</h1>
+                    <h1 className="mb-2 font-weight-bold">
+                      {getRoleDisplay()} Manuscript Workspace
+                    </h1>
                     <p className="mb-0" style={{ color: "rgba(255,255,255,0.88)" }}>
-                      Create, manage, update, and organize all uploaded manuscript records in one place.
+                      {userRoles.some(r => r.toUpperCase().includes("ADMIN")) && 
+                        "View and manage all manuscripts in the system"}
+                      {userRoles.some(r => r.toUpperCase().includes("EDITOR")) && 
+                        "Manage manuscripts assigned to you for editorial review"}
+                      {userRoles.some(r => r.toUpperCase().includes("REVIEWER")) && 
+                        "Review manuscripts assigned to you"}
+                      {!userRoles.some(r => r.toUpperCase().includes("ADMIN") || 
+                         r.toUpperCase().includes("EDITOR") || 
+                         r.toUpperCase().includes("REVIEWER")) && 
+                        "Create, manage, and track your manuscript submissions"}
                     </p>
                   </div>
 
-                  <div className="text-md-right">
-                    <button
-                      type="button"
-                      className="btn btn-light btn-lg shadow-sm rounded-pill px-4"
-                      onClick={openCreateModal}
-                    >
-                      <i className="fas fa-plus mr-2"></i>
-                      Create Manuscript
-                    </button>
-                  </div>
+                  {canCreate && (
+                    <div className="text-md-right">
+                      <button
+                        type="button"
+                        className="btn btn-light btn-lg shadow-sm rounded-pill px-4"
+                        onClick={openCreateModal}
+                      >
+                        <i className="fas fa-plus mr-2"></i>
+                        Create Manuscript
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -270,6 +394,23 @@ const ManuscriptPage = () => {
                   <div className="card-body d-flex align-items-center">
                     <div
                       className="d-flex align-items-center justify-content-center rounded-circle mr-3"
+                      style={{ width: 56, height: 56, background: "rgba(13,202,240,0.12)", color: "#0dcaf0" }}
+                    >
+                      <i className="fas fa-chart-line fa-lg"></i>
+                    </div>
+                    <div>
+                      <div className="text-muted small">Under Review</div>
+                      <div className="h4 mb-0 font-weight-bold">{stats.underReview}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-md-3 col-sm-6 mb-3">
+                <div className="card border-0 shadow-sm rounded-4 h-100">
+                  <div className="card-body d-flex align-items-center">
+                    <div
+                      className="d-flex align-items-center justify-content-center rounded-circle mr-3"
                       style={{ width: 56, height: 56, background: "rgba(25,135,84,0.12)", color: "#198754" }}
                     >
                       <i className="fas fa-check-circle fa-lg"></i>
@@ -277,6 +418,23 @@ const ManuscriptPage = () => {
                     <div>
                       <div className="text-muted small">Approved</div>
                       <div className="h4 mb-0 font-weight-bold">{stats.approved}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-md-3 col-sm-6 mb-3">
+                <div className="card border-0 shadow-sm rounded-4 h-100">
+                  <div className="card-body d-flex align-items-center">
+                    <div
+                      className="d-flex align-items-center justify-content-center rounded-circle mr-3"
+                      style={{ width: 56, height: 56, background: "rgba(220,53,69,0.12)", color: "#dc3545" }}
+                    >
+                      <i className="fas fa-times-circle fa-lg"></i>
+                    </div>
+                    <div>
+                      <div className="text-muted small">Rejected</div>
+                      <div className="h4 mb-0 font-weight-bold">{stats.rejected}</div>
                     </div>
                   </div>
                 </div>
@@ -294,10 +452,24 @@ const ManuscriptPage = () => {
               >
                 <div>
                   <h3 className="card-title mb-1 font-weight-bold" style={{ fontSize: "1.2rem" }}>
-                    All Manuscripts
+                    {userRoles.some(r => r.toUpperCase().includes("ADMIN")) && "All Manuscripts"}
+                    {userRoles.some(r => r.toUpperCase().includes("EDITOR")) && "Assigned Manuscripts"}
+                    {userRoles.some(r => r.toUpperCase().includes("REVIEWER")) && "Review Assignments"}
+                    {!userRoles.some(r => r.toUpperCase().includes("ADMIN") || 
+                       r.toUpperCase().includes("EDITOR") || 
+                       r.toUpperCase().includes("REVIEWER")) && "My Manuscripts"}
                   </h3>
                   <div className="text-muted small">
-                    Manage uploaded manuscript records and update their details.
+                    {userRoles.some(r => r.toUpperCase().includes("ADMIN")) && 
+                      "View and manage all manuscripts across the system"}
+                    {userRoles.some(r => r.toUpperCase().includes("EDITOR")) && 
+                      "Manuscripts assigned to you for editorial processing"}
+                    {userRoles.some(r => r.toUpperCase().includes("REVIEWER")) && 
+                      "Manuscripts assigned to you for peer review"}
+                    {!userRoles.some(r => r.toUpperCase().includes("ADMIN") || 
+                       r.toUpperCase().includes("EDITOR") || 
+                       r.toUpperCase().includes("REVIEWER")) && 
+                      "Manuscripts you have submitted or are working on"}
                   </div>
                 </div>
 
@@ -329,15 +501,24 @@ const ManuscriptPage = () => {
                     </div>
                     <h4 className="font-weight-bold">No manuscripts found</h4>
                     <p className="text-muted mb-4">
-                      Start by creating your first manuscript and uploading the document.
+                      {userRoles.some(r => r.toUpperCase().includes("AUTHOR")) && 
+                        "Start by creating your first manuscript and uploading the document."}
+                      {userRoles.some(r => r.toUpperCase().includes("EDITOR")) && 
+                        "No manuscripts are currently assigned to you."}
+                      {userRoles.some(r => r.toUpperCase().includes("REVIEWER")) && 
+                        "No review assignments at this time."}
+                      {userRoles.some(r => r.toUpperCase().includes("ADMIN")) && 
+                        "No manuscripts have been submitted yet."}
                     </p>
-                    <button
-                      className="btn btn-primary rounded-pill px-4"
-                      onClick={openCreateModal}
-                    >
-                      <i className="fas fa-plus mr-2"></i>
-                      Create Manuscript
-                    </button>
+                    {canCreate && (
+                      <button
+                        className="btn btn-primary rounded-pill px-4"
+                        onClick={openCreateModal}
+                      >
+                        <i className="fas fa-plus mr-2"></i>
+                        Create Manuscript
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className="table-responsive">
@@ -345,6 +526,7 @@ const ManuscriptPage = () => {
                       <thead style={{ background: "#f8fafc" }}>
                         <tr>
                           <th className="border-0 px-4 py-3">Manuscript</th>
+                          <th className="border-0 py-3">Author</th>
                           <th className="border-0 py-3">ISBN</th>
                           <th className="border-0 py-3">Language</th>
                           <th className="border-0 py-3">Year</th>
@@ -379,11 +561,12 @@ const ManuscriptPage = () => {
                                 </div>
                               </div>
                             </td>
+                            <td className="py-3">{m.author_name || m.author?.name || "-"}</td>
                             <td className="py-3">{m.isbn || "-"}</td>
                             <td className="py-3">{m.language || "-"}</td>
                             <td className="py-3">{m.publication_year || "-"}</td>
                             <td className="py-3">
-                              <span>
+                              <span className={`badge ${getStatusClass(m.status)} px-3 py-2 rounded-pill`}>
                                 {(m.status || "unknown").replaceAll("_", " ").toUpperCase()}
                               </span>
                             </td>
@@ -420,7 +603,7 @@ const ManuscriptPage = () => {
                 )}
               </div>
 
-              {!loading && list.length > 0 && (
+              {!loading && list.length > 0 && canCreate && (
                 <div className="card-footer bg-white border-0 d-flex justify-content-between align-items-center px-4 py-3">
                   <div className="text-muted small">
                     Showing <strong>{list.length}</strong> manuscript{list.length !== 1 ? "s" : ""}
@@ -435,6 +618,7 @@ const ManuscriptPage = () => {
           </div>
         </section>
 
+        {/* Modal form remains the same */}
         <div
           className={`modal fade ${showPanel ? "show d-block" : ""}`}
           style={{
@@ -477,7 +661,7 @@ const ManuscriptPage = () => {
               <form onSubmit={handleSubmit}>
                 <div className="modal-body" style={{ padding: "1.5rem" }}>
                   <div className="form-group">
-                    <label className="font-weight-semibold">Title</label>
+                    <label className="font-weight-semibold">Title *</label>
                     <input
                       name="title"
                       value={form.title}
@@ -512,7 +696,6 @@ const ManuscriptPage = () => {
                           onChange={handleChange}
                           className="form-control rounded-pill"
                           style={{ height: "48px" }}
-                          required
                         />
                       </div>
                     </div>
@@ -527,7 +710,6 @@ const ManuscriptPage = () => {
                           onChange={handleChange}
                           className="form-control rounded-pill"
                           style={{ height: "48px" }}
-                          required
                         />
                       </div>
                     </div>
@@ -589,6 +771,7 @@ const ManuscriptPage = () => {
                         onChange={(e) => setFile(e.target.files[0])}
                         className="form-control-file"
                         id="customFile"
+                        accept=".pdf,.doc,.docx"
                       />
 
                       <div className="mt-3">

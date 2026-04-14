@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout.jsx";
-import ebookApi from "./mock/ebookMockApi.js";
+import ebookApi from "../../api/ebookApi.js";
 
 const defaultRules = {
   auto_assign_editor_on_submit: false,

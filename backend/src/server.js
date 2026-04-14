@@ -57,7 +57,7 @@ import repositoryAuthorRoutes from './repository/authors/routes/repositoryAuthor
 import ebookAuthorRoutes from "./ora_ebooks/routes/author.routes.js";
 import ebookManuscriptRoutes from "./ora_ebooks/routes/manuscript.routes.js";
 import publicRoutes from "./ebook/routes/public.routes.js";
-import editorReviewerRoutes from "./ora_ebooks/routes/editor-reviewer.routes.js";
+import editorRoutes from "./ora_ebooks/routes/editor-reviewer.routes.js";
 
 import reviewerRoutes from "./ora_ebooks/routes/reviewer.routes.js";
 
@@ -156,6 +156,7 @@ app.use("/api/ebook_authors", ebookAuthorRoutes);
 app.use("/api/ebook/manuscripts", ebookManuscriptRoutes);
 app.use("/api/oraebook/reviewer", reviewerRoutes);
 app.use("/api/oraebook", reviewerRoutes);
+app.use("/api/oraebook/editor", editorRoutes);
 /* =======================
    DEFAULT ROUTE
 ======================= */

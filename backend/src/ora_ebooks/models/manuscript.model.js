@@ -72,13 +72,32 @@ export const getManuscriptsByAuthor = async (author_id) => {
   return result.rows;
 };
 
-export const getDraftManuscripts = async () => {
+// GET DRAFT MANUSCRIPTS FOR LOGGED-IN USER ONLY
+export const getDraftManuscripts = async (userId) => {
   const result = await pool.query(
-    `SELECT * FROM ora_ebook_manuscripts WHERE status = 'draft' ORDER BY created_at DESC`
+    `SELECT m.*, u.name as author_name, u.email as author_email
+     FROM ora_ebook_manuscripts m
+     LEFT JOIN users u ON m.author_id = u.uuid
+     WHERE m.author_id = $1 AND m.status = 'draft'
+     ORDER BY m.created_at DESC`,
+    [userId]
   );
   return result.rows;
 };
-
+export const getRevisionRequiredManuscripts = async (userId) => {
+  const result = await pool.query(
+    `SELECT m.*, u.name as author_name, u.email as author_email,
+            sa.comments as revision_comments, sa.recommended_action
+     FROM ora_ebook_manuscripts m
+     LEFT JOIN users u ON m.author_id = u.id
+     LEFT JOIN screening_assessments sa ON m.id = sa.manuscript_id
+     WHERE m.author_id = $1 
+       AND m.status = 'revision_required'
+     ORDER BY m.updated_at DESC`,
+    [userId]
+  );
+  return result.rows;
+};
 export const publishDraftManuscript = async (id) => {
   const result = await pool.query(
     `UPDATE ora_ebook_manuscripts
@@ -107,24 +126,24 @@ export const searchManuscripts = async (query) => {
   return result.rows;
 };
 
-export const getRevisionManuscripts = async () => {
-  const result = await pool.query(
-    `SELECT * FROM ora_ebook_manuscripts
-     WHERE status = 'revision_required'
-     ORDER BY created_at DESC`
-  );
-  return result.rows;
-};
+// export const getRevisionManuscripts = async () => {
+//   const result = await pool.query(
+//     `SELECT * FROM ora_ebook_manuscripts
+//      WHERE status = 'revision_required'
+//      ORDER BY created_at DESC`
+//   );
+//   return result.rows;
+// };
 
-export const getScreenedManuscripts = async () => {
-  const result = await pool.query(
-    `SELECT *
-     FROM ora_ebook_manuscripts
-     WHERE status = 'screened'
-     ORDER BY updated_at DESC NULLS LAST, created_at DESC`
-  );
-  return result.rows;
-};
+// export const getScreenedManuscripts = async () => {
+//   const result = await pool.query(
+//     `SELECT *
+//      FROM ora_ebook_manuscripts
+//      WHERE status = 'screened'
+//      ORDER BY updated_at DESC NULLS LAST, created_at DESC`
+//   );
+//   return result.rows;
+// };
 
 export const screenManuscript = async ({
   id,
@@ -205,4 +224,114 @@ export const screenManuscript = async ({
     message: "Screening completed successfully",
     manuscript: updatedResult.rows[0],
   };
+};
+
+// Add these missing methods to your manuscript.model.js
+
+// export const getManuscriptsByAuthor = async (authorId) => {
+//   const query = `
+//     SELECT m.*, u.name as author_name, u.email as author_email
+//     FROM manuscripts m
+//     LEFT JOIN users u ON m.author_id = u.id
+//     WHERE m.author_id = $1
+//     ORDER BY m.created_at DESC
+//   `;
+//   const result = await pool.query(query, [authorId]);
+//   return result.rows;
+// };
+
+export const getManuscriptsByEditor = async (editorId) => {
+  const query = `
+    SELECT m.*, u.name as author_name, u.email as author_email
+    FROM manuscripts m
+    LEFT JOIN users u ON m.author_id = u.id
+    WHERE m.editor_id = $1
+    ORDER BY m.created_at DESC
+  `;
+  const result = await pool.query(query, [editorId]);
+  return result.rows;
+};
+
+export const getManuscriptsForReview = async (reviewerId) => {
+  const query = `
+    SELECT m.*, u.name as author_name, u.email as author_email,
+           ra.status as review_status, ra.assignment_id
+    FROM manuscripts m
+    LEFT JOIN users u ON m.author_id = u.id
+    INNER JOIN review_assignments ra ON m.id = ra.submission_id
+    WHERE ra.reviewer_id = $1 AND ra.status != 'completed'
+    ORDER BY ra.assigned_at DESC
+  `;
+  const result = await pool.query(query, [reviewerId]);
+  return result.rows;
+};
+
+// export const getDraftManuscripts = async (userId) => {
+//   const query = `
+//     SELECT * FROM manuscripts 
+//     WHERE author_id = $1 AND status = 'draft'
+//     ORDER BY created_at DESC
+//   `;
+//   const result = await pool.query(query, [userId]);
+//   return result.rows;
+// };
+
+export const getRevisionManuscripts = async (userId) => {
+  const query = `
+    SELECT * FROM ora_ebook_manuscripts 
+    WHERE author_id = $1 AND status = 'revision_required'
+    ORDER BY updated_at DESC
+  `;
+  const result = await pool.query(query, [userId]);
+  return result.rows;
+};
+
+export const getScreenedManuscripts = async (userId) => {
+  const query = `
+    SELECT * FROM ora_ebook_manuscripts 
+    WHERE editor_id = $1 AND status = 'under_review'
+    ORDER BY updated_at DESC
+  `;
+  const result = await pool.query(query, [userId]);
+  return result.rows;
+};
+
+// model.getMyManuscripts
+export const getMyManuscripts = async (userId) => {
+  const query = `
+    SELECT * FROM ora_ebook_manuscripts 
+    WHERE author_id = $1
+    ORDER BY created_at DESC
+  `;
+  const result = await pool.query(query, [userId]);
+  return result.rows;
+};
+//drft
+
+// model.getMyManuscripts
+
+// GET PAYMENT ORDERED MANUSCRIPTS
+export const getPaymentOrderedManuscripts = async (userId) => {
+  const result = await pool.query(
+    `SELECT m.*, u.name as author_name, u.email as author_email
+     FROM ora_ebook_manuscripts m
+     LEFT JOIN users u ON m.author_id = u.id
+     WHERE m.author_id = $1 
+       AND (m.status = 'payment_ordered' OR m.payment_status = 'payment_ordered')
+     ORDER BY m.updated_at DESC`,
+    [userId]
+  );
+  return result.rows;
+};
+
+// GET PAYMENT ORDERED COUNT
+export const getPaymentOrderedCount = async (userId) => {
+  const result = await pool.query(
+    `SELECT COUNT(*) 
+     FROM ora_ebook_manuscripts 
+     WHERE author_id = $1 
+       AND (status = 'payment_ordered' OR payment_status = 'payment_ordered')`,
+    [userId]
+  );
+  return parseInt(result.rows[0].count);
 };

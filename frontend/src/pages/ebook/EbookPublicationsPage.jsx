@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout.jsx";
-import ebookApi from "./mock/ebookMockApi.js";
+import ebookApi from "../../api/ebookApi.js";
 import StatusBadge from "./components/StatusBadge.jsx";
 
 export default function EbookPublicationsPage() {
