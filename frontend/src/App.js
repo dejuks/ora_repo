@@ -231,6 +231,7 @@ import RepositoryApprovedSubmissionsPage from "./pages/repository/RepositoryAppr
 import RepositoryRejectedSubmissionsPage from "./pages/repository/RepositoryRejectedSubmissionsPage.jsx";
 import RepositoryItemDetail from "./landing/pages/RepositoryItemDetail.jsx";
 import OraEbookEditorWorkflowPage from "./landing/pages/ora_ebook/be/OraEbookEditorWorkflowPage.jsx";
+import SubmitReviewPage from "./landing/pages/ora_ebook/br/SubmitReviewPage.jsx";
 
 function App() {
   return (
@@ -476,6 +477,10 @@ function App() {
   element={<EbookReviewerPendingPage />}
 />
 
+<Route
+  path="/ebook/reviewer/submit-review/:assignmentId"
+  element={<SubmitReviewPage />}
+/>       
        <Route path="/ebook/editor/screening" element={ <ProtectedRoute><EbookEditorScreeningPage /> </ProtectedRoute>}/>
        <Route path="/ebook/editor/screened" element={ <ProtectedRoute><EbookEditorScreenedPage /> </ProtectedRoute>}/>
        <Route path="/ebook/editor/reviews" element={ <ProtectedRoute><EbookEditorReviewsPage /> </ProtectedRoute>}/>

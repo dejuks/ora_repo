@@ -12,7 +12,78 @@ function isUUID(value) {
     value
   );
 }
+export async function getReviewerAssignmentDetailHandler(req, res) {
+  try {
+    const userId = req.user?.id;
+    const userUuid = req.user?.uuid;
+    const { assignmentId } = req.params;
 
+    if (!isUUID(assignmentId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid assignment id",
+      });
+    }
+
+    const query = `
+      SELECT 
+        ra.assignment_id,
+        ra.ebook_id,
+        ra.reviewer_id,
+        ra.status,
+        ra.recommendation,
+        ra.comments,
+        ra.confidential_comments,
+        ra.assigned_at,
+        ra.accepted_at,
+        ra.completed_at,
+
+        e.title,
+        e.abstract,
+        e.keywords,
+        e.status AS ebook_status,
+
+        u.name AS author_name,
+        u.email AS author_email
+
+      FROM review_assignments ra
+      JOIN ebooks e ON e.ebook_id = ra.ebook_id
+      LEFT JOIN users u ON u.id = e.author_id
+
+      WHERE ra.assignment_id = $1
+      AND (
+        ra.reviewer_id::text = $2::text
+        OR ra.reviewer_id::text = $3::text
+      )
+      LIMIT 1
+    `;
+
+    const { rows } = await pool.query(query, [
+      assignmentId,
+      userId,
+      userUuid,
+    ]);
+
+    if (!rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Assignment not found for this reviewer",
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: rows[0],
+    });
+  } catch (error) {
+    console.error("getReviewerAssignmentDetailHandler error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load assignment",
+      error: error.message,
+    });
+  }
+}
 export async function getReviewerAssignmentsHandler(req, res) {
   try {
     const reviewerId = req.user?.id || req.user?.uuid;
