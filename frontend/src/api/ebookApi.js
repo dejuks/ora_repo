@@ -56,7 +56,7 @@ const ebookApi = {
       stage: params.stage,
       ...params
     };
-    return unwrap(() => api.get("/ebook/my-submissions", { params: queryParams }));
+    return unwrap(() => api.get("/ebook/manuscripts/my-submissions", { params: queryParams }));
   },
 
   /**
@@ -624,7 +624,7 @@ const ebookApi = {
   getReviewerDashboard: async () => {
     const [assignments, stats] = await Promise.all([
       ebookApi.getReviewerAssignments({ limit: 100 }),
-      unwrap(() => api.get("/ebook/dashboard/reviewer-stats")).catch(() => ({ summary: {} }))
+      unwrap(() => api.get("/ebook/dashboard/reviewer")).catch(() => ({ summary: {} }))
     ]);
     return {
       summary: stats?.summary || {},
