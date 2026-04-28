@@ -62,7 +62,10 @@ export async function getReviewerPendingAssignmentsHandler(req, res) {
 
 export async function getReviewerAssignmentByIdHandler(req, res) {
   try {
-    const reviewerId = req.user?.id || req.user?.uuid;
+    const reviewerId = 
+  req.user?.id ||
+  req.user?.uuid ||
+  req.user?.user_id;
     const { assignmentId } = req.params;
 
     if (!isUUID(assignmentId)) {

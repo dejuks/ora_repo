@@ -5,46 +5,38 @@ export async function getReviewerAssignments(reviewerId, filters = {}) {
 
   let query = `
     SELECT
-      era.assignment_id,
-      era.submission_id,
-      era.reviewer_id,
-      era.assigned_by,
-      era.status,
-      era.due_date,
-      era.invitation_note,
-      era.response_note,
-      era.assigned_at,
-      era.accepted_at,
-      era.completed_at,
+      era.*,
 
       es.title,
       es.subtitle,
       es.abstract,
-      es.keywords,
       es.category,
       es.language,
       es.publication_year,
-      es.target_audience,
       es.status AS submission_status,
-      es.current_version_no,
 
       author.full_name AS author_name,
       editor.full_name AS assigned_by_name
+
     FROM ebook_review_assignments era
-    INNER JOIN ebook_submissions es
+
+    LEFT JOIN ebook_submissions es
       ON es.submission_id = era.submission_id
-    LEFT JOIN users editor
-      ON editor.uuid = era.assigned_by
+
     LEFT JOIN users author
       ON author.uuid = es.author_id
-    WHERE era.reviewer_id = $1
+
+    LEFT JOIN users editor
+      ON editor.uuid = era.assigned_by
+
+    WHERE era.reviewer_id::text = $1::text
   `;
 
   const values = [reviewerId];
-  let index = values.length + 1;
+  let index = 2;
 
   if (status && status.trim()) {
-    query += ` AND era.status = $${index}::ebook_assignment_status`;
+    query += ` AND LOWER(era.status::text) = LOWER($${index})`;
     values.push(status.trim());
     index++;
   }
@@ -60,63 +52,54 @@ export async function getReviewerAssignments(reviewerId, filters = {}) {
       )
     `;
     values.push(`%${search.trim()}%`);
-    index++;
   }
 
   query += ` ORDER BY era.assigned_at DESC`;
+
+  console.log("Assignments reviewerId:", reviewerId);
 
   const { rows } = await db.query(query, values);
   return rows;
 }
 
+// ===================================================== */
 export async function getReviewerPendingAssignments(reviewerId, filters = {}) {
   const { search = "", status = "" } = filters;
 
   let query = `
     SELECT
-      era.assignment_id,
-      era.submission_id,
-      era.reviewer_id,
-      era.assigned_by,
-      era.status,
-      era.due_date,
-      era.invitation_note,
-      era.response_note,
-      era.assigned_at,
-      era.accepted_at,
-      era.completed_at,
+      era.*,
 
       es.title,
       es.subtitle,
       es.abstract,
-      es.keywords,
       es.category,
       es.language,
       es.publication_year,
-      es.target_audience,
-      es.status AS submission_status,
-      es.current_version_no,
 
-      author.full_name AS author_name,
-      editor.full_name AS assigned_by_name
+      author.full_name AS author_name
+
     FROM ebook_review_assignments era
-    INNER JOIN ebook_submissions es
+
+    LEFT JOIN ebook_submissions es
       ON es.submission_id = era.submission_id
-    LEFT JOIN users editor
-      ON editor.uuid = era.assigned_by
+
     LEFT JOIN users author
       ON author.uuid = es.author_id
-    WHERE era.reviewer_id = $1
-      AND era.status = 'assigned'::ebook_assignment_status
+
+    WHERE era.reviewer_id::text = $1::text
   `;
 
   const values = [reviewerId];
-  let index = values.length + 1;
+  let index = 2;
 
+  // ✅ FIX: case-insensitive + default pending filter
   if (status && status.trim()) {
-    query += ` AND era.status = $${index}::ebook_assignment_status`;
+    query += ` AND LOWER(era.status::text) = LOWER($${index})`;
     values.push(status.trim());
     index++;
+  } else {
+    query += ` AND LOWER(era.status::text) IN ('assigned','accepted')`;
   }
 
   if (search && search.trim()) {
@@ -124,21 +107,19 @@ export async function getReviewerPendingAssignments(reviewerId, filters = {}) {
       AND (
         es.title ILIKE $${index}
         OR COALESCE(es.subtitle, '') ILIKE $${index}
-        OR COALESCE(es.category, '') ILIKE $${index}
-        OR COALESCE(es.language, '') ILIKE $${index}
         OR COALESCE(author.full_name, '') ILIKE $${index}
       )
     `;
     values.push(`%${search.trim()}%`);
-    index++;
   }
 
   query += ` ORDER BY era.assigned_at DESC`;
 
+  console.log("Pending reviewerId:", reviewerId);
+
   const { rows } = await db.query(query, values);
   return rows;
 }
-
 export async function getReviewerAssignmentById(assignmentId, reviewerId) {
   const query = `
     SELECT

@@ -26,6 +26,7 @@ router.use(authenticate);
 
 // ============= IMPORTANT: SPECIFIC ROUTES MUST COME BEFORE PARAMETER ROUTES =============
 // These routes MUST be defined BEFORE router.route('/:id')
+router.get('/my-manuscripts', getMyManuscripts);
 
 // Status-specific routes (no UUID parameters)
 router.post('/:id/screen', screeningHandler);
@@ -40,7 +41,6 @@ router.get('/payment-ordered/count', getPaymentOrderedCount);
 
 
 // Role-specific manuscript listing routes
-router.get('/my-manuscripts', getMyManuscripts);
 router.get('/assigned-to-me', getAssignedManuscripts);
 router.get('/for-review', getForReviewManuscripts);
 router.get('/all', getAllManuscripts);

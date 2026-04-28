@@ -18,9 +18,6 @@ router.post(
   authenticate,
   assignReviewersHandler
 );
-// 5000/api/ebook/manuscripts/24393ce0-5cbb-49d3-8c39-f0fdb099e13d/screen
-http://localhost:5000/api/ebook/manuscripts/24393ce0-5cbb-49d3-8c39-f0fdb099e13d/screen
-// api/oraebook/editor/assign-me-reviewers/95980a7d-2e45-4225-80c0-558d20720ed7
 
 router.post(
   "/manuscripts/:uuid/screen",
