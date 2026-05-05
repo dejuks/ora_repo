@@ -90,8 +90,6 @@ const ManuscriptEditPage = () => {
   if (loading) {
     return (
       <MainLayout>
-        <div className="content-wrapper">
-          <section className="content">
             <div className="container-fluid">
               <div className="row">
                 <div className="col-12">
@@ -106,15 +104,13 @@ const ManuscriptEditPage = () => {
                 </div>
               </div>
             </div>
-          </section>
-        </div>
       </MainLayout>
     );
   }
 
   return (
     <MainLayout>
-      <div className="content-wrapper">
+      <div>
         <section className="content-header">
           <div className="container-fluid">
             <div className="row mb-2">
@@ -213,9 +209,9 @@ const ManuscriptEditPage = () => {
                           onChange={handleChange}
                           className="form-control"
                         >
-                          <option value="English">English</option>
-                          <option value="French">French</option>
-                          <option value="Spanish">Spanish</option>
+                          <option value="English">Afan Oromoo</option>
+                          <option value="French">English</option>
+                          <option value="Spanish">Amharic</option>
                           <option value="German">German</option>
                         </select>
                       </div>

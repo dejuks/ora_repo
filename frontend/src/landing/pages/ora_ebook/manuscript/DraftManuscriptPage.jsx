@@ -186,15 +186,17 @@ const ManuscriptPage = () => {
   };
 
   const filteredList = useMemo(() => {
-    const q = search.toLowerCase().trim();
+  const q = search.toLowerCase().trim();
 
-    return list.filter((m) => {
+  return list
+    .filter((m) => m.status === "draft") // ✅ ONLY DRAFT
+    .filter((m) => {
       const title = (m.title || "").toLowerCase();
       const isbn = (m.isbn || "").toLowerCase();
       const year = String(m.publication_year || "");
       return title.includes(q) || isbn.includes(q) || year.includes(q);
     });
-  }, [list, search]);
+}, [list, search]);
 
   const stats = useMemo(() => {
     return {
@@ -294,27 +296,7 @@ const ManuscriptPage = () => {
 
           {/* Stats - Only showing user's own stats */}
           <div className="row mb-4">
-            <div className="col-md-3 col-sm-6 mb-3">
-              <div className="card border-0 shadow-sm rounded-4 h-100">
-                <div className="card-body d-flex align-items-center">
-                  <div
-                    className="rounded-circle d-flex align-items-center justify-content-center mr-3"
-                    style={{
-                      width: 58,
-                      height: 58,
-                      background: "rgba(13,110,253,0.12)",
-                      color: "#0d6efd",
-                    }}
-                  >
-                    <i className="fas fa-book fa-lg"></i>
-                  </div>
-                  <div>
-                    <div className="text-muted small">Total Manuscripts</div>
-                    <div className="h4 mb-0 font-weight-bold">{stats.total}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            
 
             <div className="col-md-3 col-sm-6 mb-3">
               <div className="card border-0 shadow-sm rounded-4 h-100">
@@ -337,29 +319,6 @@ const ManuscriptPage = () => {
                 </div>
               </div>
             </div>
-
-            <div className="col-md-3 col-sm-6 mb-3">
-              <div className="card border-0 shadow-sm rounded-4 h-100">
-                <div className="card-body d-flex align-items-center">
-                  <div
-                    className="rounded-circle d-flex align-items-center justify-content-center mr-3"
-                    style={{
-                      width: 58,
-                      height: 58,
-                      background: "rgba(13,110,253,0.12)",
-                      color: "#0d6efd",
-                    }}
-                  >
-                    <i className="fas fa-paper-plane fa-lg"></i>
-                  </div>
-                  <div>
-                    <div className="text-muted small">Submitted</div>
-                    <div className="h4 mb-0 font-weight-bold">{stats.submitted}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <div className="col-md-3 col-sm-6 mb-3">
               <div className="card border-0 shadow-sm rounded-4 h-100">
                 <div className="card-body d-flex align-items-center">
@@ -390,9 +349,7 @@ const ManuscriptPage = () => {
                 <div className="col-md-6 mb-3 mb-md-0">
                   <div>
                     <h4 className="mb-1 font-weight-bold">My Manuscripts</h4>
-                    <div className="text-muted small">
-                      Search and manage your own manuscripts.
-                    </div>
+                   
                   </div>
                 </div>
 
@@ -463,7 +420,7 @@ const ManuscriptPage = () => {
                     <thead style={{ background: "#f8fafc" }}>
                       <tr>
                         <th className="border-0 px-4 py-3">Title</th>
-                        <th className="border-0 py-3">ISBN</th>
+                        {/* <th className="border-0 py-3">ISBN</th> */}
                         <th className="border-0 py-3">Language</th>
                         <th className="border-0 py-3">Year</th>
                         <th className="border-0 py-3">Status</th>
@@ -505,7 +462,7 @@ const ManuscriptPage = () => {
                               </div>
                             </td>
 
-                            <td className="py-3">{m.isbn || "-"}</td>
+                            {/* <td className="py-3">{m.isbn || "-"}</td> */}
                             <td className="py-3">{m.language || "-"}</td>
                             <td className="py-3">{m.publication_year || "-"}</td>
 
@@ -526,7 +483,7 @@ const ManuscriptPage = () => {
                             <td className="py-3 text-center">
                               <div className="btn-group">
                                 <a
-                                  href={`/ebook/manuscripts/show/${m.id}`}
+                                  href={`/ebook/manuscripts/draftshow/${m.id}`}
                                   className="btn btn-outline-primary btn-sm"
                                   title="View"
                                 >

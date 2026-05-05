@@ -232,6 +232,11 @@ import RepositoryRejectedSubmissionsPage from "./pages/repository/RepositoryReje
 import RepositoryItemDetail from "./landing/pages/RepositoryItemDetail.jsx";
 import OraEbookEditorWorkflowPage from "./landing/pages/ora_ebook/be/OraEbookEditorWorkflowPage.jsx";
 import SubmitReviewPage from "./landing/pages/ora_ebook/br/SubmitReviewPage.jsx";
+import AuthorDashboardPage from "./pages/ebook/author/dashboard/AuthorDashboardPage.jsx";
+import DraftShow from "./landing/pages/ora_ebook/manuscript/DraftShow.jsx";
+import ScreeningQueueShow from "./landing/pages/ora_ebook/be/ScreeningQueueShow.jsx";
+import SubmitRevisionPage from "./landing/pages/ora_ebook/manuscript/SubmitRevisionPage.jsx";
+import EbookReviewPage from "./landing/pages/ora_ebook/br/EbookReviewPage.jsx";
 
 function App() {
   return (
@@ -356,6 +361,9 @@ function App() {
         <Route path="/eic/manuscripts/:id" element={<ProtectedRoute><EICManuscriptDetails /></ProtectedRoute>} />
         <Route path="/eic/payment-orders" element={<ProtectedRoute><EICPaymentOrders /></ProtectedRoute>} />
 
+
+        
+
         {/* AE Protected Routes */}
         <Route path="/manuscript/ae/assigned-manuscripts" element={<ProtectedRoute><ManuscriptListAE /></ProtectedRoute>} />
         <Route path="/manuscription/ae/screening" element={<ProtectedRoute><InitialScreeningListAE /></ProtectedRoute>} />
@@ -435,6 +443,8 @@ function App() {
         <Route path="/library/*" element={<ProtectedRoute><LibraryModuleRoutes /></ProtectedRoute>} />
 
         {/* Ebook Protected Routes */}
+        {/* //authors dashboard */}
+        <Route path="/ebook/author/dashboard" element={<ProtectedRoute><AuthorDashboardPage /></ProtectedRoute>} />
         <Route path="/ebook/dashboard" element={<ProtectedRoute><EbookDashboardPage /></ProtectedRoute>} />
         <Route path="/ebook/workflow-overview" element={<ProtectedRoute><EbookWorkflowOverviewPage /></ProtectedRoute>} />
         <Route path="/ebook/submissions" element={<ProtectedRoute><EbookSubmissionsPage /></ProtectedRoute>} />
@@ -458,9 +468,9 @@ function App() {
         <Route path="/ebook/reviewer/overdue" element={<ProtectedRoute><EbookReviewerPage filter="overdue" /></ProtectedRoute>} />
         <Route path="/ebook/review-assignments/:id" element={<ProtectedRoute><EbookReviewDetailPage /></ProtectedRoute>} />
         <Route path="/ebook/reviewer-manager" element={<ProtectedRoute><EbookReviewerManagerPage /></ProtectedRoute>} />
- 
 
        <Route path="/ora/ebook/editor/screening" element={ <ProtectedRoute><OraEbookEditorScreeningPage /> </ProtectedRoute>}/>
+       <Route path="/ora/ebook/editor/screening/show/:id" element={ <ProtectedRoute><ScreeningQueueShow /> </ProtectedRoute>}/>
        <Route path="/ora/ebook/editor/screened" element={<OraEbookEditorScreenedPage />} />
 
        <Route
@@ -476,7 +486,7 @@ function App() {
   path="/oraebook/reviewer/pending"
   element={<EbookReviewerPendingPage />}
 />
-
+<Route path="/reviewer/review/:assignmentId" element={<EbookReviewPage />} />
 <Route
   path="/ebook/reviewer/submit-review/:assignmentId"
   element={<SubmitReviewPage />}
@@ -525,8 +535,13 @@ function App() {
           <Route path="/ebook/manuscripts/show/:id" element={<ManuscriptShowPage />} />
 {/* Drafts */}
         <Route path="/ebook/manuscripts/drafts" element={<DraftManuscriptPage />} />
+        <Route path="/ebook/manuscripts/draftshow/:id" element={<DraftShow />} />
         /* Revision Required Manuscripts */
         <Route path="/ebook/manuscripts/revisions" element={<RevisionRequiredManuscriptPage />} />
+        <Route
+  path="/ebook/manuscripts/:id/submit-revision"
+  element={<SubmitRevisionPage />}
+/>
 
 
         <Route path="/wiki/global-governance/dashboard" element={<GlobalGovernanceDashboardPage />} />

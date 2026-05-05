@@ -225,27 +225,7 @@ function OraEbookEditorScreeningPage() {
             </div>
 
             <div className="row mt-4">
-              <div className="col-md-3 col-sm-6 mb-3">
-                <div className="card border-0 shadow-sm rounded-4 h-100">
-                  <div className="card-body d-flex align-items-center">
-                    <div
-                      className="d-flex align-items-center justify-content-center rounded-circle mr-3"
-                      style={{
-                        width: 56,
-                        height: 56,
-                        background: "rgba(13,110,253,0.12)",
-                        color: "#0d6efd",
-                      }}
-                    >
-                      <i className="fas fa-inbox fa-lg"></i>
-                    </div>
-                    <div>
-                      <div className="text-muted small">Submitted Queue</div>
-                      <div className="h4 mb-0 font-weight-bold">{stats.total}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              
 
               <div className="col-md-3 col-sm-6 mb-3">
                 <div className="card border-0 shadow-sm rounded-4 h-100">
@@ -330,9 +310,7 @@ function OraEbookEditorScreeningPage() {
                   >
                     Submitted Manuscripts
                   </h3>
-                  <div className="text-muted small">
-                    These records are visible to editors for initial screening.
-                  </div>
+                  
                 </div>
 
                 <div className="mt-3 mt-md-0" style={{ minWidth: "320px" }}>
@@ -391,7 +369,7 @@ function OraEbookEditorScreeningPage() {
                       <thead style={{ background: "#f8fafc" }}>
                         <tr>
                           <th className="border-0 px-4 py-3">Manuscript</th>
-                          <th className="border-0 py-3">ISBN</th>
+                          {/* <th className="border-0 py-3">ISBN</th> */}
                           <th className="border-0 py-3">Language</th>
                           <th className="border-0 py-3">Year</th>
                           <th className="border-0 py-3">Status</th>
@@ -428,7 +406,7 @@ function OraEbookEditorScreeningPage() {
                                 </div>
                               </div>
                              </td>
-                            <td className="py-3">{m.isbn || "-"}</td>
+                            {/* <td className="py-3">{m.isbn || "-"}</td> */}
                             <td className="py-3">{m.language || "-"}</td>
                             <td className="py-3">{m.publication_year || "-"}</td>
                             <td className="py-3">
@@ -447,7 +425,7 @@ function OraEbookEditorScreeningPage() {
                             <td className="py-3 text-center">
                               <div className="btn-group flex-wrap">
                                 <a
-                                  href={`/ebook/manuscripts/show/${m.id}`}
+                                  href={`/ora/ebook/editor/screening/show/${m.id}`}
                                   className="btn btn-outline-primary btn-sm"
                                   title="View Details"
                                 >

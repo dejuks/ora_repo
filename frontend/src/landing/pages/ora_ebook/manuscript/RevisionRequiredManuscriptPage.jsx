@@ -7,11 +7,11 @@ const API = process.env.REACT_APP_API_URL;
 
 const RevisionRequiredManuscriptPage = () => {
   const navigate = useNavigate();
+
   const [list, setList] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [user, setUser] = useState(null);
 
   const BASE = `${API}/ebook/manuscripts/revisions`;
 
@@ -24,64 +24,60 @@ const RevisionRequiredManuscriptPage = () => {
       return;
     }
 
-    try {
-      const parsedUser = JSON.parse(storedUser);
-      setUser(parsedUser);
-    } catch (e) {
-      console.error("Error parsing user:", e);
-    }
-
     loadData(token);
   }, [navigate]);
 
+  // ✅ FIXED API HANDLING
   const loadData = async (token) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const res = await axios.get(BASE, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      
-      // Handle both array and object responses
-      const manuscripts = Array.isArray(res.data) ? res.data : res.data?.rows || [];
+
+      console.log("API RESPONSE:", res.data);
+
+      // ✅ IMPORTANT FIX
+      const manuscripts = res.data?.data || [];
+
+      console.log("MANUSCRIPTS:", manuscripts);
+
       setList(manuscripts);
     } catch (err) {
-      console.error("Load data error:", err);
-      setError(err?.response?.data?.error || err?.message || "Failed to load revision manuscripts");
-      
-      // Show more detailed error for debugging
-      if (err?.response?.status === 500) {
-        console.error("Server error details:", err?.response?.data);
-      }
+      console.error("Load error:", err);
+      setError(
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to load revision manuscripts"
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  // ✅ SEARCH FILTER
   const filteredList = useMemo(() => {
-    const searchLower = search.toLowerCase().trim();
-    
-    if (!searchLower) return list;
-    
-    return list.filter(
-      (m) =>
-        (m.title || "").toLowerCase().includes(searchLower) ||
-        (m.isbn || "").toLowerCase().includes(searchLower) ||
-        String(m.publication_year || "").includes(searchLower)
-    );
+    const q = search.toLowerCase().trim();
+    if (!q) return list;
+
+    return list.filter((m) => {
+      return (
+        (m.title || "").toLowerCase().includes(q) ||
+        (m.isbn || "").toLowerCase().includes(q) ||
+        String(m.publication_year || "").includes(q)
+      );
+    });
   }, [list, search]);
 
+  // ✅ STATUS BADGE
   const getStatusBadgeClass = (status) => {
     switch (status) {
-      case "draft":
-        return "badge badge-secondary";
-      case "submitted":
-        return "badge badge-primary";
       case "revision_required":
         return "badge badge-warning";
-      case "under_review":
-        return "badge badge-info";
+      case "submitted":
+        return "badge badge-primary";
       case "approved":
         return "badge badge-success";
       case "rejected":
@@ -92,15 +88,12 @@ const RevisionRequiredManuscriptPage = () => {
   };
 
   const getStatusText = (status) => {
-    if (!status) return "UNKNOWN";
-    return status.replace(/_/g, " ").toUpperCase();
+    return status ? status.replace(/_/g, " ").toUpperCase() : "UNKNOWN";
   };
 
   const handleRetry = () => {
     const token = localStorage.getItem("token");
-    if (token) {
-      loadData(token);
-    }
+    if (token) loadData(token);
   };
 
   return (
@@ -126,134 +119,100 @@ const RevisionRequiredManuscriptPage = () => {
       <section className="content">
         <div className="container-fluid">
           <div className="card">
-            <div className="card-header">
+            {/* HEADER */}
+            <div className="card-header d-flex justify-content-between align-items-center">
               <h3 className="card-title">Manuscripts Needing Revision</h3>
-              <div className="card-tools">
-                <div className="input-group input-group-sm" style={{ width: "300px" }}>
-                  <input
-                    type="text"
-                    className="form-control float-right"
-                    placeholder="Search by title, ISBN, or year..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                  <div className="input-group-append">
-                    <button className="btn btn-default" type="button">
-                      <i className="fas fa-search"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
+
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search..."
+                style={{ maxWidth: "300px" }}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
 
+            {/* BODY */}
             <div className="card-body table-responsive p-0">
               {loading ? (
                 <div className="text-center py-5">
-                  <div className="spinner-border text-primary mb-3" role="status">
-                    <span className="sr-only">Loading...</span>
-                  </div>
-                  <div className="text-muted">Loading revision manuscripts...</div>
+                  <div className="spinner-border text-primary"></div>
+                  <div className="mt-2">Loading...</div>
                 </div>
               ) : error ? (
                 <div className="text-center py-5">
-                  <div className="alert alert-danger mx-5">
-                    <i className="fas fa-exclamation-triangle mr-2"></i>
+                  <div className="alert alert-danger">
                     {error}
-                    <div className="mt-3">
-                      <button 
-                        className="btn btn-primary btn-sm" 
-                        onClick={handleRetry}
-                      >
-                        <i className="fas fa-sync-alt mr-1"></i>
-                        Retry
-                      </button>
-                    </div>
+                    <br />
+                    <button
+                      className="btn btn-sm btn-primary mt-2"
+                      onClick={handleRetry}
+                    >
+                      Retry
+                    </button>
                   </div>
                 </div>
               ) : filteredList.length === 0 ? (
                 <div className="text-center py-5">
-                  <div className="alert alert-info mx-5">
-                    <i className="fas fa-info-circle mr-2"></i>
-                    {list.length === 0 
-                      ? "No revision-required manuscripts found." 
-                      : "No manuscripts match your search criteria."}
+                  <div className="alert alert-info">
+                    No revision-required manuscripts found.
                   </div>
                 </div>
               ) : (
-                <table className="table table-hover text-nowrap">
+                <table className="table table-hover">
                   <thead>
                     <tr>
                       <th>Title</th>
-                      <th>Author</th>
-                      <th>ISBN</th>
+                      {/* <th>ISBN</th> */}
                       <th>Year</th>
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
+
                   <tbody>
                     {filteredList.map((m) => (
                       <tr key={m.id}>
                         <td>
-                          <strong>{m.title || "Untitled"}</strong>
-                          {m.abstract && (
-                          
-                            <small className="text-muted">
-                              {m.abstract.substring(0, 60)}...
-                            </small>
-                          )}
+                          <strong>{m.title}</strong>
+                          <br />
+                          <small className="text-muted">
+                            {m.abstract?.substring(0, 60)}
+                          </small>
                         </td>
-                        <td>{m.author_name || m.author?.name || "-"}</td>
-                        <td>{m.isbn || "-"}</td>
+
+                        {/* <td>{m.isbn || "-"}</td> */}
+
+                        <td>{m.publication_year || "-"}</td>
+
                         <td>
-                          <span className="badge badge-info">
-                            {m.publication_year || "N/A"}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={getStatusBadgeClass(m.status)}>
+                          <span>
                             {getStatusText(m.status)}
                           </span>
-                          {m.status === "revision_required" && (
-                            <span className="badge badge-warning ml-1">
-                              <i className="fas fa-clock"></i> Action Required
-                            </span>
-                          )}
                         </td>
+
                         <td>
                           <div className="btn-group btn-group-sm">
                             <Link
                               to={`/ebook/manuscripts/show/${m.id}`}
                               className="btn btn-info"
-                              title="View Details"
                             >
                               <i className="fas fa-eye"></i>
                             </Link>
 
-                            {m.status === "revision_required" && (
-                              <>
-                                <Link
-                                  to={`/ebook/manuscripts/${m.id}/revisions`}
-                                  className="btn btn-warning"
-                                  title="View Revision Comments"
-                                >
-                                  <i className="fas fa-comment-dots"></i>
-                                </Link>
+                          
 
-                                <Link
-                                  to={`/ebook/manuscripts/${m.id}/submit-revision`}
-                                  className="btn btn-success"
-                                  title="Submit Revision"
-                                >
-                                  <i className="fas fa-upload"></i>
-                                </Link>
-                              </>
-                            )}
+                            <Link
+                              to={`/ebook/manuscripts/${m.id}/submit-revision`}
+                              className="btn btn-success"
+                            >
+                              <i className="fas fa-upload"></i>
+                            </Link>
 
                             <Link
                               to={`/ebook/manuscripts/edit/${m.id}`}
                               className="btn btn-primary"
-                              title="Edit"
                             >
                               <i className="fas fa-edit"></i>
                             </Link>
@@ -266,21 +225,10 @@ const RevisionRequiredManuscriptPage = () => {
               )}
             </div>
 
-            {!loading && !error && filteredList.length > 0 && (
-              <div className="card-footer clearfix">
-                <div className="row">
-                  <div className="col-sm-12 col-md-5">
-                    <div className="dataTables_info">
-                      Showing {filteredList.length} of {list.length} manuscript(s)
-                      {filteredList.length !== list.length && " (filtered)"}
-                    </div>
-                  </div>
-                  <div className="col-sm-12 col-md-7">
-                    <div className="dataTables_paginate paging_simple_numbers">
-                      {/* Add pagination here if needed */}
-                    </div>
-                  </div>
-                </div>
+            {/* FOOTER */}
+            {!loading && filteredList.length > 0 && (
+              <div className="card-footer">
+                Showing {filteredList.length} of {list.length} manuscripts
               </div>
             )}
           </div>

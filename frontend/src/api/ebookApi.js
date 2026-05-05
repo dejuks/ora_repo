@@ -263,7 +263,7 @@ const ebookApi = {
    * List available reviewers
    */
   listReviewerOptions: (params = {}) => {
-    return unwrap(() => api.get("/ebook/reviewers", { params }));
+    return unwrap(() => api.get("/api/oraebook/reviewer/", { params }));
   },
 
   /**

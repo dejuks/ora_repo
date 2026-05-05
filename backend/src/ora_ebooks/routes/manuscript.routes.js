@@ -26,13 +26,14 @@ router.use(authenticate);
 
 // ============= IMPORTANT: SPECIFIC ROUTES MUST COME BEFORE PARAMETER ROUTES =============
 // These routes MUST be defined BEFORE router.route('/:id')
+router.get('/revisions', getRevisions);
+
 router.get('/my-manuscripts', getMyManuscripts);
 
 // Status-specific routes (no UUID parameters)
 router.post('/:id/screen', screeningHandler);
 
 router.get('/drafts', getDrafts);
-router.get('/revisions', getRevisions);
 router.get('/screened', getScreened);
 router.get('/payment-ordered', getPaymentOrderedManuscripts);
 router.get('/payment-ordered/count', getPaymentOrderedCount);

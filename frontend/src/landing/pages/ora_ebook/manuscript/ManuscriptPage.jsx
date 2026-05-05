@@ -468,8 +468,7 @@ const ManuscriptPage = () => {
                       "Manuscripts assigned to you for peer review"}
                     {!userRoles.some(r => r.toUpperCase().includes("ADMIN") || 
                        r.toUpperCase().includes("EDITOR") || 
-                       r.toUpperCase().includes("REVIEWER")) && 
-                      "Manuscripts you have submitted or are working on"}
+                       r.toUpperCase().includes("REVIEWER")) }
                   </div>
                 </div>
 
@@ -526,7 +525,7 @@ const ManuscriptPage = () => {
                       <thead style={{ background: "#f8fafc" }}>
                         <tr>
                           <th className="border-0 px-4 py-3">Manuscript</th>
-                          <th className="border-0 py-3">Author</th>
+                          {/* <th className="border-0 py-3">Author</th> */}
                           <th className="border-0 py-3">ISBN</th>
                           <th className="border-0 py-3">Language</th>
                           <th className="border-0 py-3">Year</th>
@@ -561,13 +560,13 @@ const ManuscriptPage = () => {
                                 </div>
                               </div>
                             </td>
-                            <td className="py-3">{m.author_name || m.author?.name || "-"}</td>
+                            {/* <td className="py-3">{m.author_name || m.author?.name || "-"}</td> */}
                             <td className="py-3">{m.isbn || "-"}</td>
                             <td className="py-3">{m.language || "-"}</td>
                             <td className="py-3">{m.publication_year || "-"}</td>
                             <td className="py-3">
-                              <span className={`badge ${getStatusClass(m.status)} px-3 py-2 rounded-pill`}>
-                                {(m.status || "unknown").replaceAll("_", " ").toUpperCase()}
+                              <span>
+                                {m.status }
                               </span>
                             </td>
                             <td className="py-3 text-center">

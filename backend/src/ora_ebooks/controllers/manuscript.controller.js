@@ -272,11 +272,30 @@ export const getDrafts = async (req, res) => {
 // REVISIONS
 export const getRevisions = async (req, res) => {
   try {
-    const revisions = await model.getRevisionManuscripts();
-    res.json(revisions);
-  } catch (err) {
-    console.error("GetRevisions error:", err);
-    res.status(500).json({ error: "Failed to fetch revision manuscripts" });
+    const userId = req.user?.id || req.user?.uuid;
+
+    console.log("Controller userId:", userId);
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: user not found",
+      });
+    }
+
+    // ✅ FIX HERE
+    const rows = await model.getRevisionManuscripts(userId);
+
+    res.json({
+      success: true,
+      data: rows,
+    });
+  } catch (error) {
+    console.error("getRevisions error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch revisions",
+    });
   }
 };
 

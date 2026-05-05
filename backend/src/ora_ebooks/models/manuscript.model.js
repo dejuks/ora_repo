@@ -277,15 +277,20 @@ export const getManuscriptsForReview = async (reviewerId) => {
 // };
 
 export const getRevisionManuscripts = async (userId) => {
+  console.log("Fetching revision manuscripts for user:", userId);
+
   const query = `
     SELECT * FROM ora_ebook_manuscripts 
     WHERE author_id = $1 AND status = 'revision_required'
     ORDER BY updated_at DESC
   `;
+
   const result = await pool.query(query, [userId]);
+
+  console.log("Rows found:", result.rows.length);
+
   return result.rows;
 };
-
 export const getScreenedManuscripts = async (userId) => {
   const query = `
     SELECT * FROM ora_ebook_manuscripts 

@@ -106,6 +106,60 @@ export async function getReviewerAssignmentsHandler(req, res) {
   }
 }
 
+export const startReview = async ({ assignmentId, reviewerId }) => {
+  try {
+    const { rows } = await db.query(
+      `
+      UPDATE ebook_review_assignments
+      SET
+        status = 'in_review',
+        started_at = NOW(),
+        updated_at = NOW()
+      WHERE assignment_id = $1
+        AND reviewer_id = $2
+        AND status = 'accepted'
+      RETURNING *;
+      `,
+      [assignmentId, reviewerId]
+    );
+
+    if (!rows.length) {
+      console.warn("⚠️ Start review failed:", { assignmentId, reviewerId });
+      return null;
+    }
+
+    return rows[0];
+  } catch (error) {
+    console.error("❌ MODEL ERROR:", error);
+    throw error;
+  }
+};
+
+export async function startReviewHandler(req, res) {
+  try {
+    const reviewerId = req.user.id;
+    const { assignmentId } = req.params;
+
+    const result = await startReview({ assignmentId, reviewerId });
+
+    if (!result) {
+      return res.status(400).json({
+        success: false,
+        message: "Assignment must be accepted first",
+      });
+    }
+
+    return res.json({ success: true, data: result });
+  } catch (error) {
+    console.error("🔥 START REVIEW ERROR:", error); // 👈 VERY IMPORTANT
+
+    return res.status(500).json({
+      success: false,
+      message: error.message, // 👈 SHOW REAL ERROR
+    });
+  }
+}
+
 export async function getReviewerPendingAssignmentsHandler(req, res) {
   try {
     const reviewerId = req.user?.id || req.user?.uuid;
@@ -170,67 +224,38 @@ export async function getReviewerAssignmentByIdHandler(req, res) {
   }
 }
 
-export async function respondToAssignmentHandler(req, res) {
+export const respondToAssignmentHandler = async (req, res) => {
   try {
-    const reviewerId = req.user?.id || req.user?.uuid;
+    const reviewerId = req.user.id;
     const { assignmentId } = req.params;
-    const status = req.body?.status || req.body?.action;
-    const { response_note } = req.body;
 
-    if (!isUUID(assignmentId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid assignment id",
-      });
-    }
+    const { action, response_note } = req.body;
+
+    // ✅ FIX: map action → status
+    const status = action;
 
     if (!["accepted", "declined"].includes(status)) {
-      return res.status(422).json({
-        success: false,
-        message: "Status must be accepted or declined",
-      });
+      return res.status(400).json({ message: "Invalid action" });
     }
 
-    const updated = await respondToAssignment({
+    const result = await respondToAssignment({
       assignmentId,
       reviewerId,
       status,
-      response_note: response_note || null,
+      response_note,
     });
 
-    if (!updated) {
-      return res.status(404).json({
-        success: false,
-        message: "Assignment not found or already updated",
-      });
-    }
-
-    return res.json({
-      success: true,
-      message: `Assignment ${status} successfully`,
-      data: updated,
-    });
-  } catch (error) {
-    console.error("respondToAssignmentHandler error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to respond to assignment",
-      error: error.message,
-    });
+    res.json({ success: true, data: result });
+  } catch (err) {
+    console.error("respondToAssignmentHandler error:", err);
+    res.status(500).json({ message: "Server error" });
   }
-}
+};
 
-export async function submitReviewHandler(req, res) {
+export const submitReviewHandler = async (req, res) => {
   try {
-    const reviewerId = req.user?.id || req.user?.uuid;
+    const reviewerId = req.user.id;
     const { assignmentId } = req.params;
-
-    if (!isUUID(assignmentId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid assignment id",
-      });
-    }
 
     const {
       originality_score,
@@ -246,20 +271,6 @@ export async function submitReviewHandler(req, res) {
       return res.status(422).json({
         success: false,
         message: "Recommendation is required",
-      });
-    }
-
-    const allowedRecommendations = [
-      "accept",
-      "minor_revision",
-      "major_revision",
-      "reject",
-    ];
-
-    if (!allowedRecommendations.includes(recommendation)) {
-      return res.status(422).json({
-        success: false,
-        message: "Invalid recommendation value",
       });
     }
 
@@ -288,7 +299,7 @@ export async function submitReviewHandler(req, res) {
       error: error.message,
     });
   }
-}
+};
 
 export async function getAssignmentFilesHandler(req, res) {
   try {

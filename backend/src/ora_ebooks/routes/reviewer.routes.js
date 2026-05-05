@@ -6,7 +6,7 @@ import {
   getReviewerAssignmentByIdHandler,
   respondToAssignmentHandler,
   submitReviewHandler,
-  getAssignmentFilesHandler,
+  getAssignmentFilesHandler,startReviewHandler
 } from "../controllers/reviewer.controller.js";
 
 const router = express.Router();
@@ -17,6 +17,7 @@ router.use(authenticate);
  * Reviewer assignment lists
  */
 router.get("/pending", getReviewerPendingAssignmentsHandler);
+router.post("/:assignmentId/start", startReviewHandler);
 router.get("/review-assignments", getReviewerAssignmentsHandler);
 
 /**

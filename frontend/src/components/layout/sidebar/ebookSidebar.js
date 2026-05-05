@@ -36,11 +36,11 @@ export function buildEbookRoutes(ROLES) {
       subMenu: [
         { name: "Screening Queue", path: "/ora/ebook/editor/screening", icon: "fas fa-filter", roles: [E, A] },
         { name: "Screened Submissions", path: "/ora/ebook/editor/screened", icon: "fas fa-check-circle", roles: [E, A] },
-        { name: "Decision Queue", path: "/ebook/editor/decision", icon: "fas fa-check-circle", roles: [E, A] },
-        { name: "Review Monitoring", path: "/ebook/editor/reviews", icon: "fas fa-eye", roles: [E, A] },
-        { name: "Accepted & Handoff", path: "/ebook/editor/handoff", icon: "fas fa-handshake", roles: [E, A] },
-        { name: "Reviewer Manager", path: "/ebook/reviewer-manager", icon: "fas fa-users-cog", roles: [E, A] },
-        { name: "All Submissions", path: "/ebook/submissions", icon: "fas fa-list", roles: [E, A] },
+        // { name: "Decision Queue", path: "/ebook/editor/decision", icon: "fas fa-check-circle", roles: [E, A] },
+        // { name: "Review Monitoring", path: "/ebook/editor/reviews", icon: "fas fa-eye", roles: [E, A] },
+        // { name: "Accepted & Handoff", path: "/ebook/editor/handoff", icon: "fas fa-handshake", roles: [E, A] },
+        // { name: "Reviewer Manager", path: "/ebook/reviewer-manager", icon: "fas fa-users-cog", roles: [E, A] },
+        // { name: "All Submissions", path: "/ebook/submissions", icon: "fas fa-list", roles: [E, A] },
       ],
     },
     {
