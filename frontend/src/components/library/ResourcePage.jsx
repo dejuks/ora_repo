@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import MainLayout from "../layout/MainLayout.jsx";
-import libraryApi from "../../api/library.api";
-import CrudModal from "../../pages/library/shared/CrudModal.jsx";
+import libraryApi from "../../api/library.api.js";
+import CrudModal from "./shared/CrudModal.jsx";
 
 function getValue(obj, path) {
   return path.split('.').reduce((acc, key) => (acc == null ? acc : acc[key]), obj);
@@ -93,8 +93,6 @@ export default function ResourcePage({
     setNotice('');
     setIsFormOpen(true);
   };
-
-  useEffect(() => { if (!readonly && !editing && Object.keys(form).length === 0) beginCreate(); }, [readonly]);
 
   const beginEdit = (row) => {
     setEditing(row);
@@ -219,7 +217,7 @@ export default function ResourcePage({
             <CrudModal
               open={isFormOpen}
               title={editing ? `Edit ${title}` : `Create ${title}`}
-              onClose={() => setIsFormOpen(false)}
+              onClose={() => { setIsFormOpen(false); if (!editing) setForm({}); }}
               footer={(
                 <>
                   <button type="button" className="btn btn-secondary" onClick={() => setIsFormOpen(false)}>Close</button>

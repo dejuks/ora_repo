@@ -1,6 +1,6 @@
-import api from './api.js';
 
-export const getSystemSettings = () => api.get('/system/settings');
-export const updateSystemSettings = (settings) => api.put('/system/settings', { settings });
-export const getLibraryAuditLogs = (params = {}) => api.get('/library/audit-logs', { params });
-export const getLibrarySecurityAlerts = () => api.get('/library/audit-logs/security-alerts');
+import api from './api.js';
+export const getLibraryAuditLogs = (params = {}) =>
+  api.get('/library/audit-logs', { params }).then((res) => res?.data?.data ?? res?.data ?? res);
+export const getLibrarySecurityAlerts = (params = {}) =>
+  api.get('/library/audit-logs/security-alerts', { params }).then((res) => res?.data?.data ?? res?.data ?? res);
