@@ -52,7 +52,7 @@ const normalizeListResponse = (data) => {
 };
 
 const publicEbookApi = {
-  listPublications: async (params = {}) => {
+  listPublications: (params = {}) => {
     const queryParams = {
       limit: params.limit ?? 20,
       page: params.page ?? 1,
@@ -61,133 +61,139 @@ const publicEbookApi = {
       ...(params.language ? { language: params.language } : {}),
       ...(params.sort ? { sort: params.sort } : {}),
     };
-
-    const data = await unwrap(() => api.get(`${BASE}/ebooks`, { params: queryParams }));
-    return normalizeListResponse(data);
+    return unwrap(() => api.get("/ebook-public/publications", { params: queryParams }));
   },
 
   getPublication: (id) => {
     return unwrap(() => api.get(`${BASE}/ebooks/${id}`));
   },
 
-  getTrendingEbooks: async (limit = 10) => {
-    const data = await unwrap(() =>
-      api.get(`${BASE}/ebooks/trending`, { params: { limit } })
-    );
-    return normalizeListResponse(data);
+  getTrendingEbooks: (limit = 10) => {
+    return unwrap(() => api.get("/public/ebooks/trending", { params: { limit } }));
   },
 
-  getNewReleases: async (limit = 10) => {
-    const data = await unwrap(() =>
-      api.get(`${BASE}/ebooks/new-releases`, { params: { limit } })
-    );
-    return normalizeListResponse(data);
+  getNewReleases: (limit = 10) => {
+    return unwrap(() => api.get("/public/ebooks/new-releases", { params: { limit } }));
   },
 
-  getFeaturedEbooks: async (limit = 6) => {
-    const data = await unwrap(() =>
-      api.get(`${BASE}/ebooks/featured`, { params: { limit } })
-    );
-    return normalizeListResponse(data);
+  getFeaturedEbooks: (limit = 6) => {
+    return unwrap(() => api.get("/public/ebooks/featured", { params: { limit } }));
   },
 
-  getCategories: async () => {
-    const data = await unwrap(() => api.get(`${BASE}/categories`));
-    if (Array.isArray(data)) return data;
-    if (Array.isArray(data?.rows)) return data.rows;
-    if (Array.isArray(data?.data)) return data.data;
-    return [];
+  getCategories: () => {
+    return unwrap(() => api.get("/public/categories"));
   },
 
-  getPublicationsByCategory: async (categorySlug, params = {}) => {
-    const data = await unwrap(() =>
-      api.get(`${BASE}/categories/${categorySlug}/ebooks`, { params })
-    );
-    return normalizeListResponse(data);
+  getPublicationsByCategory: (categorySlug, params = {}) => {
+    return unwrap(() => api.get(`/public/categories/${categorySlug}/ebooks`, { params }));
   },
 
-  searchPublications: async (query, params = {}) => {
-    const data = await unwrap(() =>
-      api.get(`${BASE}/search`, { params: { q: query, ...params } })
-    );
-    return normalizeListResponse(data);
+  searchPublications: (query, params = {}) => {
+    return unwrap(() => api.get("/public/search", { 
+      params: { q: query, ...params } 
+    }));
   },
 
-  getPublicationsByAuthor: async (authorId, params = {}) => {
-    const data = await unwrap(() =>
-      api.get(`${BASE}/authors/${authorId}/ebooks`, { params })
-    );
-    return normalizeListResponse(data);
+  getPublicationsByAuthor: (authorId, params = {}) => {
+    return unwrap(() => api.get(`/public/authors/${authorId}/ebooks`, { params }));
   },
 
   getAuthorDetails: (authorId) => {
     return unwrap(() => api.get(`${BASE}/authors/${authorId}`));
   },
 
-  getAuthors: async (params = {}) => {
-    const data = await unwrap(() => api.get(`${BASE}/authors`, { params }));
-    return normalizeListResponse(data);
+  getAuthors: (params = {}) => {
+    return unwrap(() => api.get("/public/authors", { params }));
   },
 
-  getTopAuthors: async (limit = 10, sortBy = "downloads") => {
-    const data = await unwrap(() =>
-      api.get(`${BASE}/authors/top`, { params: { limit, sortBy } })
-    );
-    return normalizeListResponse(data);
+  getTopAuthors: (limit = 10, sortBy = "downloads") => {
+    return unwrap(() => api.get("/public/authors/top", { params: { limit, sortBy } }));
   },
 
+  /**
+   * Get the full URL for a PDF file
+   */
+  getPdfUrl: (fileUrl) => {
+    const baseUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
+    return fileUrl.startsWith("http") ? fileUrl : `${baseUrl}${fileUrl}`;
+  },
+
+  /**
+   * Download ebook using direct file URL from API response
+   */
   downloadEbook: async (publicationId, format = "pdf") => {
     try {
-      await api
-        .post(`${BASE}/ebooks/${publicationId}/track-download`, {
-          format,
-          user_agent: navigator.userAgent,
-          timestamp: new Date().toISOString(),
-        })
-        .catch(() => {});
-
-      const response = await api.get(`${BASE}/ebooks/${publicationId}/download`, {
-        params: { format },
-        responseType: "blob",
-      });
-
-      const blob = new Blob([response.data]);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-
-      const contentDisposition = response.headers["content-disposition"];
-      let filename = `ebook-${publicationId}.${format}`;
-
-      if (contentDisposition) {
-        const match = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-        if (match?.[1]) filename = match[1].replace(/['"]/g, "");
+      const response = await api.get(`/ebook-public/publications`);
+      const publications = response?.data?.rows || [];
+      const publication = publications.find(p => p.uuid === publicationId);
+      
+      if (publication && publication.file_url) {
+        const fileUrl = publicEbookApi.getPdfUrl(publication.file_url);
+        
+        const link = document.createElement("a");
+        link.href = fileUrl;
+        link.setAttribute("download", `${publication.title || 'ebook'}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        try {
+          await api.post(`/public/ebooks/${publicationId}/track-download`, {
+            format,
+            user_agent: navigator.userAgent,
+            timestamp: new Date().toISOString()
+          }).catch(() => {});
+        } catch (trackError) {
+          console.warn("Download tracking failed:", trackError);
+        }
+        
+        return true;
+      } else {
+        throw new Error("File URL not found for this publication");
       }
+    } catch (error) {
+      console.error("Download error:", error);
+      throw new Error("Failed to download ebook. File may not be available.");
+    }
+  },
 
-      link.setAttribute("download", filename);
+  /**
+   * Direct download using file_url
+   */
+  downloadByFileUrl: async (fileUrl, title = "ebook") => {
+    try {
+      const fullUrl = publicEbookApi.getPdfUrl(fileUrl);
+      const link = document.createElement("a");
+      link.href = fullUrl;
+      link.setAttribute("download", `${title}.pdf`);
       document.body.appendChild(link);
       link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-
+      document.body.removeChild(link);
       return true;
     } catch (error) {
       console.error("Download error:", error);
-      throw new Error("Failed to download ebook. Please try again.");
+      throw new Error("Failed to download file");
     }
+  },
+
+  /**
+   * Get PDF URL for viewing in iframe or embed
+   */
+  getPdfViewerUrl: (fileUrl) => {
+    const fullUrl = publicEbookApi.getPdfUrl(fileUrl);
+    // Add PDF viewer parameters if needed
+    return fullUrl;
   },
 
   streamEbook: async (publicationId, format = "pdf") => {
     try {
-      await api
-        .post(`${BASE}/ebooks/${publicationId}/track-view`, {
-          format,
-          user_agent: navigator.userAgent,
-        })
-        .catch(() => {});
-
-      const response = await api.get(`${BASE}/ebooks/${publicationId}/stream`, {
-        params: { format },
+      await api.post(`/public/ebooks/${publicationId}/track-view`, {
+        format,
+        user_agent: navigator.userAgent
+      }).catch(() => {});
+      
+      const response = await api.get(`/public/ebooks/${publicationId}/stream`, {
+        params: { format }
       });
 
       return response?.data?.stream_url || response?.data?.url || null;
@@ -197,30 +203,16 @@ const publicEbookApi = {
     }
   },
 
-  getSimilarPublications: async (publicationId, limit = 5) => {
-    const data = await unwrap(() =>
-      api.get(`${BASE}/ebooks/${publicationId}/similar`, { params: { limit } })
-    );
-    return normalizeListResponse(data);
+  getSimilarPublications: (publicationId, limit = 5) => {
+    return unwrap(() => api.get(`/public/ebooks/${publicationId}/similar`, { params: { limit } }));
   },
 
-  getPublicStats: async () => {
-    const data = await unwrap(() => api.get(`${BASE}/stats`));
-    return (
-      data || {
-        totalEbooks: 0,
-        totalDownloads: 0,
-        totalAuthors: 0,
-        languages: 0,
-      }
-    );
+  getPublicStats: () => {
+    return unwrap(() => api.get("/public/stats"));
   },
 
-  getRecentActivity: async (limit = 20) => {
-    const data = await unwrap(() =>
-      api.get(`${BASE}/activity`, { params: { limit } })
-    );
-    return normalizeListResponse(data);
+  getRecentActivity: (limit = 20) => {
+    return unwrap(() => api.get("/public/activity", { params: { limit } }));
   },
 
   getLanguageStats: () => {
@@ -237,18 +229,12 @@ const publicEbookApi = {
     );
   },
 
-  getPopularTags: async (limit = 20) => {
-    const data = await unwrap(() =>
-      api.get(`${BASE}/tags/popular`, { params: { limit } })
-    );
-    return normalizeListResponse(data);
+  getPopularTags: (limit = 20) => {
+    return unwrap(() => api.get("/public/tags/popular", { params: { limit } }));
   },
 
-  searchByTag: async (tag, params = {}) => {
-    const data = await unwrap(() =>
-      api.get(`${BASE}/tags/${encodeURIComponent(tag)}/ebooks`, { params })
-    );
-    return normalizeListResponse(data);
+  searchByTag: (tag, params = {}) => {
+    return unwrap(() => api.get(`/public/tags/${encodeURIComponent(tag)}/ebooks`, { params }));
   },
 
   getReadingStats: () => {

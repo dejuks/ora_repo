@@ -230,6 +230,13 @@ import RepositoryReadySubmissionsPage from "./pages/repository/RepositoryReadySu
 import RepositoryApprovedSubmissionsPage from "./pages/repository/RepositoryApprovedSubmissionsPage.jsx";
 import RepositoryRejectedSubmissionsPage from "./pages/repository/RepositoryRejectedSubmissionsPage.jsx";
 import RepositoryItemDetail from "./landing/pages/RepositoryItemDetail.jsx";
+import OraEbookEditorWorkflowPage from "./landing/pages/ora_ebook/be/OraEbookEditorWorkflowPage.jsx";
+import SubmitReviewPage from "./landing/pages/ora_ebook/br/SubmitReviewPage.jsx";
+import AuthorDashboardPage from "./pages/ebook/author/dashboard/AuthorDashboardPage.jsx";
+import DraftShow from "./landing/pages/ora_ebook/manuscript/DraftShow.jsx";
+import ScreeningQueueShow from "./landing/pages/ora_ebook/be/ScreeningQueueShow.jsx";
+import SubmitRevisionPage from "./landing/pages/ora_ebook/manuscript/SubmitRevisionPage.jsx";
+import EbookReviewPage from "./landing/pages/ora_ebook/br/EbookReviewPage.jsx";
 
 function App() {
   return (
@@ -659,38 +666,14 @@ function App() {
           }
         />
         {/* EIC Protected Routes */}
-        <Route
-          path="/journal/eic/submissions"
-          element={
-            <ProtectedRoute>
-              <EICCompletedReviews />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/eic/decision/:id"
-          element={
-            <ProtectedRoute>
-              <EICMakeDecision />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/eic/manuscripts/:id"
-          element={
-            <ProtectedRoute>
-              <EICManuscriptDetails />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/eic/payment-orders"
-          element={
-            <ProtectedRoute>
-              <EICPaymentOrders />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/journal/eic/submissions" element={<ProtectedRoute><EICCompletedReviews /></ProtectedRoute>} />
+        <Route path="/eic/decision/:id" element={<ProtectedRoute><EICMakeDecision /></ProtectedRoute>} />
+        <Route path="/eic/manuscripts/:id" element={<ProtectedRoute><EICManuscriptDetails /></ProtectedRoute>} />
+        <Route path="/eic/payment-orders" element={<ProtectedRoute><EICPaymentOrders /></ProtectedRoute>} />
+
+
+        
+
         {/* AE Protected Routes */}
         <Route
           path="/manuscript/ae/assigned-manuscripts"
@@ -1587,362 +1570,76 @@ function App() {
           }
         />
         {/* Ebook Protected Routes */}
-        <Route
-          path="/ebook/dashboard"
-          element={
-            <ProtectedRoute>
-              <EbookDashboardPage />
-            </ProtectedRoute>
-          }
+        {/* //authors dashboard */}
+        <Route path="/ebook/author/dashboard" element={<ProtectedRoute><AuthorDashboardPage /></ProtectedRoute>} />
+        <Route path="/ebook/dashboard" element={<ProtectedRoute><EbookDashboardPage /></ProtectedRoute>} />
+        <Route path="/ebook/workflow-overview" element={<ProtectedRoute><EbookWorkflowOverviewPage /></ProtectedRoute>} />
+        <Route path="/ebook/submissions" element={<ProtectedRoute><EbookSubmissionsPage /></ProtectedRoute>} />
+        <Route path="/ebook/submissions/create" element={<ProtectedRoute><EbookSubmissionCreatePage /></ProtectedRoute>} />
+        <Route path="/ebook/submissions/:id/edit" element={<ProtectedRoute><EbookSubmissionEditPage /></ProtectedRoute>} />
+        <Route path="/ebook/submissions/:id" element={<ProtectedRoute><EbookSubmissionDetailPage /></ProtectedRoute>} />
+        <Route path="/ebook/my-submissions" element={<ProtectedRoute><EbookAuthorMySubmissionsPage /></ProtectedRoute>} />
+        <Route path="/ebook/drafts" element={<ProtectedRoute><EbookAuthorMySubmissionsPage stage="drafts" /></ProtectedRoute>} />
+        <Route path="/ebook/my-revisions" element={<ProtectedRoute><EbookAuthorRevisionQueuePage /></ProtectedRoute>} />
+        <Route path="/ebook/my-payments" element={<ProtectedRoute><EbookAuthorPaymentsQueuePage /></ProtectedRoute>} />
+        <Route path="/ebook/my-proofs" element={<ProtectedRoute><EbookAuthorProofQueuePage /></ProtectedRoute>} />
+        <Route path="/ebook/my-rejected" element={<ProtectedRoute><EbookAuthorRejectedQueuePage /></ProtectedRoute>} />
+        <Route path="/ebook/submissions/:id/payment" element={<ProtectedRoute><EbookAuthorPaymentPage /></ProtectedRoute>} />
+        <Route path="/ebook/submissions/:id/proof-approval" element={<ProtectedRoute><EbookAuthorProofApprovalPage /></ProtectedRoute>} />
+        <Route path="/ebook/submissions/:id/review-comments" element={<ProtectedRoute><EbookAuthorReviewCommentsPage /></ProtectedRoute>} />
+        <Route path="/ebook/reviewer" element={<ProtectedRoute><EbookReviewerPage filter="all" /></ProtectedRoute>} />
+        <Route path="/ebook/reviewer/pending" element={<ProtectedRoute><EbookReviewerPage filter="pending" /></ProtectedRoute>} />
+        <Route path="/ebook/reviewer/accepted" element={<ProtectedRoute><EbookReviewerPage filter="accepted" /></ProtectedRoute>} />
+        <Route path="/ebook/reviewer/rejected" element={<ProtectedRoute><EbookReviewerPage filter="rejected" /></ProtectedRoute>} />
+        <Route path="/ebook/reviewer/completed" element={<ProtectedRoute><EbookReviewerPage filter="completed" /></ProtectedRoute>} />
+        <Route path="/ebook/reviewer/overdue" element={<ProtectedRoute><EbookReviewerPage filter="overdue" /></ProtectedRoute>} />
+        <Route path="/ebook/review-assignments/:id" element={<ProtectedRoute><EbookReviewDetailPage /></ProtectedRoute>} />
+        <Route path="/ebook/reviewer-manager" element={<ProtectedRoute><EbookReviewerManagerPage /></ProtectedRoute>} />
+
+       <Route path="/ora/ebook/editor/screening" element={ <ProtectedRoute><OraEbookEditorScreeningPage /> </ProtectedRoute>}/>
+       <Route path="/ora/ebook/editor/screening/show/:id" element={ <ProtectedRoute><ScreeningQueueShow /> </ProtectedRoute>}/>
+       <Route path="/ora/ebook/editor/screened" element={<OraEbookEditorScreenedPage />} />
+
+       <Route
+          path="ebook/editor/workflow/:submissionId"
+          element={<OraEbookEditorWorkflowPage />}
         />
-        <Route
-          path="/ebook/workflow-overview"
-          element={
-            <ProtectedRoute>
-              <EbookWorkflowOverviewPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/submissions"
-          element={
-            <ProtectedRoute>
-              <EbookSubmissionsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/submissions/create"
-          element={
-            <ProtectedRoute>
-              <EbookSubmissionCreatePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/submissions/:id/edit"
-          element={
-            <ProtectedRoute>
-              <EbookSubmissionEditPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/submissions/:id"
-          element={
-            <ProtectedRoute>
-              <EbookSubmissionDetailPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/my-submissions"
-          element={
-            <ProtectedRoute>
-              <EbookAuthorMySubmissionsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/drafts"
-          element={
-            <ProtectedRoute>
-              <EbookAuthorMySubmissionsPage stage="drafts" />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/my-revisions"
-          element={
-            <ProtectedRoute>
-              <EbookAuthorRevisionQueuePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/my-payments"
-          element={
-            <ProtectedRoute>
-              <EbookAuthorPaymentsQueuePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/my-proofs"
-          element={
-            <ProtectedRoute>
-              <EbookAuthorProofQueuePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/my-rejected"
-          element={
-            <ProtectedRoute>
-              <EbookAuthorRejectedQueuePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/submissions/:id/payment"
-          element={
-            <ProtectedRoute>
-              <EbookAuthorPaymentPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/submissions/:id/proof-approval"
-          element={
-            <ProtectedRoute>
-              <EbookAuthorProofApprovalPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/submissions/:id/review-comments"
-          element={
-            <ProtectedRoute>
-              <EbookAuthorReviewCommentsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/reviewer"
-          element={
-            <ProtectedRoute>
-              <EbookReviewerPage filter="all" />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/reviewer/pending"
-          element={
-            <ProtectedRoute>
-              <EbookReviewerPage filter="pending" />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/reviewer/accepted"
-          element={
-            <ProtectedRoute>
-              <EbookReviewerPage filter="accepted" />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/reviewer/rejected"
-          element={
-            <ProtectedRoute>
-              <EbookReviewerPage filter="rejected" />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/reviewer/completed"
-          element={
-            <ProtectedRoute>
-              <EbookReviewerPage filter="completed" />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/reviewer/overdue"
-          element={
-            <ProtectedRoute>
-              <EbookReviewerPage filter="overdue" />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/review-assignments/:id"
-          element={
-            <ProtectedRoute>
-              <EbookReviewDetailPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/reviewer-manager"
-          element={
-            <ProtectedRoute>
-              <EbookReviewerManagerPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ora/ebook/editor/screening"
-          element={
-            <ProtectedRoute>
-              <OraEbookEditorScreeningPage />{" "}
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ora/ebook/editor/screened"
-          element={<OraEbookEditorScreenedPage />}
-        />
-        <Route
-          path="/ebook/editor/assign-reviewers/:submissionId"
-          element={<EbookEditorAssignReviewersPage />}
-        />
-        <Route
-          path="/oraebook/reviewer/pending"
-          element={<EbookReviewerPendingPage />}
-        />
-        <Route
-          path="/ebook/editor/screening"
-          element={
-            <ProtectedRoute>
-              <EbookEditorScreeningPage />{" "}
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/editor/screened"
-          element={
-            <ProtectedRoute>
-              <EbookEditorScreenedPage />{" "}
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/editor/reviews"
-          element={
-            <ProtectedRoute>
-              <EbookEditorReviewsPage />{" "}
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/editor/decision"
-          element={
-            <ProtectedRoute>
-              <EbookEditorDecisionPage />{" "}
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/editor/handoff"
-          element={
-            <ProtectedRoute>
-              <EbookEditorHandoffPage />{" "}
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/editor-queue"
-          element={
-            <ProtectedRoute>
-              <EbookEditorQueuePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/finance"
-          element={
-            <ProtectedRoute>
-              <EbookFinancePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/finance/pending-payments"
-          element={
-            <ProtectedRoute>
-              <EbookFinancePendingPaymentsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/finance/calculate-bpc"
-          element={
-            <ProtectedRoute>
-              <EbookFinanceCalculateBpcPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/finance/publishing-fees"
-          element={
-            <ProtectedRoute>
-              <EbookFinancePublishingFeesPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/finance/invoices"
-          element={
-            <ProtectedRoute>
-              <EbookFinanceInvoicesPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/finance/verify-payment"
-          element={
-            <ProtectedRoute>
-              <EbookFinanceVerifyPaymentPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/finance/payment-history"
-          element={
-            <ProtectedRoute>
-              <EbookFinancePaymentHistoryPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/finance/waivers"
-          element={
-            <ProtectedRoute>
-              <EbookFinanceWaiversPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/finance/reports"
-          element={
-            <ProtectedRoute>
-              <EbookFinanceReportsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/finance/ready-for-production"
-          element={
-            <ProtectedRoute>
-              <EbookFinanceReadyForProductionPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/production"
-          element={
-            <ProtectedRoute>
-              <EbookProductionPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/management/publications"
-          element={
-            <ProtectedRoute>
-              <EbookPublicationsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ebook/admin"
-          element={
-            <ProtectedRoute>
-              <EbookAdminPage />
-            </ProtectedRoute>
-          }
-        />
+       <Route
+  path="/ebook/editor/assign-reviewers/:submissionId"
+  element={<EbookEditorAssignReviewersPage />}
+/>
+
+<Route
+  path="/oraebook/reviewer/pending"
+  element={<EbookReviewerPendingPage />}
+/>
+<Route path="/reviewer/review/:assignmentId" element={<EbookReviewPage />} />
+<Route
+  path="/ebook/reviewer/submit-review/:assignmentId"
+  element={<SubmitReviewPage />}
+/>       
+       <Route path="/ebook/editor/screening" element={ <ProtectedRoute><EbookEditorScreeningPage /> </ProtectedRoute>}/>
+       <Route path="/ebook/editor/screened" element={ <ProtectedRoute><EbookEditorScreenedPage /> </ProtectedRoute>}/>
+       <Route path="/ebook/editor/reviews" element={ <ProtectedRoute><EbookEditorReviewsPage /> </ProtectedRoute>}/>
+       <Route path="/ebook/editor/decision" element={ <ProtectedRoute><EbookEditorDecisionPage /> </ProtectedRoute>}/>
+       <Route path="/ebook/editor/handoff" element={ <ProtectedRoute><EbookEditorHandoffPage /> </ProtectedRoute>}/>
+
+
+        <Route path="/ebook/editor-queue" element={<ProtectedRoute><EbookEditorQueuePage /></ProtectedRoute>} />
+        <Route path="/ebook/finance" element={<ProtectedRoute><EbookFinancePage /></ProtectedRoute>} />
+        <Route path="/ebook/finance/pending-payments" element={<ProtectedRoute><EbookFinancePendingPaymentsPage /></ProtectedRoute>} />
+        <Route path="/ebook/finance/calculate-bpc" element={<ProtectedRoute><EbookFinanceCalculateBpcPage /></ProtectedRoute>} />
+        <Route path="/ebook/finance/publishing-fees" element={<ProtectedRoute><EbookFinancePublishingFeesPage /></ProtectedRoute>} />
+        <Route path="/ebook/finance/invoices" element={<ProtectedRoute><EbookFinanceInvoicesPage /></ProtectedRoute>} />
+        <Route path="/ebook/finance/verify-payment" element={<ProtectedRoute><EbookFinanceVerifyPaymentPage /></ProtectedRoute>} />
+        <Route path="/ebook/finance/payment-history" element={<ProtectedRoute><EbookFinancePaymentHistoryPage /></ProtectedRoute>} />
+        <Route path="/ebook/finance/waivers" element={<ProtectedRoute><EbookFinanceWaiversPage /></ProtectedRoute>} />
+        <Route path="/ebook/finance/reports" element={<ProtectedRoute><EbookFinanceReportsPage /></ProtectedRoute>} />
+        <Route path="/ebook/finance/ready-for-production" element={<ProtectedRoute><EbookFinanceReadyForProductionPage /></ProtectedRoute>} />
+        <Route path="/ebook/production" element={<ProtectedRoute><EbookProductionPage /></ProtectedRoute>} />
+        <Route path="/ebook/management/publications" element={<ProtectedRoute><EbookPublicationsPage /></ProtectedRoute>} />
+        <Route path="/ebook/admin" element={<ProtectedRoute><EbookAdminPage /></ProtectedRoute>} />
+
         {/* Finance Dashboard */}
         <Route
           path="/finance-dashboard"
@@ -1994,51 +1691,30 @@ function App() {
           element={<ManuscriptEditPage />}
         />
         {/* show */}
-        <Route
-          path="/ebook/manuscripts/show/:id"
-          element={<ManuscriptShowPage />}
-        />
-        {/* Drafts */}
-        <Route
-          path="/ebook/manuscripts/drafts"
-          element={<DraftManuscriptPage />}
-        />
+          <Route path="/ebook/manuscripts/show/:id" element={<ManuscriptShowPage />} />
+{/* Drafts */}
+        <Route path="/ebook/manuscripts/drafts" element={<DraftManuscriptPage />} />
+        <Route path="/ebook/manuscripts/draftshow/:id" element={<DraftShow />} />
         /* Revision Required Manuscripts */
+        <Route path="/ebook/manuscripts/revisions" element={<RevisionRequiredManuscriptPage />} />
         <Route
-          path="/ebook/manuscripts/revisions"
-          element={<RevisionRequiredManuscriptPage />}
-        />
-        <Route
-          path="/wiki/global-governance/dashboard"
-          element={<GlobalGovernanceDashboardPage />}
-        />
-        <Route
-          path="/wiki/global-governance/role-management"
-          element={<RoleManagementPage />}
-        />
-        <Route
-          path="/wiki/global-governance/global-actions"
-          element={<GlobalActionsPage />}
-        />
-        <Route
-          path="/wiki/global-governance/community-policies"
-          element={<CommunityPoliciesPage />}
-        />
-        <Route
-          path="/wiki/global-governance/review-queue"
-          element={<ReviewQueuePage />}
-        />
-        <Route
-          path="/wiki/global-governance/activity-logs"
-          element={<GovernanceLogsPage />}
-        />
-        <Route path="/wiki/profile" element={<WikiProfilePage />} />
-        {/* wiki/reports/content */}
-        <Route path="wiki/moderation" element={<ReportedContentPage />} />
-        <Route
-          path="/wiki/reports/content"
-          element={<WikiModerationDashboardPage />}
-        />
+  path="/ebook/manuscripts/:id/submit-revision"
+  element={<SubmitRevisionPage />}
+/>
+
+
+        <Route path="/wiki/global-governance/dashboard" element={<GlobalGovernanceDashboardPage />} />
+<Route path="/wiki/global-governance/role-management" element={<RoleManagementPage />} />
+<Route path="/wiki/global-governance/global-actions" element={<GlobalActionsPage />} />
+<Route path="/wiki/global-governance/community-policies" element={<CommunityPoliciesPage />} />
+<Route path="/wiki/global-governance/review-queue" element={<ReviewQueuePage />} />
+<Route path="/wiki/global-governance/activity-logs" element={<GovernanceLogsPage />} />
+<Route path="/wiki/profile" element={<WikiProfilePage />} />
+{/* wiki/reports/content */}
+<Route path="wiki/moderation" element={<ReportedContentPage />} />
+<Route path="/wiki/reports/content" element={<WikiModerationDashboardPage />} />
+
+
         {/* 404 Not Found - This should be the LAST route */}
         <Route path="*" element={<h1>404 Not Found</h1>} />
       </Routes>

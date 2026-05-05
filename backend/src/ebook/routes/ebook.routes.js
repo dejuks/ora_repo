@@ -290,9 +290,9 @@ router.get('/review-template',  asyncHandler(async (req, res) => {
   res.json(TEMPLATE);
 }));
 
-router.get('/review-assignments',  ebookReviewAssignmentController.index);
-router.get('/review-assignments/:id',  ebookReviewAssignmentController.show);
-router.get('/review-assignments/:id/detail',  asyncHandler(async (req, res) => {
+router.get('/reviewer/assignments',  ebookReviewAssignmentController.index);
+router.get('/reviewer/assignments/:id',  ebookReviewAssignmentController.show);
+router.get('/reviewer/assignments/:id/detail',  asyncHandler(async (req, res) => {
   const { rows } = await pool.query(`
     SELECT era.*, es.title, es.subtitle, es.abstract, es.status AS submission_status, es.keywords, es.category, es.language,
            u.full_name AS reviewer_name, a.full_name AS author_name,

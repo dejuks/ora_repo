@@ -14,10 +14,16 @@ import { authenticate } from "../../middleware/auth.middleware.js";
 
 const router = Router();
 router.post(
-  "/editor/assign-me-reviewers/:submissionId",
+  "/assign-me-reviewers/:submissionId",
   authenticate,
   assignReviewersHandler
 );
+
+router.post(
+  "/manuscripts/:uuid/screen",
+  assignReviewersHandler
+);
+
 router.get("/editor/test", (req, res) => {
   return res.status(200).json({
     success: true,
@@ -27,27 +33,27 @@ router.get("/editor/test", (req, res) => {
 
 
 router.get(
-  "/editor/assigned-reviewers/:submissionId",
+  "/assigned-reviewers/:submissionId",
   authenticate,
   getAssignReviewersPageData
 );
 
 
 router.patch(
-  "/editor/assign-reviewers/:submissionId/assignment/:assignmentId",
+  "/assign-reviewers/:submissionId/assignment/:assignmentId",
   authenticate,
   validateUpdateAssignment,
   updateAssignmentHandler
 );
 
 router.delete(
-  "/editor/assign-reviewers/:submissionId/assignment/:assignmentId",
+  "/assign-reviewers/:submissionId/assignment/:assignmentId",
   authenticate,
   removeAssignmentHandler
 );
 
 router.post(
-  "/editor/assign-reviewers/:submissionId/assignment/:assignmentId/resend",
+  "/assign-reviewers/:submissionId/assignment/:assignmentId/resend",
   authenticate,
   resendInvitationHandler
 );

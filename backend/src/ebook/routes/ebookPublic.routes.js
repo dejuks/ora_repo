@@ -4,6 +4,7 @@ import { ebookWorkflowService } from "../services/ebookWorkflow.service.js";
 const router = express.Router();
 const asyncHandler = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
+router.get('')
 router.get('/publications', asyncHandler(async (req, res) => {
   res.json(await ebookWorkflowService.publicCatalog(req.query || {}));
 }));

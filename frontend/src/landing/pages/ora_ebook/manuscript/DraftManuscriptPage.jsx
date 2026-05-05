@@ -22,8 +22,10 @@ const ManuscriptPage = () => {
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [user, setUser] = useState(null);
 
-  const BASE = `${API}/ebook/manuscripts/drafts`;
+  // Use the correct endpoint for user's own manuscripts
+  const BASE = `${API}/ebook/manuscripts/my-manuscripts`;
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -34,16 +36,24 @@ const ManuscriptPage = () => {
       return;
     }
 
+    try {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+    } catch (e) {
+      console.error("Error parsing user:", e);
+    }
+
     loadData(token);
   }, []);
 
   const loadData = async (token) => {
     try {
       setLoading(true);
+      // Get only user's own manuscripts
       const res = await axios.get(BASE, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setList(Array.isArray(res.data) ? res.data : []);
+      setList(Array.isArray(res.data) ? res.data : res.data?.rows || []);
     } catch (err) {
       console.error(err);
       alert(err?.response?.data?.error || "Failed to load manuscripts");
@@ -94,11 +104,16 @@ const ManuscriptPage = () => {
       formData.append("file", file);
     }
 
+    // Add author_id to associate with current user
+    if (user?.uuid) {
+      formData.append("author_id", user.uuid);
+    }
+
     try {
       setSubmitting(true);
 
       if (editId) {
-        await axios.put(`${BASE}/${editId}`, formData, {
+        await axios.put(`${API}/ebook/manuscripts/${editId}`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${token}`,
@@ -106,7 +121,7 @@ const ManuscriptPage = () => {
         });
         alert("Updated successfully");
       } else {
-        await axios.post(BASE, formData, {
+        await axios.post(`${API}/ebook/manuscripts`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${token}`,
@@ -125,7 +140,13 @@ const ManuscriptPage = () => {
     }
   };
 
-  const handleEdit = (m) => {
+  const handleEdit = async (m) => {
+    // Verify ownership before editing
+    if (m.author_id !== user?.uuid) {
+      alert("You can only edit your own manuscripts");
+      return;
+    }
+
     setForm({
       title: m.title || "",
       abstract: m.abstract || "",
@@ -140,15 +161,24 @@ const ManuscriptPage = () => {
   };
 
   const handleDelete = async (id) => {
+    const manuscriptToDelete = list.find(m => m.id === id);
+    
+    // Verify ownership before deleting
+    if (manuscriptToDelete?.author_id !== user?.uuid) {
+      alert("You can only delete your own manuscripts");
+      return;
+    }
+
     if (!window.confirm("Delete this manuscript?")) return;
 
     const token = localStorage.getItem("token");
 
     try {
-      await axios.delete(`${BASE}/${id}`, {
+      await axios.delete(`${API}/ebook/manuscripts/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       loadData(token);
+      alert("Deleted successfully");
     } catch (err) {
       console.error(err);
       alert(err?.response?.data?.error || "Delete failed");
@@ -156,15 +186,17 @@ const ManuscriptPage = () => {
   };
 
   const filteredList = useMemo(() => {
-    const q = search.toLowerCase().trim();
+  const q = search.toLowerCase().trim();
 
-    return list.filter((m) => {
+  return list
+    .filter((m) => m.status === "draft") // ✅ ONLY DRAFT
+    .filter((m) => {
       const title = (m.title || "").toLowerCase();
       const isbn = (m.isbn || "").toLowerCase();
       const year = String(m.publication_year || "");
       return title.includes(q) || isbn.includes(q) || year.includes(q);
     });
-  }, [list, search]);
+}, [list, search]);
 
   const stats = useMemo(() => {
     return {
@@ -243,10 +275,9 @@ const ManuscriptPage = () => {
                     <span className="font-weight-bold">ORA eBook Publishing</span>
                   </div>
 
-                  <h2 className="mb-2 font-weight-bold">Draft Manuscripts</h2>
+                  <h2 className="mb-2 font-weight-bold">My Manuscripts</h2>
                   <p className="mb-0" style={{ color: "rgba(255,255,255,0.88)" }}>
-                    Manage your unpublished drafts, update manuscript metadata,
-                    and prepare files before submission.
+                    Manage your own manuscripts, update metadata, and prepare files before submission.
                   </p>
                 </div>
 
@@ -256,36 +287,16 @@ const ManuscriptPage = () => {
                     onClick={openCreatePanel}
                   >
                     <i className="fas fa-plus mr-2"></i>
-                    Create Draft
+                    Create Manuscript
                   </button>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Stats */}
+          {/* Stats - Only showing user's own stats */}
           <div className="row mb-4">
-            <div className="col-md-3 col-sm-6 mb-3">
-              <div className="card border-0 shadow-sm rounded-4 h-100">
-                <div className="card-body d-flex align-items-center">
-                  <div
-                    className="rounded-circle d-flex align-items-center justify-content-center mr-3"
-                    style={{
-                      width: 58,
-                      height: 58,
-                      background: "rgba(13,110,253,0.12)",
-                      color: "#0d6efd",
-                    }}
-                  >
-                    <i className="fas fa-book fa-lg"></i>
-                  </div>
-                  <div>
-                    <div className="text-muted small">Total Drafts</div>
-                    <div className="h4 mb-0 font-weight-bold">{stats.total}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            
 
             <div className="col-md-3 col-sm-6 mb-3">
               <div className="card border-0 shadow-sm rounded-4 h-100">
@@ -308,29 +319,6 @@ const ManuscriptPage = () => {
                 </div>
               </div>
             </div>
-
-            <div className="col-md-3 col-sm-6 mb-3">
-              <div className="card border-0 shadow-sm rounded-4 h-100">
-                <div className="card-body d-flex align-items-center">
-                  <div
-                    className="rounded-circle d-flex align-items-center justify-content-center mr-3"
-                    style={{
-                      width: 58,
-                      height: 58,
-                      background: "rgba(13,110,253,0.12)",
-                      color: "#0d6efd",
-                    }}
-                  >
-                    <i className="fas fa-paper-plane fa-lg"></i>
-                  </div>
-                  <div>
-                    <div className="text-muted small">Submitted</div>
-                    <div className="h4 mb-0 font-weight-bold">{stats.submitted}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <div className="col-md-3 col-sm-6 mb-3">
               <div className="card border-0 shadow-sm rounded-4 h-100">
                 <div className="card-body d-flex align-items-center">
@@ -360,10 +348,8 @@ const ManuscriptPage = () => {
               <div className="row align-items-center">
                 <div className="col-md-6 mb-3 mb-md-0">
                   <div>
-                    <h4 className="mb-1 font-weight-bold">All Draft Manuscripts</h4>
-                    <div className="text-muted small">
-                      Search and manage your working manuscript drafts.
-                    </div>
+                    <h4 className="mb-1 font-weight-bold">My Manuscripts</h4>
+                   
                   </div>
                 </div>
 
@@ -401,7 +387,7 @@ const ManuscriptPage = () => {
               {loading ? (
                 <div className="text-center py-5">
                   <div className="spinner-border text-primary mb-3" role="status"></div>
-                  <div className="text-muted">Loading draft manuscripts...</div>
+                  <div className="text-muted">Loading your manuscripts...</div>
                 </div>
               ) : filteredList.length === 0 ? (
                 <div className="text-center py-5">
@@ -416,16 +402,16 @@ const ManuscriptPage = () => {
                   >
                     <i className="fas fa-folder-open fa-2x"></i>
                   </div>
-                  <h4 className="font-weight-bold">No draft manuscripts found</h4>
+                  <h4 className="font-weight-bold">No manuscripts found</h4>
                   <p className="text-muted mb-4">
-                    Create a new draft manuscript to begin managing your content.
+                    You haven't created any manuscripts yet. Create your first manuscript to get started.
                   </p>
                   <button
                     className="btn btn-primary rounded-pill px-4"
                     onClick={openCreatePanel}
                   >
                     <i className="fas fa-plus mr-2"></i>
-                    Create Draft
+                    Create Manuscript
                   </button>
                 </div>
               ) : (
@@ -434,7 +420,7 @@ const ManuscriptPage = () => {
                     <thead style={{ background: "#f8fafc" }}>
                       <tr>
                         <th className="border-0 px-4 py-3">Title</th>
-                        <th className="border-0 py-3">ISBN</th>
+                        {/* <th className="border-0 py-3">ISBN</th> */}
                         <th className="border-0 py-3">Language</th>
                         <th className="border-0 py-3">Year</th>
                         <th className="border-0 py-3">Status</th>
@@ -444,6 +430,8 @@ const ManuscriptPage = () => {
                     <tbody>
                       {filteredList.map((m) => {
                         const badge = getStatusBadgeClass(m.status);
+                        // Only show edit/delete if user owns this manuscript
+                        const isOwner = m.author_id === user?.uuid;
 
                         return (
                           <tr key={m.id}>
@@ -474,7 +462,7 @@ const ManuscriptPage = () => {
                               </div>
                             </td>
 
-                            <td className="py-3">{m.isbn || "-"}</td>
+                            {/* <td className="py-3">{m.isbn || "-"}</td> */}
                             <td className="py-3">{m.language || "-"}</td>
                             <td className="py-3">{m.publication_year || "-"}</td>
 
@@ -495,28 +483,32 @@ const ManuscriptPage = () => {
                             <td className="py-3 text-center">
                               <div className="btn-group">
                                 <a
-                                  href={`/ebook/manuscripts/show/${m.id}`}
+                                  href={`/ebook/manuscripts/draftshow/${m.id}`}
                                   className="btn btn-outline-primary btn-sm"
-                                  title="Show"
+                                  title="View"
                                 >
                                   <i className="fas fa-eye"></i>
                                 </a>
 
-                                <button
-                                  className="btn btn-outline-info btn-sm"
-                                  onClick={() => handleEdit(m)}
-                                  title="Edit"
-                                >
-                                  <i className="fas fa-edit"></i>
-                                </button>
+                                {isOwner && (
+                                  <>
+                                    <button
+                                      className="btn btn-outline-info btn-sm"
+                                      onClick={() => handleEdit(m)}
+                                      title="Edit"
+                                    >
+                                      <i className="fas fa-edit"></i>
+                                    </button>
 
-                                <button
-                                  className="btn btn-outline-danger btn-sm"
-                                  onClick={() => handleDelete(m.id)}
-                                  title="Delete"
-                                >
-                                  <i className="fas fa-trash"></i>
-                                </button>
+                                    <button
+                                      className="btn btn-outline-danger btn-sm"
+                                      onClick={() => handleDelete(m.id)}
+                                      title="Delete"
+                                    >
+                                      <i className="fas fa-trash"></i>
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -531,8 +523,8 @@ const ManuscriptPage = () => {
             {!loading && filteredList.length > 0 && (
               <div className="card-footer bg-white border-0 px-4 py-3 d-flex justify-content-between align-items-center">
                 <div className="text-muted small">
-                  Showing <strong>{filteredList.length}</strong> draft
-                  manuscript{filteredList.length !== 1 ? "s" : ""}
+                  Showing <strong>{filteredList.length}</strong> manuscript
+                  {filteredList.length !== 1 ? "s" : ""}
                 </div>
 
                 <button
@@ -540,14 +532,14 @@ const ManuscriptPage = () => {
                   onClick={openCreatePanel}
                 >
                   <i className="fas fa-plus mr-2"></i>
-                  New Draft
+                  New Manuscript
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Overlay */}
+        {/* Panel Modal - Same as before */}
         {showPanel && (
           <div
             onClick={closePanel}
@@ -592,12 +584,12 @@ const ManuscriptPage = () => {
                 >
                   <i className="fas fa-pen mr-2"></i>
                   <span className="font-weight-bold">
-                    {editId ? "Edit Mode" : "New Draft"}
+                    {editId ? "Edit Mode" : "New Manuscript"}
                   </span>
                 </div>
 
                 <h4 className="mb-1 font-weight-bold">
-                  {editId ? "Edit Draft Manuscript" : "Create Draft Manuscript"}
+                  {editId ? "Edit Manuscript" : "Create Manuscript"}
                 </h4>
                 <div style={{ color: "rgba(255,255,255,0.86)" }}>
                   Fill in the manuscript details and upload your document.
@@ -622,7 +614,7 @@ const ManuscriptPage = () => {
             </div>
           </div>
 
-          {/* Panel Body */}
+          {/* Panel Body - Same form as before */}
           <div
             className="flex-grow-1"
             style={{
@@ -637,7 +629,7 @@ const ManuscriptPage = () => {
 
                   <div className="form-group mb-3">
                     <label className="font-weight-bold text-muted small">
-                      MANUSCRIPT TITLE
+                      MANUSCRIPT TITLE *
                     </label>
                     <input
                       name="title"
@@ -675,7 +667,7 @@ const ManuscriptPage = () => {
                     <div className="col-md-6">
                       <div className="form-group mb-3">
                         <label className="font-weight-bold text-muted small">
-                          ISBN
+                          ISBN *
                         </label>
                         <input
                           name="isbn"
@@ -692,7 +684,7 @@ const ManuscriptPage = () => {
                     <div className="col-md-6">
                       <div className="form-group mb-3">
                         <label className="font-weight-bold text-muted small">
-                          PUBLICATION YEAR
+                          PUBLICATION YEAR *
                         </label>
                         <input
                           name="publication_year"
@@ -782,11 +774,11 @@ const ManuscriptPage = () => {
                         type="file"
                         onChange={(e) => setFile(e.target.files[0])}
                         className="custom-file-input"
-                        id="draftManuscriptFile"
+                        id="manuscriptFile"
                       />
                       <label
                         className="custom-file-label rounded-pill shadow-sm border-0"
-                        htmlFor="draftManuscriptFile"
+                        htmlFor="manuscriptFile"
                         style={{
                           overflow: "hidden",
                           textOverflow: "ellipsis",
@@ -799,7 +791,7 @@ const ManuscriptPage = () => {
 
                     {!editId && (
                       <small className="text-muted d-block mt-3">
-                        File upload is required when creating a new draft manuscript.
+                        File upload is required when creating a new manuscript.
                       </small>
                     )}
 
@@ -841,7 +833,7 @@ const ManuscriptPage = () => {
                   ) : (
                     <>
                       <i className={`fas ${editId ? "fa-save" : "fa-plus"} mr-2`}></i>
-                      {editId ? "Update Draft" : "Create Draft"}
+                      {editId ? "Update Manuscript" : "Create Manuscript"}
                     </>
                   )}
                 </button>

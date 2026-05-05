@@ -14,14 +14,13 @@ function OraEbookEditorScreeningPage() {
 
   const [screeningForm, setScreeningForm] = useState({
     relevance_score: "",
-    scope_match: "yes",
+    scope_match: "high",
     quality_score: "",
     comments: "",
     recommended_action: "accept_for_peer_review",
   });
 
   const BASE = `${API}/ebook/manuscripts`;
-  const SCREENING_BASE = `${API}/ebook/manuscripts`;
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -44,6 +43,7 @@ function OraEbookEditorScreeningPage() {
       });
 
       const rows = Array.isArray(res.data) ? res.data : [];
+      // Filter only submitted manuscripts for screening
       const submittedOnly = rows.filter(
         (m) => (m.status || "").toLowerCase() === "submitted"
       );
@@ -90,7 +90,7 @@ function OraEbookEditorScreeningPage() {
     setSelected(manuscript);
     setScreeningForm({
       relevance_score: "",
-      scope_match: "yes",
+      scope_match: "high",
       quality_score: "",
       comments: "",
       recommended_action: action,
@@ -103,7 +103,7 @@ function OraEbookEditorScreeningPage() {
     setSelected(null);
     setScreeningForm({
       relevance_score: "",
-      scope_match: "yes",
+      scope_match: "high",
       quality_score: "",
       comments: "",
       recommended_action: "accept_for_peer_review",
@@ -120,11 +120,26 @@ function OraEbookEditorScreeningPage() {
   const handleSubmitScreening = async (e) => {
     e.preventDefault();
 
-    const manuscriptId =
-      selected?.id || selected?.manuscript_id || selected?.submission_id;
+    const manuscriptId = selected?.id;
 
     if (!manuscriptId) {
       alert("Invalid manuscript id");
+      return;
+    }
+
+    // Validate scores
+    if (!screeningForm.relevance_score || !screeningForm.quality_score) {
+      alert("Please provide both relevance and quality scores");
+      return;
+    }
+
+    if (screeningForm.relevance_score < 1 || screeningForm.relevance_score > 10) {
+      alert("Relevance score must be between 1 and 10");
+      return;
+    }
+
+    if (screeningForm.quality_score < 1 || screeningForm.quality_score > 10) {
+      alert("Quality score must be between 1 and 10");
       return;
     }
 
@@ -133,12 +148,13 @@ function OraEbookEditorScreeningPage() {
     try {
       setSubmitting(true);
 
-      await axios.post(
-        `${SCREENING_BASE}/${manuscriptId}/oraebookscreening`,
+      // FIXED: Changed from /oraebookscreening to /screen
+      const response = await axios.post(
+        `${BASE}/${manuscriptId}/screen`,
         {
-          relevance_score: screeningForm.relevance_score,
+          relevance_score: parseInt(screeningForm.relevance_score),
           scope_match: screeningForm.scope_match,
-          quality_score: screeningForm.quality_score,
+          quality_score: parseInt(screeningForm.quality_score),
           comments: screeningForm.comments,
           recommended_action: screeningForm.recommended_action,
         },
@@ -147,9 +163,13 @@ function OraEbookEditorScreeningPage() {
         }
       );
 
-      alert("Screening submitted successfully");
-      closePanel();
-      loadData(token);
+      if (response.data.success) {
+        alert("Screening submitted successfully");
+        closePanel();
+        loadData(token);
+      } else {
+        alert(response.data.error || "Failed to submit screening");
+      }
     } catch (err) {
       console.error(err);
       alert(err?.response?.data?.error || "Failed to submit screening");
@@ -205,27 +225,7 @@ function OraEbookEditorScreeningPage() {
             </div>
 
             <div className="row mt-4">
-              <div className="col-md-3 col-sm-6 mb-3">
-                <div className="card border-0 shadow-sm rounded-4 h-100">
-                  <div className="card-body d-flex align-items-center">
-                    <div
-                      className="d-flex align-items-center justify-content-center rounded-circle mr-3"
-                      style={{
-                        width: 56,
-                        height: 56,
-                        background: "rgba(13,110,253,0.12)",
-                        color: "#0d6efd",
-                      }}
-                    >
-                      <i className="fas fa-inbox fa-lg"></i>
-                    </div>
-                    <div>
-                      <div className="text-muted small">Submitted Queue</div>
-                      <div className="h4 mb-0 font-weight-bold">{stats.total}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              
 
               <div className="col-md-3 col-sm-6 mb-3">
                 <div className="card border-0 shadow-sm rounded-4 h-100">
@@ -308,11 +308,9 @@ function OraEbookEditorScreeningPage() {
                     className="card-title mb-1 font-weight-bold"
                     style={{ fontSize: "1.2rem" }}
                   >
-                    Submitted Manuscripts Only
+                    Submitted Manuscripts
                   </h3>
-                  <div className="text-muted small">
-                    These records are visible to editors for initial screening.
-                  </div>
+                  
                 </div>
 
                 <div className="mt-3 mt-md-0" style={{ minWidth: "320px" }}>
@@ -371,7 +369,7 @@ function OraEbookEditorScreeningPage() {
                       <thead style={{ background: "#f8fafc" }}>
                         <tr>
                           <th className="border-0 px-4 py-3">Manuscript</th>
-                          <th className="border-0 py-3">ISBN</th>
+                          {/* <th className="border-0 py-3">ISBN</th> */}
                           <th className="border-0 py-3">Language</th>
                           <th className="border-0 py-3">Year</th>
                           <th className="border-0 py-3">Status</th>
@@ -380,7 +378,7 @@ function OraEbookEditorScreeningPage() {
                       </thead>
                       <tbody>
                         {filteredList.map((m) => (
-                          <tr key={m.id || m.manuscript_id || m.submission_id}>
+                          <tr key={m.id}>
                             <td className="px-4 py-3">
                               <div className="d-flex align-items-start">
                                 <div
@@ -407,12 +405,10 @@ function OraEbookEditorScreeningPage() {
                                   </div>
                                 </div>
                               </div>
-                            </td>
-
-                            <td className="py-3">{m.isbn || "-"}</td>
+                             </td>
+                            {/* <td className="py-3">{m.isbn || "-"}</td> */}
                             <td className="py-3">{m.language || "-"}</td>
                             <td className="py-3">{m.publication_year || "-"}</td>
-
                             <td className="py-3">
                               <span
                                 className="px-3 py-2 rounded-pill font-weight-bold"
@@ -426,11 +422,10 @@ function OraEbookEditorScreeningPage() {
                                 SUBMITTED
                               </span>
                             </td>
-
                             <td className="py-3 text-center">
                               <div className="btn-group flex-wrap">
                                 <a
-                                  href={`/ebook/manuscripts/show/${m.id || m.manuscript_id || m.submission_id}`}
+                                  href={`/ora/ebook/editor/screening/show/${m.id}`}
                                   className="btn btn-outline-primary btn-sm"
                                   title="View Details"
                                 >
@@ -478,6 +473,7 @@ function OraEbookEditorScreeningPage() {
           </div>
         </section>
 
+        {/* Screening Panel Modal */}
         {showPanel && (
           <div
             onClick={closePanel}
@@ -567,7 +563,7 @@ function OraEbookEditorScreeningPage() {
                     <div className="col-md-6">
                       <div className="form-group mb-3">
                         <label className="font-weight-bold text-muted small">
-                          RELEVANCE SCORE
+                          RELEVANCE SCORE (1-10)
                         </label>
                         <input
                           type="number"
@@ -587,7 +583,7 @@ function OraEbookEditorScreeningPage() {
                     <div className="col-md-6">
                       <div className="form-group mb-3">
                         <label className="font-weight-bold text-muted small">
-                          QUALITY SCORE
+                          QUALITY SCORE (1-10)
                         </label>
                         <input
                           type="number"
@@ -616,9 +612,9 @@ function OraEbookEditorScreeningPage() {
                           className="form-control border-0 shadow-sm rounded-pill"
                           style={{ height: "50px", background: "#f8fafc" }}
                         >
-                          <option value="yes">Yes</option>
-                          <option value="partial">Partial</option>
-                          <option value="no">No</option>
+                          <option value="high">High</option>
+                          <option value="medium">Medium</option>
+                          <option value="low">Low</option>
                         </select>
                       </div>
                     </div>

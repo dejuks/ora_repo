@@ -361,13 +361,13 @@ function OraEbookEditorScreenedPage() {
                                   <i className="fas fa-user-plus"></i>
                                 </a>
 
-                                <a
+                                {/* <a
                                   href={`/ebook/editor/workflow/${m.id || m.manuscript_id || m.submission_id}`}
                                   className="btn btn-outline-dark btn-sm"
                                   title="Workflow"
                                 >
                                   <i className="fas fa-project-diagram"></i>
-                                </a>
+                                </a> */}
                               </div>
                             </td>
                           </tr>
