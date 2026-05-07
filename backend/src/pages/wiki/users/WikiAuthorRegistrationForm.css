@@ -1,0 +1,160 @@
+.wiki-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #f4f7f6, #e8f0f2);
+  font-family: 'Inter', sans-serif;
+}
+
+.wiki-wrapper {
+  display: flex;
+  width: 1000px;
+  max-width: 95%;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.info-side {
+  flex: 1;
+  background: linear-gradient(135deg, #0F3D2E, #1A5439);
+  padding: 40px;
+  color: white;
+}
+
+.info-side h2 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.info-side p {
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+.benefits div {
+  margin-bottom: 12px;
+  font-size: 1.05rem;
+}
+
+.form-card {
+  flex: 1;
+  padding: 40px;
+}
+
+.form-card h2 {
+  text-align: center;
+  color: #0F3D2E;
+}
+
+.subtitle {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #666;
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 15px;
+  transition: 0.3s;
+}
+
+.input-group:focus-within {
+  border-color: #C9A227;
+}
+
+.input-group input,
+.input-group textarea,
+.input-group select {
+  border: none;
+  outline: none;
+  flex: 1;
+  margin-left: 10px;
+  background: transparent;
+}
+
+.input-group textarea {
+  resize: none;
+  min-height: 60px;
+}
+
+.field-error {
+  color: #ff4444;
+  font-size: 0.85rem;
+}
+
+.error-box {
+  background: #ffebee;
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  color: #ff4444;
+}
+
+.password-strength {
+  margin-bottom: 15px;
+}
+
+.strength-bars {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 5px;
+}
+
+.strength-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 3px;
+}
+
+.wiki-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  background: #C9A227;
+  color: #0F3D2E;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.wiki-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(201,162,39,0.3);
+}
+
+.login-text {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.login-text a {
+  color: #0F3D2E;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.login-text a:hover {
+  text-decoration: underline;
+}
+
+.success-card {
+  background: #fff;
+  padding: 50px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+.success-icon {
+  font-size: 4rem;
+  color: #4CAF50;
+  margin-bottom: 20px;
+}

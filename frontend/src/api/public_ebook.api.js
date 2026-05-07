@@ -1,28 +1,71 @@
 // api/public_ebook.api.js
 import api from "./axios";
 
+const BASE = "/public";
+
 const unwrap = async (request) => {
   try {
     const response = await request();
-    return response?.data;
+    return response?.data ?? null;
   } catch (error) {
-    console.error("API Error:", error);
+    console.error("API Error:", error?.response?.data || error.message || error);
     throw error;
   }
+};
+
+const normalizeListResponse = (data) => {
+  if (!data) return { rows: [], total: 0, page: 1, limit: 20 };
+
+  if (Array.isArray(data)) {
+    return {
+      rows: data,
+      total: data.length,
+      page: 1,
+      limit: data.length,
+    };
+  }
+
+  if (Array.isArray(data.rows)) {
+    return {
+      rows: data.rows,
+      total: data.total ?? data.rows.length ?? 0,
+      page: data.page ?? 1,
+      limit: data.limit ?? data.rows.length ?? 20,
+    };
+  }
+
+  if (Array.isArray(data.data)) {
+    return {
+      rows: data.data,
+      total: data.total ?? data.data.length ?? 0,
+      page: data.page ?? data.current_page ?? 1,
+      limit: data.limit ?? data.per_page ?? data.data.length ?? 20,
+    };
+  }
+
+  return {
+    rows: [],
+    total: 0,
+    page: 1,
+    limit: 20,
+  };
 };
 
 const publicEbookApi = {
   listPublications: (params = {}) => {
     const queryParams = {
-      limit: params.limit || 20,
-      page: params.page || 1,
-      ...params
+      limit: params.limit ?? 20,
+      page: params.page ?? 1,
+      ...(params.search ? { search: params.search } : {}),
+      ...(params.category ? { category: params.category } : {}),
+      ...(params.language ? { language: params.language } : {}),
+      ...(params.sort ? { sort: params.sort } : {}),
     };
     return unwrap(() => api.get("/ebook-public/publications", { params: queryParams }));
   },
 
   getPublication: (id) => {
-    return unwrap(() => api.get(`/public/ebooks/${id}`));
+    return unwrap(() => api.get(`${BASE}/ebooks/${id}`));
   },
 
   getTrendingEbooks: (limit = 10) => {
@@ -56,7 +99,7 @@ const publicEbookApi = {
   },
 
   getAuthorDetails: (authorId) => {
-    return unwrap(() => api.get(`/public/authors/${authorId}`));
+    return unwrap(() => api.get(`${BASE}/authors/${authorId}`));
   },
 
   getAuthors: (params = {}) => {
@@ -152,8 +195,8 @@ const publicEbookApi = {
       const response = await api.get(`/public/ebooks/${publicationId}/stream`, {
         params: { format }
       });
-      
-      return response.data.stream_url;
+
+      return response?.data?.stream_url || response?.data?.url || null;
     } catch (error) {
       console.error("Stream error:", error);
       throw new Error("Failed to load ebook for reading.");
@@ -173,15 +216,17 @@ const publicEbookApi = {
   },
 
   getLanguageStats: () => {
-    return unwrap(() => api.get("/public/language-stats"));
+    return unwrap(() => api.get(`${BASE}/language-stats`));
   },
 
   getPublicationTimeline: () => {
-    return unwrap(() => api.get("/public/timeline"));
+    return unwrap(() => api.get(`${BASE}/timeline`));
   },
 
   subscribeNewsletter: (email, preferences = {}) => {
-    return unwrap(() => api.post("/public/newsletter/subscribe", { email, preferences }));
+    return unwrap(() =>
+      api.post(`${BASE}/newsletter/subscribe`, { email, preferences })
+    );
   },
 
   getPopularTags: (limit = 20) => {
@@ -193,12 +238,12 @@ const publicEbookApi = {
   },
 
   getReadingStats: () => {
-    return unwrap(() => api.get("/public/reading-stats"));
+    return unwrap(() => api.get(`${BASE}/reading-stats`));
   },
 
   getShareMetadata: (publicationId) => {
-    return unwrap(() => api.get(`/public/ebooks/${publicationId}/share-metadata`));
-  }
+    return unwrap(() => api.get(`${BASE}/ebooks/${publicationId}/share-metadata`));
+  },
 };
 
 export default publicEbookApi;

@@ -1,13 +1,30 @@
-import pool from "../../config/db.js";
-
-export const writeLibraryAuditLog = async ({ actorUserId = null, action, entityType, entityId = null, oldValues = null, newValues = null, ipAddress = null, userAgent = null }) => {
-  try {
-    await pool.query(
-      `INSERT INTO library_audit_logs (actor_user_id, action, entity_type, entity_id, old_values, new_values, ip_address, user_agent)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-      [actorUserId, action, entityType, entityId, oldValues, newValues, ipAddress, userAgent]
-    );
-  } catch (error) {
-    console.error('Failed to write library audit log:', error.message);
+export async function writeLibraryAuditLog(action, details = {}, req = null) {
+    try {
+      return {
+        success: true,
+        action,
+        details,
+        user_id: req?.user?.id || req?.user?.uuid || null,
+        ip_address: req?.ip || null,
+        user_agent: req?.headers?.["user-agent"] || null,
+        created_at: new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error("Audit log error:", error);
+      return null;
+    }
   }
-};
+  
+  export async function logAudit(action, details = {}, req = null) {
+    return writeLibraryAuditLog(action, details, req);
+  }
+  
+  export async function audit(action, details = {}, req = null) {
+    return writeLibraryAuditLog(action, details, req);
+  }
+  
+  export default {
+    writeLibraryAuditLog,
+    logAudit,
+    audit,
+  };

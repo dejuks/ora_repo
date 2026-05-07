@@ -1,0 +1,460 @@
+/* =========================================================
+   BASE
+========================================================= */
+body {
+  background: #fafafa;
+  color: #111827;
+}
+
+.container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 0 16px;
+}
+
+/* =========================================================
+   HERO
+========================================================= */
+.repo-hero {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 3rem 0;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2rem;
+  align-items: center;
+}
+
+.hero-title {
+  font-size: 2.4rem;
+  font-weight: 700;
+}
+
+.hero-title span {
+  color: #2563eb;
+}
+
+.repo-subtitle {
+  margin-top: 0.8rem;
+  color: #6b7280;
+  max-width: 600px;
+}
+
+/* =========================================================
+   HERO STATS
+========================================================= */
+.repo-stats {
+  display: flex;
+  gap: 1rem;
+}
+
+.stat-box {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 1rem 1.2rem;
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.stat-box svg {
+  font-size: 1.4rem;
+  color: #2563eb;
+}
+
+/* =========================================================
+   SEARCH + FILTER BAR
+========================================================= */
+.repo-search {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1.5rem 0;
+}
+
+/* SEARCH BAR CONTAINER */
+.search-bar {
+  display: grid;
+  grid-template-columns: 1.6fr 0.8fr 0.8fr auto;
+  gap: 12px;
+  align-items: center;
+  background: #ffffff;
+  padding: 14px;
+  border-radius: 18px;
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+}
+
+/* SEARCH INPUT */
+.search-input {
+  position: relative;
+  width: 100%;
+}
+
+.search-input input {
+  width: 100%;
+  padding: 14px 16px 14px 42px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  font-size: 15px;
+  background: #f9fafb;
+  transition: all 0.2s ease;
+}
+
+.search-input input:focus {
+  outline: none;
+  background: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  opacity: 0.6;
+}
+
+/* SELECT DROPDOWNS */
+.search-bar select {
+  padding: 13px 14px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  font-size: 14px;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.search-bar select:hover {
+  background: #ffffff;
+}
+
+.search-bar select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+}
+
+/* SEARCH BUTTON */
+.search-btn {
+  padding: 14px 22px;
+  border-radius: 16px;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  box-shadow: 0 10px 28px rgba(37, 99, 235, 0.35);
+  transition: all 0.25s ease;
+}
+
+.search-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 40px rgba(37, 99, 235, 0.45);
+}
+
+.search-btn:active {
+  transform: scale(0.97);
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .search-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .search-btn {
+    width: 100%;
+  }
+}
+
+
+/* =========================================================
+   VIEW SWITCH
+========================================================= */
+.view-switch {
+  display: flex;
+  align-items: center;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 12px;
+}
+
+.view-switch button {
+  border: none;
+  background: transparent;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-switch button:hover {
+  background: #e2e8f0;
+}
+
+.view-switch button.active {
+  background: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+}
+
+/* =========================================================
+   FILTER BUTTON
+========================================================= */
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(37, 99, 235, 0.35);
+  transition: all 0.25s ease;
+}
+
+.filter-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px rgba(37, 99, 235, 0.45);
+}
+
+/* =========================================================
+   ACTIVE FILTER CHIPS
+========================================================= */
+.active-filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eef2ff;
+  color: #1e40af;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.filter-chip button {
+  background: #c7d2fe;
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+/* =========================================================
+   CONTENT
+========================================================= */
+.repo-content {
+  padding: 2.5rem 0;
+}
+
+.results-title {
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+/* =========================================================
+   GRID / LIST
+========================================================= */
+.items.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.4rem;
+}
+
+.items.list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+/* =========================================================
+   STATES
+========================================================= */
+.loading,
+.empty-state {
+  text-align: center;
+  padding: 4rem 0;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  margin: 0 auto 1rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.empty-state button {
+  margin-top: 1rem;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 0.7rem 1.4rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* =========================================================
+   REPOSITORY CARD
+========================================================= */
+.repo-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.06);
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.repo-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 48px rgba(0,0,0,0.12);
+}
+
+/* CARD HEADER */
+.repo-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.repo-icon {
+  font-size: 22px;
+  color: #2563eb;
+}
+
+.repo-type {
+  font-size: 12px;
+  padding: 4px 12px;
+  background: #eef2ff;
+  color: #3730a3;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+/* CARD TEXT */
+.repo-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.repo-meta {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.repo-abstract {
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.6;
+}
+
+/* CARD STATS */
+.repo-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+/* CARD ACTIONS */
+.repo-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.repo-actions button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-view {
+  background: #f3f4f6;
+}
+
+.btn-view:hover {
+  background: #e5e7eb;
+}
+
+.btn-download {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+}
+
+.btn-download:hover {
+  opacity: 0.92;
+}
+
+/* =========================================================
+   MODAL
+========================================================= */
+.repo-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.repo-modal-card {
+  background: #ffffff;
+  width: 90%;
+  max-width: 760px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.2);
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+@media (max-width: 768px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .search-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

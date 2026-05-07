@@ -15,8 +15,6 @@ export function buildJournalRoutes(ROLES) {
 //   JOURNAL_REVIEWER
 // const JR = ROLES.JOURNAL_REVIEWER;
 
-
-
   return [
     {
       name: "Dashboard",
@@ -44,7 +42,6 @@ export function buildJournalRoutes(ROLES) {
         { name: "Journal List", path: "/journal/list", icon: "fas fa-list", roles: [JM, E] },
       ],
     },
-
     {
       name: "Author Dashboard",
       path: "/journal/author-dashboard",
