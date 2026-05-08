@@ -1,59 +1,123 @@
 import express from "express";
 import { authenticate } from "../../middleware/auth.middleware.js";
+
 import {
   getReviewerAssignmentsHandler,
   getReviewerPendingAssignmentsHandler,
   getReviewerAssignmentByIdHandler,
   respondToAssignmentHandler,
-  submitReviewHandler,
-  getAssignmentFilesHandler,startReviewHandler
+  startReviewHandler,
+  submitReviewHandler,getCompletedReviewsHandler,getReviewerCompletedProductionHandler,
+  getProductionPaymentOrdersHandler,markPaymentPaidHandler,createProductionPaymentOrderHandler,markProductionPaymentPaidHandler 
 } from "../controllers/reviewer.controller.js";
 
 const router = express.Router();
 
 router.use(authenticate);
-
 /**
- * Reviewer assignment lists
+ * ACCEPT / DECLINE
  */
-router.get("/pending", getReviewerPendingAssignmentsHandler);
-router.post("/:assignmentId/start", startReviewHandler);
-router.get("/review-assignments", getReviewerAssignmentsHandler);
-
-/**
- * Pending assignment response
- */
-router.post("/pending/:assignmentId/respond", respondToAssignmentHandler);
-
-/**
- * Reviewer assignment actions
- * IMPORTANT: keep these before /review-assignments/:assignmentId
- */
-router.get("/review-assignments/:assignmentId/files", getAssignmentFilesHandler);
-
 router.post(
-  "/review-assignments/:assignmentId/respond",
+  "/:assignmentId/respond",
   respondToAssignmentHandler
 );
 
+/**
+ * ==========================================
+ * SUBMIT REVIEW
+ * ==========================================
+ */
 router.post(
   "/review-assignments/:assignmentId/submit-review",
   submitReviewHandler
 );
 
 /**
- * Reviewer assignment detail
- * This supports SubmitReviewPage.jsx loadAssignment()
+ * =========================================
+ * COMPLETED REVIEWS
+ * =========================================
  */
 router.get(
-  "/review-assignments/:assignmentId",
-  getReviewerAssignmentByIdHandler
+  "/completed",
+  getCompletedReviewsHandler
+);
+
+router.get(
+  "/production/completed",
+  getReviewerCompletedProductionHandler
 );
 
 /**
- * Optional legacy route
- * Keep only if your frontend really uses this.
+ * GET pending assignments
  */
-router.post("/manuscripts/:manuscriptId/screen", respondToAssignmentHandler);
+router.get(
+  "/pending",
+  getReviewerPendingAssignmentsHandler
+);
 
+router.get(
+  "/production/payments",
+  getProductionPaymentOrdersHandler
+);
+
+
+/**
+ * CREATE PAYMENT ORDER
+ */
+router.post(
+  "/production/payment-orders",
+  createProductionPaymentOrderHandler
+);
+
+/**
+ * GET ALL PAYMENT ORDERS
+ */
+router.get(
+  "/production/payment-orders",
+  getProductionPaymentOrdersHandler
+);
+
+/**
+ * MARK PAYMENT AS PAID
+ */
+router.put(
+  "/payment-orders/:assignmentId/paid",
+  markProductionPaymentPaidHandler
+);
+
+/**
+ * MARK PAYMENT AS PAID
+ */
+router.post(
+  "/production/payments/:assignmentId/paid",
+  markPaymentPaidHandler
+);
+
+/**
+ * GET all reviewer assignments
+ */
+router.get(
+  "/assignments",
+  getReviewerAssignmentsHandler
+);
+
+/**
+ * GET single assignment detail
+ */
+router.get(
+  "/assignments/:assignmentId",
+  getReviewerAssignmentByIdHandler
+);
+
+
+
+/**
+ * START REVIEW
+ */
+router.post(
+  "/:assignmentId/start",
+  startReviewHandler
+);
+// accept/ decline: http://localhost:5000/api/oraebook/reviewer/e6baa1a5-12e8-4a20-adb8-b86bd898905c/respond
+// start review: http://localhost:5000/api/oraebook/reviewer/e6baa1a5-12e8-4a20-adb8-b86bd898905c/start
 export default router;

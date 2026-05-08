@@ -1,5 +1,10 @@
 import db from "../../config/db.js";
 
+/**
+ * ===============================
+ * LIST
+ * ===============================
+ */
 export async function getReviewerAssignments(reviewerId, filters = {}) {
   const { search = "", status = "" } = filters;
 
@@ -7,60 +12,34 @@ export async function getReviewerAssignments(reviewerId, filters = {}) {
     SELECT
       era.assignment_id,
       era.submission_id,
-      era.reviewer_id,
-      era.assigned_by,
       era.status,
-      era.due_date,
-      era.invitation_note,
-      era.response_note,
       era.assigned_at,
+      era.due_date,
       era.accepted_at,
       era.completed_at,
 
-      es.title,
-      es.subtitle,
-      es.abstract,
-      es.category,
-      es.language,
-      es.publication_year,
-      es.status AS submission_status,
-
-      editor.full_name AS assigned_by_name
+      em.title,
+      em.abstract,
+      em.language,
+      em.publication_year
 
     FROM ebook_review_assignments era
-
-    LEFT JOIN ebook_submissions es
-      ON es.submission_id = era.submission_id   -- ✅ FIXED (no cast)
-
-    LEFT JOIN users editor
-      ON editor.uuid = era.assigned_by          -- ✅ FIXED
-
-    WHERE era.reviewer_id = $1                  -- ✅ FIXED
+    LEFT JOIN ora_ebook_manuscripts em
+      ON em.id = era.submission_id
+    WHERE era.reviewer_id = $1
   `;
 
   const values = [reviewerId];
-  let index = 2;
+  let i = 2;
 
-  // ✅ STATUS FILTER (SAFE FOR ENUM)
-  if (status && status.trim()) {
-    query += ` AND era.status = $${index}`;
-    values.push(status.trim());
-    index++;
+  if (status) {
+    query += ` AND era.status = $${i++}`;
+    values.push(status);
   }
 
-  // ✅ SEARCH FILTER
-  if (search && search.trim()) {
-    query += `
-      AND (
-        es.title ILIKE $${index}
-        OR es.subtitle ILIKE $${index}
-        OR es.category ILIKE $${index}
-        OR es.language ILIKE $${index}
-        OR es.publication_year::text ILIKE $${index}
-      )
-    `;
-    values.push(`%${search.trim()}%`);
-    index++;
+  if (search) {
+    query += ` AND em.title ILIKE $${i}`;
+    values.push(`%${search}%`);
   }
 
   query += ` ORDER BY era.assigned_at DESC`;
@@ -68,65 +47,43 @@ export async function getReviewerAssignments(reviewerId, filters = {}) {
   const { rows } = await db.query(query, values);
   return rows;
 }
+
+/**
+ * ===============================
+ * PENDING
+ * ===============================
+ */
 export async function getReviewerPendingAssignments(reviewerId, filters = {}) {
   const { search = "", status = "" } = filters;
 
   let query = `
     SELECT
       era.assignment_id,
-      era.submission_id,
-      era.reviewer_id,
       era.status,
-      era.invitation_note,
-      era.response_note,
       era.assigned_at,
       era.due_date,
-      era.accepted_at,
-      era.declined_at,
-      era.completed_at,
-
-      es.title,
-      es.abstract,
-      es.language,
-      es.publication_year,
-      es.file_path,
-      es.isbn,
-      es.status AS submission_status
-
+      em.title,
+      em.abstract,
+      em.file_path
     FROM ebook_review_assignments era
-
-    -- ✅ FIXED JOIN
-    LEFT JOIN ora_ebook_manuscripts es
-      ON es.id::text = era.submission_id::text
-
-    WHERE era.reviewer_id::text = $1::text
+    LEFT JOIN ora_ebook_manuscripts em
+      ON em.id = era.submission_id
+    WHERE era.reviewer_id = $1
   `;
 
   const values = [reviewerId];
-  let index = 2;
+  let i = 2;
 
-  // ✅ STATUS FILTER
-  if (status && status.trim()) {
-    query += ` AND LOWER(era.status::text) = LOWER($${index})`;
-    values.push(status.trim());
-    index++;
+  if (status) {
+    query += ` AND era.status = $${i++}`;
+    values.push(status);
   } else {
-    query += ` AND LOWER(era.status::text) IN ('assigned', 'accepted')`;
+    query += ` AND era.status IN ('assigned','accepted')`;
   }
 
-  // ✅ SEARCH FILTER
-  if (search && search.trim()) {
-    query += `
-      AND (
-        COALESCE(es.title, '') ILIKE $${index}
-        OR COALESCE(es.abstract, '') ILIKE $${index}
-        OR COALESCE(es.language, '') ILIKE $${index}
-        OR COALESCE(es.publication_year::text, '') ILIKE $${index}
-        OR COALESCE(es.isbn, '') ILIKE $${index}
-      )
-    `;
-    values.push(`%${search.trim()}%`);
-    index++;
+  if (search) {
+    query += ` AND em.title ILIKE $${i}`;
+    values.push(`%${search}%`);
   }
 
   query += ` ORDER BY era.assigned_at DESC`;
@@ -135,49 +92,101 @@ export async function getReviewerPendingAssignments(reviewerId, filters = {}) {
   return rows;
 }
 
-export async function getReviewerAssignmentById(assignmentId, reviewerId) {
-  const query = `
+/**
+ * ===============================
+ * DETAIL
+ * ===============================
+ */
+export async function getReviewerAssignmentById(
+  assignmentId,
+  reviewerId
+) {
+  const { rows } = await db.query(
+    `
     SELECT
-      era.assignment_id,
-      era.submission_id,
-      era.reviewer_id,
-      era.status,
-      era.due_date,
-      era.invitation_note,
-      era.response_note,
-      era.assigned_at,
-      era.accepted_at,
-      era.completed_at,
-
-      es.title,
-      es.subtitle,
-      es.abstract,
-      es.category,
-      es.language,
-      es.publication_year,
-      es.keywords,
-      es.target_audience,
-      es.status AS submission_status
+      era.*,
+      em.title,
+      em.abstract,
+      em.file_path,
+      em.language,
+      em.publication_year,
+      em.isbn
 
     FROM ebook_review_assignments era
 
-    LEFT JOIN ebook_submissions es
-      ON es.submission_id::text = era.submission_id::text
+    LEFT JOIN ora_ebook_manuscripts em
+      ON em.id::text = era.submission_id::text
 
     WHERE era.assignment_id::text = $1::text
       AND era.reviewer_id::text = $2::text
 
     LIMIT 1
-  `;
+    `,
+    [assignmentId, reviewerId]
+  );
 
-  const { rows } = await db.query(query, [assignmentId, reviewerId]);
   return rows[0] || null;
 }
 
+/**
+ * ===============================
+ * RESPOND
+ * ===============================
+ */
+export async function respondToAssignmentModel({
+  assignmentId,
+  reviewerId,
+  status,
+}) {
+  try {
+    const query = `
+      UPDATE ebook_review_assignments
+      SET
+        status = $3::ebook_assignment_status,
 
+        accepted_at = CASE
+          WHEN $3 = 'accepted'
+          THEN NOW()
+          ELSE accepted_at
+        END,
 
-export const startReview = async ({ assignmentId, reviewerId }) => {
-  const query = `
+        declined_at = CASE
+          WHEN $3 = 'declined'
+          THEN NOW()
+          ELSE declined_at
+        END,
+
+        updated_at = NOW()
+
+      WHERE assignment_id::text = $1::text
+        AND reviewer_id::text = $2::text
+
+      RETURNING *;
+    `;
+
+    const values = [
+      assignmentId,
+      reviewerId,
+      status,
+    ];
+
+    const { rows } = await db.query(query, values);
+
+    return rows[0] || null;
+
+  } catch (error) {
+    console.error("MODEL ERROR:", error);
+    throw error;
+  }
+}
+/**
+ * ===============================
+ * START REVIEW
+ * ===============================
+ */
+export async function startReview({ assignmentId, reviewerId }) {
+  const { rows } = await db.query(
+    `
     UPDATE ebook_review_assignments
     SET
       status = 'in_review',
@@ -187,188 +196,265 @@ export const startReview = async ({ assignmentId, reviewerId }) => {
       AND reviewer_id = $2
       AND status = 'accepted'
     RETURNING *;
-  `;
-
-  const { rows } = await db.query(query, [assignmentId, reviewerId]);
-
-  if (!rows.length) {
-    console.warn("⚠️ No rows updated:", { assignmentId, reviewerId });
-    return null;
-  }
+  `,
+    [assignmentId, reviewerId]
+  );
 
   return rows[0];
-};
+}
 
-export const respondToAssignment = async ({
-  assignmentId,
-  reviewerId,
-  status,
-  response_note,
-}) => {
-  const query = `
-    UPDATE ebook_review_assignments
-SET
-  status = $3::ebook_assignment_status,
-  response_note = $4,
-  accepted_at = CASE
-    WHEN $3::ebook_assignment_status = 'accepted' THEN NOW()
-    ELSE accepted_at
-  END,
-  declined_at = CASE
-    WHEN $3::ebook_assignment_status = 'declined' THEN NOW()
-    ELSE declined_at
-  END,
-  updated_at = NOW()
-WHERE assignment_id = $1 AND reviewer_id = $2
-RETURNING *;
-  `;
-
-  const values = [assignmentId, reviewerId, status, response_note];
-
-  const result = await db.query(query, values);
-  return result.rows[0];
-};
-
+/**
+ * ==========================================
+ * SUBMIT REVIEW
+ * ==========================================
+ */
 export async function submitReview({
   assignmentId,
   reviewerId,
-  originality_score,
-  clarity_score,
-  methodology_score,
-  relevance_score,
-  comments_for_author,
-  confidential_comments,
-  recommendation,
+  reviewData,
 }) {
-  const client = await db.connect();
+  const {
+    originality_score,
+    clarity_score,
+    methodology_score,
+    relevance_score,
+    recommendation,
+    comments_for_author,
+    confidential_comments,
+  } = reviewData;
 
-  try {
-    await client.query("BEGIN");
+  const reviewContent = {
+    originality_score,
+    clarity_score,
+    methodology_score,
+    relevance_score,
+    recommendation,
+    comments_for_author,
+    confidential_comments,
+  };
 
-    const assignmentResult = await client.query(
-      `
-      SELECT
-        assignment_id,
-        submission_id,
-        reviewer_id,
-        status
-      FROM ebook_review_assignments
-      WHERE assignment_id::text = $1::text
-        AND reviewer_id::text = $2::text
-      LIMIT 1
-      `,
-      [assignmentId, reviewerId]
-    );
+  const { rows } = await db.query(
+  `
+  UPDATE ebook_review_assignments
+  SET
+    status = 'completed'::ebook_assignment_status,
 
-    const assignment = assignmentResult.rows[0];
+    originality_score = $3,
+    clarity_score = $4,
+    methodology_score = $5,
+    relevance_score = $6,
 
-    if (!assignment) {
-      throw new Error("Assignment not found");
-    }
+    recommendation = $7,
 
-    if (assignment.status !== "accepted") {
-      throw new Error("Only accepted assignments can submit reviews");
-    }
+    comments_for_author = $8,
+    confidential_comments = $9,
 
-    const reviewResult = await client.query(
-      `
-      INSERT INTO ebook_reviews (
-        assignment_id,
-        submission_id,
-        reviewer_id,
-        originality_score,
-        clarity_score,
-        methodology_score,
-        relevance_score,
-        comments_for_author,
-        confidential_comments,
-        recommendation,
-        created_at,
-        updated_at
-      )
-      VALUES (
-        $1,
-        $2,
-        $3,
-        $4,
-        $5,
-        $6,
-        $7,
-        $8,
-        $9,
-        $10::ebook_recommendation,
-        NOW(),
-        NOW()
-      )
-      ON CONFLICT (assignment_id)
-      DO UPDATE SET
-        originality_score = EXCLUDED.originality_score,
-        clarity_score = EXCLUDED.clarity_score,
-        methodology_score = EXCLUDED.methodology_score,
-        relevance_score = EXCLUDED.relevance_score,
-        comments_for_author = EXCLUDED.comments_for_author,
-        confidential_comments = EXCLUDED.confidential_comments,
-        recommendation = EXCLUDED.recommendation,
-        updated_at = NOW()
-      RETURNING *
-      `,
-      [
-        assignment.assignment_id,
-        assignment.submission_id,
-        reviewerId,
-        originality_score ?? null,
-        clarity_score ?? null,
-        methodology_score ?? null,
-        relevance_score ?? null,
-        comments_for_author ?? null,
-        confidential_comments ?? null,
-        recommendation,
-      ]
-    );
+    review_content = $10::jsonb,
 
-    await client.query(
-      `
-      UPDATE ebook_review_assignments
-      SET
-        status = 'submitted'::ebook_assignment_status,
-        completed_at = NOW()
-      WHERE assignment_id::text = $1::text
-        AND reviewer_id::text = $2::text
-      `,
-      [assignmentId, reviewerId]
-    );
+    completed_at = NOW(),
+    updated_at = NOW()
 
-    await client.query("COMMIT");
-    return reviewResult.rows[0];
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
-  }
+  WHERE assignment_id = $1
+    AND reviewer_id = $2
+
+  RETURNING *;
+  `,
+  [
+    assignmentId,
+    reviewerId,
+
+    originality_score,
+    clarity_score,
+    methodology_score,
+    relevance_score,
+
+    recommendation,
+
+    comments_for_author,
+    confidential_comments,
+
+    JSON.stringify(reviewContent),
+  ]
+);
+
+  return rows[0];
+}
+/**
+ * =========================================
+ * GET COMPLETED REVIEWS
+ * =========================================
+ */
+export async function getCompletedReviews(
+  reviewerId
+) {
+  const { rows } = await db.query(
+    `
+    SELECT
+      era.assignment_id,
+      era.status,
+      era.completed_at,
+
+      era.originality_score,
+      era.clarity_score,
+      era.methodology_score,
+      era.relevance_score,
+
+      era.recommendation,
+
+      em.title,
+      em.abstract,
+      em.language,
+      em.publication_year,
+      em.file_path
+
+    FROM ebook_review_assignments era
+
+    LEFT JOIN ora_ebook_manuscripts em
+      ON em.id = era.submission_id
+
+    WHERE era.reviewer_id = $1
+      AND era.status =
+      'completed'::ebook_assignment_status
+
+    ORDER BY era.completed_at DESC
+    `,
+    [reviewerId]
+  );
+
+  return rows;
 }
 
-export async function getAssignmentFiles(assignmentId, reviewerId) {
-  const query = `
+export async function getReviewerCompletedProduction() {
+  const { rows } = await db.query(
+    `
     SELECT
-      ef.file_id,
-      ef.submission_id,
-      ef.version_no,
-      ef.file_type,
-      ef.original_name,
-      ef.stored_name,
-      ef.mime_type,
-      ef.size_bytes,
-      ef.uploaded_by,
-      ef.uploaded_at
-    FROM ebook_files ef
-    INNER JOIN ebook_review_assignments era
-      ON era.submission_id::text = ef.submission_id::text
-    WHERE era.assignment_id::text = $1::text
-      AND era.reviewer_id::text = $2::text
-    ORDER BY ef.uploaded_at DESC
-  `;
+      era.assignment_id,
+      era.status,
+      era.completed_at,
+      era.recommendation,
+      era.originality_score,
+      era.clarity_score,
+      era.methodology_score,
+      era.relevance_score,
 
-  const { rows } = await db.query(query, [assignmentId, reviewerId]);
+      em.title,
+      em.abstract,
+      em.language
+
+    FROM ebook_review_assignments era
+    LEFT JOIN ora_ebook_manuscripts em
+      ON em.id = era.submission_id
+
+    WHERE era.status = 'completed'
+
+    ORDER BY era.completed_at DESC
+    `
+  );
+
+  return rows;
+}
+
+export async function markPaymentAsPaidModel(assignmentId, method) {
+  const { rows } = await db.query(
+    `
+    UPDATE ebook_review_assignments
+    SET
+      payment_status = 'paid',
+      payment_method = $2,
+      paid_at = NOW()
+    WHERE assignment_id = $1
+    RETURNING *;
+    `,
+    [assignmentId, method]
+  );
+
+  return rows[0];
+}
+export async function createProductionPaymentOrder({
+  assignmentId,
+  amount,
+  paymentMethod,
+}) {
+
+  const paymentOrderId =
+    "PAY-" +
+    Date.now() +
+    "-" +
+    Math.floor(Math.random() * 10000);
+
+  const { rows } = await db.query(
+    `
+    UPDATE ebook_review_assignments
+    SET
+      payment_status = 'ordered',
+      payment_amount = $2,
+      payment_method = $3,
+      payment_order_id = $4,
+      updated_at = NOW()
+    WHERE assignment_id = $1
+    RETURNING *;
+    `,
+    [
+      assignmentId,
+      amount,
+      paymentMethod,
+      paymentOrderId,
+    ]
+  );
+
+  return rows[0];
+}
+
+export async function markProductionPaymentPaid({
+  assignmentId,
+}) {
+
+  const { rows } = await db.query(
+    `
+    UPDATE ebook_review_assignments
+    SET
+      payment_status = 'paid',
+      paid_at = NOW(),
+      updated_at = NOW()
+    WHERE assignment_id = $1
+    RETURNING *;
+    `,
+    [assignmentId]
+  );
+
+  return rows[0];
+}
+
+/**
+ * GET PAYMENT ORDERS
+ */
+export async function getProductionPaymentOrders() {
+
+  const { rows } = await db.query(
+    `
+    SELECT
+      era.assignment_id,
+      era.payment_status,
+      era.payment_amount,
+      era.payment_method,
+      era.payment_order_id,
+      era.paid_at,
+      era.completed_at,
+      era.status,
+
+      em.title,
+      em.language
+
+    FROM ebook_review_assignments era
+
+    LEFT JOIN ora_ebook_manuscripts em
+      ON em.id = era.submission_id
+
+    WHERE era.status = 'completed'
+
+    ORDER BY era.completed_at DESC
+    `
+  );
+
   return rows;
 }

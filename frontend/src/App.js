@@ -237,6 +237,10 @@ import DraftShow from "./landing/pages/ora_ebook/manuscript/DraftShow.jsx";
 import ScreeningQueueShow from "./landing/pages/ora_ebook/be/ScreeningQueueShow.jsx";
 import SubmitRevisionPage from "./landing/pages/ora_ebook/manuscript/SubmitRevisionPage.jsx";
 import EbookReviewPage from "./landing/pages/ora_ebook/br/EbookReviewPage.jsx";
+import EbookReviewerReviewPage from "./landing/pages/ora_ebook/br/EbookReviewerReviewPage.jsx";
+import EbookReviewerCompletedPage from "./landing/pages/ora_ebook/br/EbookReviewerCompletedPage.jsx";
+import ReviewerProductionCompletedPage from "./landing/pages/ora_ebook/dcm/ReviewerProductionCompletedPage.jsx";
+import EbookProductionPaymentPage from "./landing/pages/ora_ebook/dcm/EbookProductionPaymentPage.jsx";
 
 function App() {
   return (
@@ -361,9 +365,6 @@ function App() {
         <Route path="/eic/manuscripts/:id" element={<ProtectedRoute><EICManuscriptDetails /></ProtectedRoute>} />
         <Route path="/eic/payment-orders" element={<ProtectedRoute><EICPaymentOrders /></ProtectedRoute>} />
 
-
-        
-
         {/* AE Protected Routes */}
         <Route path="/manuscript/ae/assigned-manuscripts" element={<ProtectedRoute><ManuscriptListAE /></ProtectedRoute>} />
         <Route path="/manuscription/ae/screening" element={<ProtectedRoute><InitialScreeningListAE /></ProtectedRoute>} />
@@ -464,11 +465,29 @@ function App() {
         <Route path="/ebook/reviewer/pending" element={<ProtectedRoute><EbookReviewerPage filter="pending" /></ProtectedRoute>} />
         <Route path="/ebook/reviewer/accepted" element={<ProtectedRoute><EbookReviewerPage filter="accepted" /></ProtectedRoute>} />
         <Route path="/ebook/reviewer/rejected" element={<ProtectedRoute><EbookReviewerPage filter="rejected" /></ProtectedRoute>} />
-        <Route path="/ebook/reviewer/completed" element={<ProtectedRoute><EbookReviewerPage filter="completed" /></ProtectedRoute>} />
+        {/* <Route path="/ebook/reviewer/completed" element={<ProtectedRoute><EbookReviewerPage filter="completed" /></ProtectedRoute>} /> */}
         <Route path="/ebook/reviewer/overdue" element={<ProtectedRoute><EbookReviewerPage filter="overdue" /></ProtectedRoute>} />
         <Route path="/ebook/review-assignments/:id" element={<ProtectedRoute><EbookReviewDetailPage /></ProtectedRoute>} />
         <Route path="/ebook/reviewer-manager" element={<ProtectedRoute><EbookReviewerManagerPage /></ProtectedRoute>} />
 
+
+<Route
+  path="ebook/reviewer/completed"
+  element={<EbookReviewerCompletedPage />}
+/>
+
+<Route
+  path="/ebook/production/reviewer/completed"
+  element={<ReviewerProductionCompletedPage />}
+/> 
+
+{/* // order ebook production route */}
+<Route
+  path="/ebook/production/reviewer/payment-orders/:id"
+  element={<EbookProductionPaymentPage />}
+/>
+
+ 
        <Route path="/ora/ebook/editor/screening" element={ <ProtectedRoute><OraEbookEditorScreeningPage /> </ProtectedRoute>}/>
        <Route path="/ora/ebook/editor/screening/show/:id" element={ <ProtectedRoute><ScreeningQueueShow /> </ProtectedRoute>}/>
        <Route path="/ora/ebook/editor/screened" element={<OraEbookEditorScreenedPage />} />
@@ -486,11 +505,15 @@ function App() {
   path="/oraebook/reviewer/pending"
   element={<EbookReviewerPendingPage />}
 />
-<Route path="/reviewer/review/:assignmentId" element={<EbookReviewPage />} />
+<Route path="/ebook/reviewer/review/:assignmentId" element={<EbookReviewPage />} />
 <Route
   path="/ebook/reviewer/submit-review/:assignmentId"
   element={<SubmitReviewPage />}
 />       
+<Route
+  path="/reviewer/review/:assignmentId"
+  element={<EbookReviewerReviewPage />}
+/>
        <Route path="/ebook/editor/screening" element={ <ProtectedRoute><EbookEditorScreeningPage /> </ProtectedRoute>}/>
        <Route path="/ebook/editor/screened" element={ <ProtectedRoute><EbookEditorScreenedPage /> </ProtectedRoute>}/>
        <Route path="/ebook/editor/reviews" element={ <ProtectedRoute><EbookEditorReviewsPage /> </ProtectedRoute>}/>

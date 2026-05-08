@@ -63,14 +63,14 @@ export function buildEbookRoutes(ROLES) {
       subMenu: [
         { name: "Finance Dashboard", path: "/ebook/finance", icon: "fas fa-chart-line", roles: [F, A] },
         { name: "Pending Payments", path: "/ebook/finance/pending-payments", icon: "fas fa-hourglass-half", roles: [F, A] },
-        { name: "Calculate BPC", path: "/ebook/finance/calculate-bpc", icon: "fas fa-calculator", roles: [F, A] },
+        // { name: "Calculate BPC", path: "/ebook/finance/calculate-bpc", icon: "fas fa-calculator", roles: [F, A] },
         { name: "Set Publishing Fees", path: "/ebook/finance/publishing-fees", icon: "fas fa-tag", roles: [F, A] },
         { name: "Generate Invoices", path: "/ebook/finance/invoices", icon: "fas fa-file-invoice", roles: [F, A] },
         { name: "Payment Verification", path: "/ebook/finance/verify-payment", icon: "fas fa-check-double", roles: [F, A] },
-        { name: "Payment History", path: "/ebook/finance/payment-history", icon: "fas fa-history", roles: [F, A] },
-        { name: "Waivers & Discounts", path: "/ebook/finance/waivers", icon: "fas fa-percent", roles: [F, A] },
+        // { name: "Payment History", path: "/ebook/finance/payment-history", icon: "fas fa-history", roles: [F, A] },
+        // { name: "Waivers & Discounts", path: "/ebook/finance/waivers", icon: "fas fa-percent", roles: [F, A] },
         { name: "Financial Reports", path: "/ebook/finance/reports", icon: "fas fa-chart-bar", roles: [F, A] },
-        { name: "Ready for Production", path: "/ebook/finance/ready-for-production", icon: "fas fa-forward", roles: [F, A] },
+        // { name: "Ready for Production", path: "/ebook/finance/ready-for-production", icon: "fas fa-forward", roles: [F, A] },
       ],
     },
     {
@@ -78,7 +78,7 @@ export function buildEbookRoutes(ROLES) {
       icon: "fas fa-industry",
       roles: [D, DX, A],
       subMenu: [
-        { name: "Production Queue", path: "/ebook/production", icon: "fas fa-tasks", roles: [D, DX, A] },
+        { name: "Production Queue", path: "/ebook/production/reviewer/completed", icon: "fas fa-tasks", roles: [D, DX, A] },
         { name: "Publication Management", path: "/ebook/management/publications", icon: "fas fa-book", roles: [D, DX, A] },
       ],
     },
