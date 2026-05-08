@@ -5,20 +5,11 @@ import MainLayout from "../../../../components/layout/MainLayout";
 
 const API = process.env.REACT_APP_API_URL;
 
-export default function EbookReviewPage() {
+export default function ReviewerAssignmentDetailPage() {
   const { assignmentId } = useParams();
   const navigate = useNavigate();
 
   const [data, setData] = useState(null);
-  const [form, setForm] = useState({
-    originality_score: "",
-    clarity_score: "",
-    methodology_score: "",
-    relevance_score: "",
-    comments_for_author: "",
-    confidential_comments: "",
-    recommendation: "",
-  });
 
   useEffect(() => {
     load();
@@ -28,64 +19,135 @@ export default function EbookReviewPage() {
     const token = localStorage.getItem("token");
 
     const res = await axios.get(
-      `${API}/oraebook/reviewer/${assignmentId}`,
+      `${API}/oraebook/reviewer/assignments/${assignmentId}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
     setData(res.data.data);
   };
 
-  const submit = async () => {
+const respond = async (action) => {
+  try {
     const token = localStorage.getItem("token");
 
-    await axios.post(
-      `${API}/oraebook/reviewer/${assignmentId}/submit`,
-      form,
-      { headers: { Authorization: `Bearer ${token}` } }
+    if (!token) {
+      alert("Please login first");
+      return;
+    }
+
+    console.log("Sending Action:", action);
+    console.log("Assignment ID:", assignmentId);
+
+    const response = await axios.post(
+      `${API}/oraebook/reviewer/${assignmentId}/respond`,
+      {
+        action: action,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
     );
 
-    alert("Review submitted");
-    navigate("/reviewer/pending");
-  };
+    console.log("SERVER RESPONSE:", response.data);
+
+    if (response.data.success) {
+      alert(`Assignment ${action} successfully`);
+
+      // reload updated assignment
+      await load();
+    } else {
+      alert(response.data.message || "Action failed");
+    }
+
+  } catch (error) {
+    console.error("FULL ERROR:", error);
+
+    // backend response
+    if (error.response) {
+      console.log("STATUS:", error.response.status);
+      console.log("DATA:", error.response.data);
+
+      alert(
+        error.response.data?.message ||
+        error.response.data?.error ||
+        "Server error"
+      );
+    } else {
+      alert("Network error");
+    }
+  }
+};
 
   if (!data) return <div>Loading...</div>;
+
+  const fileUrl = data.file_path
+    ? `${API}/${data.file_path}`
+    : null;
 
   return (
     <MainLayout>
       <div className="container mt-4">
 
         <h3>{data.title}</h3>
+
+        <p><b>Status:</b> {data.status}</p>
+        <p><b>Language:</b> {data.language}</p>
+        <p><b>Publication Year:</b> {data.publication_year}</p>
+        <p><b>ISBN:</b> {data.isbn}</p>
+        <p><b>Round:</b> {data.round_no}</p>
+
+        <hr />
+
+        <h5>Abstract</h5>
         <p>{data.abstract}</p>
 
-        <h4 className="mt-4">Review</h4>
+        {/* ✅ PDF VIEW */}
+        {fileUrl && (
+          <iframe
+            src={fileUrl}
+            width="100%"
+            height="500px"
+            title="PDF Viewer"
+          />
+        )}
 
-        <input className="form-control mt-2" placeholder="Originality"
-          onChange={(e)=>setForm({...form, originality_score:e.target.value})} />
+        <div className="mt-3">
 
-        <input className="form-control mt-2" placeholder="Clarity"
-          onChange={(e)=>setForm({...form, clarity_score:e.target.value})} />
+          {/* ASSIGNED */}
+          {data.status === "assigned" && (
+            <>
+              <button
+                className="btn btn-success me-2"
+                onClick={() => respond("accepted")}
+              >
+                Accept
+              </button>
 
-        <input className="form-control mt-2" placeholder="Methodology"
-          onChange={(e)=>setForm({...form, methodology_score:e.target.value})} />
+              <button
+                className="btn btn-danger"
+                onClick={() => respond("declined")}
+              >
+                Decline
+              </button>
+            </>
+          )}
 
-        <input className="form-control mt-2" placeholder="Relevance"
-          onChange={(e)=>setForm({...form, relevance_score:e.target.value})} />
+          {/* ACCEPTED */}
+          {data.status === "accepted" && (
+            <button
+              className="btn btn-primary"
+              onClick={() =>
+                navigate(`/reviewer/review/${assignmentId}`)
+              }
+            >
+              Start Review
+            </button>
+          )}
 
-        <textarea className="form-control mt-2" placeholder="Comments"
-          onChange={(e)=>setForm({...form, comments_for_author:e.target.value})} />
-
-        <select className="form-control mt-2"
-          onChange={(e)=>setForm({...form, recommendation:e.target.value})}>
-          <option value="">Select</option>
-          <option value="accept">Accept</option>
-          <option value="minor_revision">Minor</option>
-          <option value="major_revision">Major</option>
-          <option value="reject">Reject</option>
-        </select>
-
-        <button className="btn btn-success mt-3" onClick={submit}>
-          Submit Review
-        </button>
+        </div>
 
       </div>
     </MainLayout>

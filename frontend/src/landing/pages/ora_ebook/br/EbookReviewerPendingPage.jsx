@@ -2,33 +2,39 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import MainLayout from "../../../../components/layout/MainLayout";
 import { useNavigate } from "react-router-dom";
+
 const API = process.env.REACT_APP_API_URL;
 
 function EbookReviewerPendingPage() {
+  const navigate = useNavigate();
+
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
-  const [actionLoadingId, setActionLoadingId] = useState("");
-  const [responseNote, setResponseNote] = useState({});
-  const [selectedItem, setSelectedItem] = useState(null);
 
   const BASE = `${API}/oraebook/reviewer/pending`;
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) return (window.location.href = "/login");
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
     loadData(token);
   }, []);
-const navigate = useNavigate();
+
   const loadData = async (token) => {
     try {
       setLoading(true);
+
       const res = await axios.get(BASE, {
         headers: { Authorization: `Bearer ${token}` },
         params: { search, status },
       });
+
       setRows(res?.data?.data || []);
+
     } catch (err) {
       console.error(err);
       alert("Failed to load data");
@@ -42,99 +48,24 @@ const navigate = useNavigate();
     loadData(token);
   };
 
-  // ✅ ACCEPT / DECLINE
-  const handleRespond = async (assignmentId, action) => {
+  const startReview = async (assignmentId) => {
     const token = localStorage.getItem("token");
 
     try {
-      setActionLoadingId(assignmentId);
-
       await axios.post(
-        `${BASE}/${assignmentId}/respond`,
+        `${API}/oraebook/reviewer/${assignmentId}/start`,
+        {},
         {
-          action,
-          response_note: responseNote[assignmentId] || "",
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
 
-      setRows((prev) =>
-        prev.map((item) =>
-          item.assignment_id === assignmentId
-            ? { ...item, status: action }
-            : item
-        )
-      );
+      navigate(`/reviewer/review/${assignmentId}`);
 
-      setSelectedItem(null);
     } catch (err) {
       console.error(err);
-      alert("Failed to respond");
-    } finally {
-      setActionLoadingId("");
+      alert("Failed to start review");
     }
-  };
-
-  // ✅ START REVIEW
-const startReview = async (assignmentId) => {
-  const token = localStorage.getItem("token");
-
-  try {
-    setActionLoadingId(assignmentId);
-
-    // ✅ update backend status first
-    await axios.post(
-      `${API}/oraebook/reviewer/${assignmentId}/start`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    // ✅ redirect to review page
-    navigate(`/reviewer/review/${assignmentId}`);
-
-  } catch (err) {
-    console.error(err);
-    alert("Failed to start review");
-  } finally {
-    setActionLoadingId("");
-  }
-};
-
-  // ✅ SUBMIT REVIEW
-  const submitReview = async (assignmentId) => {
-    const token = localStorage.getItem("token");
-
-    try {
-      setActionLoadingId(assignmentId);
-
-      await axios.post(
-        `${API}/oraebook/reviewer/${assignmentId}/submit`,
-        {
-          recommendation: "accept", // 🔥 you can replace with select input
-          comments_for_author: responseNote[assignmentId] || "",
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      setRows((prev) =>
-        prev.map((item) =>
-          item.assignment_id === assignmentId
-            ? { ...item, status: "completed" }
-            : item
-        )
-      );
-
-      setSelectedItem(null);
-    } catch (err) {
-      console.error(err);
-      alert("Failed to submit review");
-    } finally {
-      setActionLoadingId("");
-    }
-  };
-
-  const setNote = (id, value) => {
-    setResponseNote((prev) => ({ ...prev, [id]: value }));
   };
 
   return (
@@ -162,8 +93,6 @@ const startReview = async (assignmentId) => {
                 <option value="">All</option>
                 <option value="assigned">Assigned</option>
                 <option value="accepted">Accepted</option>
-                <option value="in_review">In Review</option>
-                <option value="completed">Completed</option>
               </select>
             </div>
 
@@ -204,110 +133,36 @@ const startReview = async (assignmentId) => {
                           ? new Date(item.due_date).toLocaleDateString()
                           : "-"}
                       </td>
+
                       <td>
                         <button
-                          className="btn btn-info btn-sm"
-                          onClick={() => setSelectedItem(item)}
+                          className="btn btn-sm btn-info me-2"
+                          onClick={() =>
+                            navigate(`/ebook/reviewer/review/${item.assignment_id}`)
+                          }
                         >
                           View
                         </button>
+
+                        {item.status === "accepted" && (
+                          <button
+                            className="btn btn-sm btn-primary"
+                            onClick={() => startReview(item.assignment_id)}
+                          >
+                            Start
+                          </button>
+                        )}
                       </td>
+
                     </tr>
                   ))}
                 </tbody>
 
               </table>
             )}
+
           </div>
         </div>
-
-        {/* MODAL */}
-        {selectedItem && (
-          <div className="modal d-block" style={{ background: "#00000088" }}>
-            <div className="modal-dialog modal-lg">
-              <div className="modal-content p-3">
-
-                <h4>{selectedItem.title}</h4>
-
-                <p><b>Author:</b> {selectedItem.author_name || "-"}</p>
-                <p><b>Category:</b> {selectedItem.category || "-"}</p>
-                <p><b>Language:</b> {selectedItem.language}</p>
-
-                <hr />
-
-                <p>{selectedItem.abstract}</p>
-
-                <textarea
-                  className="form-control"
-                  placeholder="Note..."
-                  value={responseNote[selectedItem.assignment_id] || ""}
-                  onChange={(e) =>
-                    setNote(selectedItem.assignment_id, e.target.value)
-                  }
-                />
-
-                <div className="mt-3">
-
-                  {/* ASSIGNED */}
-                  {selectedItem.status === "assigned" && (
-                    <>
-                      <button
-                        className="btn btn-success mr-2"
-                        onClick={() =>
-                          handleRespond(selectedItem.assignment_id, "accepted")
-                        }
-                      >
-                        Accept
-                      </button>
-
-                      <button
-                        className="btn btn-danger"
-                        onClick={() =>
-                          handleRespond(selectedItem.assignment_id, "declined")
-                        }
-                      >
-                        Decline
-                      </button>
-                    </>
-                  )}
-
-                  {/* ACCEPTED */}
-                  {selectedItem.status === "accepted" && (
-                    <button
-                      className="btn btn-primary"
-                      onClick={() =>
-                        startReview(selectedItem.assignment_id)
-                      }
-                    >
-                      Start Review
-                    </button>
-                  )}
-
-                  {/* IN REVIEW */}
-                  {selectedItem.status === "in_review" && (
-                    <button
-                      className="btn btn-success"
-                      onClick={() =>
-                        submitReview(selectedItem.assignment_id)
-                      }
-                    >
-                      Submit Review
-                    </button>
-                  )}
-
-                  <button
-                    className="btn btn-secondary ml-2"
-                    onClick={() => setSelectedItem(null)}
-                  >
-                    Close
-                  </button>
-
-                </div>
-
-              </div>
-            </div>
-          </div>
-        )}
 
       </div>
     </MainLayout>
