@@ -156,7 +156,6 @@ import LibraryAdminUsersPage from "./pages/library/admin/LibraryAdminUsersPage.j
 import InventoryReportsPage from "./pages/library/manager/InventoryReportsPage.jsx";
 
 // Ebook Imports
-import EbookDashboardPage from "./pages/ebook/EbookDashboardPage.jsx";
 import EbookSubmissionsPage from "./pages/ebook/EbookSubmissionsPage.jsx";
 import EbookSubmissionCreatePage from "./pages/ebook/EbookSubmissionCreatePage.jsx";
 import EbookSubmissionEditPage from "./pages/ebook/EbookSubmissionEditPage.jsx";
@@ -241,6 +240,10 @@ import EbookReviewerReviewPage from "./landing/pages/ora_ebook/br/EbookReviewerR
 import EbookReviewerCompletedPage from "./landing/pages/ora_ebook/br/EbookReviewerCompletedPage.jsx";
 import ReviewerProductionCompletedPage from "./landing/pages/ora_ebook/dcm/ReviewerProductionCompletedPage.jsx";
 import EbookProductionPaymentPage from "./landing/pages/ora_ebook/dcm/EbookProductionPaymentPage.jsx";
+import EbookReviewerRejectedPage from "./landing/pages/ora_ebook/br/EbookReviewerRejectedPage.jsx";
+import EbookReviewerAllPage from "./landing/pages/ora_ebook/br/EbookReviewerAllPage.jsx";
+//EbookDashboardPage
+import EbookDashboardPage from "./landing/pages/ora_ebook/dashboard/EbookDashboardPage.jsx";
 
 function App() {
   return (
@@ -446,7 +449,6 @@ function App() {
         {/* Ebook Protected Routes */}
         {/* //authors dashboard */}
         <Route path="/ebook/author/dashboard" element={<ProtectedRoute><AuthorDashboardPage /></ProtectedRoute>} />
-        <Route path="/ebook/dashboard" element={<ProtectedRoute><EbookDashboardPage /></ProtectedRoute>} />
         <Route path="/ebook/workflow-overview" element={<ProtectedRoute><EbookWorkflowOverviewPage /></ProtectedRoute>} />
         <Route path="/ebook/submissions" element={<ProtectedRoute><EbookSubmissionsPage /></ProtectedRoute>} />
         <Route path="/ebook/submissions/create" element={<ProtectedRoute><EbookSubmissionCreatePage /></ProtectedRoute>} />
@@ -461,10 +463,9 @@ function App() {
         <Route path="/ebook/submissions/:id/payment" element={<ProtectedRoute><EbookAuthorPaymentPage /></ProtectedRoute>} />
         <Route path="/ebook/submissions/:id/proof-approval" element={<ProtectedRoute><EbookAuthorProofApprovalPage /></ProtectedRoute>} />
         <Route path="/ebook/submissions/:id/review-comments" element={<ProtectedRoute><EbookAuthorReviewCommentsPage /></ProtectedRoute>} />
-        <Route path="/ebook/reviewer" element={<ProtectedRoute><EbookReviewerPage filter="all" /></ProtectedRoute>} />
         <Route path="/ebook/reviewer/pending" element={<ProtectedRoute><EbookReviewerPage filter="pending" /></ProtectedRoute>} />
         <Route path="/ebook/reviewer/accepted" element={<ProtectedRoute><EbookReviewerPage filter="accepted" /></ProtectedRoute>} />
-        <Route path="/ebook/reviewer/rejected" element={<ProtectedRoute><EbookReviewerPage filter="rejected" /></ProtectedRoute>} />
+        {/* <Route path="/ebook/reviewer/rejected" element={<ProtectedRoute><EbookReviewerPage filter="rejected" /></ProtectedRoute>} /> */}
         {/* <Route path="/ebook/reviewer/completed" element={<ProtectedRoute><EbookReviewerPage filter="completed" /></ProtectedRoute>} /> */}
         <Route path="/ebook/reviewer/overdue" element={<ProtectedRoute><EbookReviewerPage filter="overdue" /></ProtectedRoute>} />
         <Route path="/ebook/review-assignments/:id" element={<ProtectedRoute><EbookReviewDetailPage /></ProtectedRoute>} />
@@ -475,6 +476,18 @@ function App() {
   path="ebook/reviewer/completed"
   element={<EbookReviewerCompletedPage />}
 />
+
+<Route
+  path="ebook/reviewer/rejected"
+  element={<EbookReviewerRejectedPage />}
+/>
+
+<Route
+  path="ebook/reviewer"
+  element={<EbookReviewerAllPage />}
+/>
+
+
 
 <Route
   path="/ebook/production/reviewer/completed"
@@ -505,6 +518,8 @@ function App() {
   path="/oraebook/reviewer/pending"
   element={<EbookReviewerPendingPage />}
 />
+        <Route path="/ebook/dashboard" element={<ProtectedRoute><EbookDashboardPage /></ProtectedRoute>} />
+
 <Route path="/ebook/reviewer/review/:assignmentId" element={<EbookReviewPage />} />
 <Route
   path="/ebook/reviewer/submit-review/:assignmentId"
@@ -535,7 +550,8 @@ function App() {
         <Route path="/ebook/production" element={<ProtectedRoute><EbookProductionPage /></ProtectedRoute>} />
         <Route path="/ebook/management/publications" element={<ProtectedRoute><EbookPublicationsPage /></ProtectedRoute>} />
         <Route path="/ebook/admin" element={<ProtectedRoute><EbookAdminPage /></ProtectedRoute>} />
-
+ <Route path="/ebook/management/publications/:id" element={<EbookPublicPublicationDetailPage />} />
+        <Route path="/ebook/publications/slug/:slug" element={<EbookPublicPublicationDetailPage />} />
         {/* Finance Dashboard */}
         <Route path="/finance-dashboard" element={<ProtectedRoute><FinanceDashboard /></ProtectedRoute>} />
 

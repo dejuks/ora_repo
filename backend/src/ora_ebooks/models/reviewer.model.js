@@ -323,37 +323,103 @@ export async function getCompletedReviews(
 
   return rows;
 }
-
-export async function getReviewerCompletedProduction() {
+//getReviewerRejectedProduction
+export async function getReviewerRejectedProduction(reviewerId, status) {
   const { rows } = await db.query(
     `
     SELECT
       era.assignment_id,
       era.status,
       era.completed_at,
-      era.recommendation,
-      era.originality_score,
-      era.clarity_score,
-      era.methodology_score,
-      era.relevance_score,
 
       em.title,
       em.abstract,
-      em.language
+      em.language,
+      em.publication_year,
+      em.file_path
+
+    FROM ebook_review_assignments era
+
+    LEFT JOIN ora_ebook_manuscripts em
+      ON em.id = era.submission_id
+
+    WHERE era.reviewer_id = $1
+      AND era.status = $2::ebook_assignment_status
+
+    ORDER BY era.completed_at DESC
+    `,
+    [reviewerId, status]
+  );
+
+  return rows;
+} 
+// all status
+// getReviewerAssignmentsAll
+export async function getReviewerAssignmentsAll(reviewerId, filters = {}) {
+  const { search = "" } = filters;
+
+  let query = `
+    SELECT
+      era.assignment_id,
+      era.status,
+      era.assigned_at,
+      era.due_date,
+      era.completed_at,
+
+      em.title,
+      em.abstract,
+      em.language,
+      em.publication_year
 
     FROM ebook_review_assignments era
     LEFT JOIN ora_ebook_manuscripts em
+      ON em.id = era.submission_id
+    WHERE era.reviewer_id = $1
+  `;
+
+  const values = [reviewerId];
+  let i = 2;
+
+  if (search) {
+    query += ` AND em.title ILIKE $${i}`;
+    values.push(`%${search}%`);
+  }
+
+  query += ` ORDER BY era.assigned_at DESC`;
+
+  const { rows } = await db.query(query, values);
+  return rows;
+} 
+export async function getReviewerCompletedProduction() {
+  const { rows } = await db.query(`
+    SELECT
+      era.assignment_id,
+      era.submission_id,
+      era.status,
+      era.payment_status,
+      era.payment_amount,
+      era.payment_method,
+      era.completed_at,
+      era.recommendation,
+
+      em.id,
+      em.title,
+      em.abstract,
+      em.language,
+      em.status AS manuscript_status
+
+    FROM ebook_review_assignments AS era
+
+    LEFT JOIN ora_ebook_manuscripts AS em
       ON em.id = era.submission_id
 
     WHERE era.status = 'completed'
 
     ORDER BY era.completed_at DESC
-    `
-  );
+  `);
 
   return rows;
 }
-
 export async function markPaymentAsPaidModel(assignmentId, method) {
   const { rows } = await db.query(
     `

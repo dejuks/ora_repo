@@ -1,146 +1,177 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import MainLayout from "../../components/layout/MainLayout.jsx";
-import StatusBadge from "./components/StatusBadge.jsx";
 
-// ---------------- MOCK USER ----------------
+// ================= MOCK USER =================
 const mockUser = {
   id: "1",
-  name: "Dejene",
-  roles: [{ role_name: "EBOOK_AUTHOR" }],
-};
-
-// ---------------- MOCK DATA ----------------
-const MOCK_DATA = {
-  author: [
-    {
-      submission_id: 1,
-      title: "React Basics",
-      status: "published",
-      created_at: "2026-05-01",
-    },
-    {
-      submission_id: 2,
-      title: "Node.js Guide",
-      status: "revision_requested",
-      created_at: "2026-05-02",
-    },
-    {
-      submission_id: 3,
-      title: "Laravel API",
-      status: "payment_pending",
-      created_at: "2026-05-03",
-    },
-  ],
-
-  reviewer: [
-    {
-      assignment_id: 1,
-      title: "AI Book Review",
-      status: "assigned",
-      created_at: "2026-05-01",
-    },
-    {
-      assignment_id: 2,
-      title: "ML Basics",
-      status: "submitted",
-      created_at: "2026-05-02",
-    },
-  ],
-
-  editor: [
-    {
-      id: 1,
-      title: "Database Design",
-      stage: "screening",
-      status: "pending",
-      created_at: "2026-05-01",
-    },
-  ],
-
-  admin: [
-    {
-      id: 1,
-      title: "System Overview",
-      status: "published",
-      created_at: "2026-05-01",
-    },
+  name: "Dejene Kasa",
+  roles: [
+    { role_name: "EBOOK_AUTHOR" },
+    { role_name: "EBOOK_REVIEWER" },
   ],
 };
 
-// ---------------- HELPERS ----------------
-const normalizeRoleName = (value) =>
-  (value || "").toString().trim().toUpperCase();
+// ================= UNIFIED DATA =================
+const MOCK_ITEMS = [
+  {
+    id: 1,
+    type: "submission",
+    title: "React Basics",
+    status: "published",
+    stage: null,
+    role: "EBOOK_AUTHOR",
+    created_at: "2026-05-01",
+  },
+  {
+    id: 2,
+    type: "submission",
+    title: "Node.js Guide",
+    status: "revision_requested",
+    stage: null,
+    role: "EBOOK_AUTHOR",
+    created_at: "2026-05-02",
+  },
+  {
+    id: 3,
+    type: "payment",
+    title: "Laravel API",
+    status: "payment_pending",
+    stage: null,
+    role: "EBOOK_AUTHOR",
+    created_at: "2026-05-03",
+  },
+  {
+    id: 4,
+    type: "review",
+    title: "AI Book Review",
+    status: "assigned",
+    stage: null,
+    role: "EBOOK_REVIEWER",
+    created_at: "2026-05-01",
+  },
+  {
+    id: 5,
+    type: "review",
+    title: "ML Basics",
+    status: "submitted",
+    stage: null,
+    role: "EBOOK_REVIEWER",
+    created_at: "2026-05-02",
+  },
+  {
+    id: 6,
+    type: "editing",
+    title: "Database Design",
+    status: "pending",
+    stage: "screening",
+    role: "EBOOK_EDITOR",
+    created_at: "2026-05-01",
+  },
+  {
+    id: 7,
+    type: "system",
+    title: "System Overview",
+    status: "published",
+    stage: null,
+    role: "EBOOK_ADMIN",
+    created_at: "2026-05-01",
+  },
+];
 
-const ROLE_TO_PANEL = {
-  EBOOK_AUTHOR: "author",
-  EBOOK_REVIEWER: "reviewer",
-  EBOOK_EDITOR: "editor",
-  EBOOK_ADMIN: "admin",
+// ================= ROLE CONFIG =================
+const ROLE_CONFIG = {
+  EBOOK_AUTHOR: {
+    label: "Author",
+    filter: (item) => item.role === "EBOOK_AUTHOR",
+    summary: (data) => ({
+      total: data.length,
+      published: data.filter((d) => d.status === "published").length,
+      revisions: data.filter(
+        (d) => d.status === "revision_requested"
+      ).length,
+      payment_pending: data.filter(
+        (d) => d.status === "payment_pending"
+      ).length,
+    }),
+  },
+
+  EBOOK_REVIEWER: {
+    label: "Reviewer",
+    filter: (item) => item.role === "EBOOK_REVIEWER",
+    summary: (data) => ({
+      assigned: data.filter((d) => d.status === "assigned").length,
+      submitted: data.filter((d) => d.status === "submitted").length,
+      total: data.length,
+    }),
+  },
+
+  EBOOK_EDITOR: {
+    label: "Editor",
+    filter: (item) => item.role === "EBOOK_EDITOR",
+    summary: (data) => ({
+      screening: data.filter((d) => d.stage === "screening").length,
+      total: data.length,
+    }),
+  },
+
+  EBOOK_ADMIN: {
+    label: "Admin",
+    filter: () => true,
+    summary: (data) => ({
+      total: data.length,
+      published: data.filter((d) => d.status === "published").length,
+    }),
+  },
 };
 
-// ---------------- COMPONENT ----------------
+// ================= HELPER =================
+const normalize = (r) => (r || "").toUpperCase();
+
+// ================= COMPONENT =================
 export default function EbookDashboardPage() {
   const user = mockUser;
 
-  const roleNames =
-    user?.roles?.map((r) => normalizeRoleName(r.role_name)) || [];
+  // get roles
+  const roles = user.roles.map((r) => normalize(r.role_name));
 
-  const panel = useMemo(
-    () => roleNames.map((r) => ROLE_TO_PANEL[r]).find(Boolean) || "author",
-    [roleNames.join(",")]
+  // pick active config (first role priority)
+  const activeRole = roles.find((r) => ROLE_CONFIG[r]) || "EBOOK_AUTHOR";
+  const config = ROLE_CONFIG[activeRole];
+
+  // filter items based on ALL user roles
+  const visibleItems = useMemo(() => {
+    return MOCK_ITEMS.filter((item) =>
+      roles.includes(item.role)
+    );
+  }, [roles]);
+
+  // summary
+  const summary = useMemo(
+    () => config.summary(visibleItems),
+    [visibleItems, config]
   );
 
-  const [data] = useState(MOCK_DATA[panel] || []);
-
-  // ---------------- SUMMARY ----------------
-  const summary = useMemo(() => {
-    if (panel === "author") {
-      return {
-        total: data.length,
-        published: data.filter((d) => d.status === "published").length,
-        revisions: data.filter((d) => d.status === "revision_requested").length,
-      };
-    }
-
-    if (panel === "reviewer") {
-      return {
-        pending: data.filter((d) =>
-          ["assigned", "accepted"].includes(d.status)
-        ).length,
-        completed: data.filter((d) => d.status === "submitted").length,
-        total: data.length,
-      };
-    }
-
-    if (panel === "editor") {
-      return {
-        screening: data.filter((d) => d.stage === "screening").length,
-        total: data.length,
-      };
-    }
-
-    return {
-      total: data.length,
-    };
-  }, [data, panel]);
-
-  // ---------------- UI ----------------
   return (
     <MainLayout>
-      <div className="content-header">
-        <h1>{panel.toUpperCase()} DASHBOARD</h1>
-        <p className="text-muted">Static demo (no API)</p>
+      {/* HEADER */}
+      <div className="content-header mb-3">
+        <h2>{config.label} Dashboard</h2>
+        <p className="text-muted">
+          Unified dashboard for all ebook roles
+        </p>
       </div>
 
-      {/* SUMMARY */}
-      <div className="row mb-3">
-        {Object.entries(summary).map(([k, v]) => (
-          <div className="col-md-3" key={k}>
-            <div className="card">
+      {/* SUMMARY CARDS */}
+      <div className="row mb-4">
+        {Object.entries(summary).map(([key, value]) => (
+          <div className="col-md-3 mb-2" key={key}>
+            <div className="card shadow-sm">
               <div className="card-body">
-                <small className="text-muted">{k}</small>
-                <h3>{v}</h3>
+                <small className="text-muted text-uppercase">
+                  {key}
+                </small>
+                <h3 className="mt-1">{value}</h3>
               </div>
             </div>
           </div>
@@ -149,38 +180,46 @@ export default function EbookDashboardPage() {
 
       {/* TABLE */}
       <div className="card">
-        <div className="card-header">My Items</div>
+        <div className="card-header">
+          <strong>My Activities</strong>
+        </div>
+
         <div className="card-body table-responsive">
-          <table className="table">
+          <table className="table table-hover">
             <thead>
               <tr>
                 <th>Title</th>
+                <th>Type</th>
                 <th>Status</th>
                 <th>Date</th>
                 <th>Action</th>
               </tr>
             </thead>
+
             <tbody>
-              {!data.length ? (
+              {visibleItems.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="text-center">
-                    No data
+                  <td colSpan="5" className="text-center">
+                    No data found
                   </td>
                 </tr>
               ) : (
-                data.map((row, i) => (
-                  <tr key={i}>
-                    <td>{row.title}</td>
+                visibleItems.map((item) => (
+                  <tr key={item.id}>
+                    <td>{item.title}</td>
+                    <td>{item.type}</td>
                     <td>
-                      <span>{row.status}</span>
+                      <span className="badge bg-info text-dark">
+                        {item.status}
+                      </span>
                     </td>
                     <td>
-                      {new Date(row.created_at).toLocaleDateString()}
+                      {new Date(item.created_at).toLocaleDateString()}
                     </td>
                     <td>
                       <Link
-                        className="btn btn-sm btn-primary"
                         to="#"
+                        className="btn btn-sm btn-primary"
                       >
                         View
                       </Link>
