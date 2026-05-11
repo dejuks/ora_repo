@@ -6,7 +6,7 @@ import {
   startReview,submitReview,getCompletedReviews,
   markPaymentAsPaidModel,createProductionPaymentOrder,
   markProductionPaymentPaid,getReviewerCompletedProduction,
-  getProductionPaymentOrders
+  getProductionPaymentOrders,getReviewerRejectedProduction,getReviewerAssignmentsAll
 } from "../models/reviewer.model.js";
 
 /**
@@ -258,6 +258,65 @@ export async function getReviewerCompletedProductionHandler(req, res) {
     return res.status(500).json({
       success: false,
       message: "Server error",
+    });
+  }
+}
+
+// rejcted
+// getRejectedReviewsHandler
+export async function getRejectedReviewsHandler(
+  req,
+  res
+) {
+  try {
+    const reviewerId =
+      req.user.uuid || req.user.id || req.user.user_id;
+
+    const data = await getReviewerRejectedProduction(
+      reviewerId,
+      "declined"
+    );
+
+    return res.json({
+      success: true,
+      data,
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+// display all status
+// getReviewerAssignmentsAllHandler
+export async function getReviewerAssignmentsAllHandler(
+  req,
+  res
+) {
+  try {
+    const reviewerId =
+      req.user.uuid || req.user.id || req.user.user_id;
+
+    const data = await getReviewerAssignmentsAll(
+      reviewerId,
+      req.query
+    );
+
+    return res.json({
+      success: true,
+      data,
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
 }

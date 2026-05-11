@@ -3,6 +3,7 @@ import path from "path";
 import pool from "../../config/db.js";
 import { sha256File } from "../utils/fileChecksum.js";
 import { EbookSubmissionModel } from "../models/ebookSubmission.model.js";
+import e from "express";
 
 const badRequest = (message) => Object.assign(new Error(message), { status: 400 });
 const notFound = (message) => Object.assign(new Error(message), { status: 404 });
@@ -56,7 +57,60 @@ const getCurrentReviewRound = async (client, submissionId) => {
   );
   return rows[0]?.round_no || 0;
 };
+// publish
+export const publish = async (submissionId, actorId, payload = {}) => {
+  const client = await pool.connect();
 
+  try {
+    await client.query("BEGIN");
+    const currentRes = await client.query(
+      `SELECT *
+        FROM ora_ebook_manuscripts
+        WHERE id = $1
+        FOR UPDATE`,
+      [submissionId]
+    );
+    const current = currentRes.rows[0];
+
+    if (!current) throw notFound("Submission not found");
+
+    if (current.status !== "accepted") {
+      throw badRequest("Submission is not accepted");
+    }
+
+    const updateRes = await client.query(
+      ` UPDATE ora_ebook_manuscripts
+        SET status = 'published',
+            published_at = NOW(),
+            updated_at = NOW()
+        WHERE id = $1
+        RETURNING *`,
+      [submissionId]
+    );
+    const updated = updateRes.rows[0];
+    await addHistory(
+      client,
+      submissionId,
+      current.status,
+      "published",
+      "editor.published",
+      actorId,
+      JSON.stringify(payload)
+    );
+    await client.query("COMMIT");
+    return updated;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+
+    
+
+    
 export const ebookWorkflowService = {
   async authorDashboard(userId) {
     const [summaryRes, itemsRes] = await Promise.all([
@@ -67,14 +121,14 @@ export const ebookWorkflowService = {
                 COUNT(*) FILTER (WHERE status = 'accepted')::int AS accepted_count,
                 COUNT(*) FILTER (WHERE status = 'published')::int AS published_count,
                 COUNT(*) FILTER (WHERE status = 'rejected')::int AS rejected_count
-         FROM ebook_submissions
+         FROM ora_ebook_manuscripts
          WHERE author_id = $1`,
         [userId]
       ),
       pool.query(
         `SELECT es.*, ep.slug, ep.access_level, ep.is_public
-         FROM ebook_submissions es
-         LEFT JOIN ebook_publications ep ON ep.submission_id = es.submission_id
+         FROM ora_ebook_manuscripts es
+         LEFT JOIN ebook_publications ep ON ep.submission_id = es.id
          WHERE es.author_id = $1
          ORDER BY COALESCE(es.updated_at, es.created_at) DESC
          LIMIT 50`,
@@ -85,41 +139,95 @@ export const ebookWorkflowService = {
     return { summary: summaryRes.rows[0], submissions: itemsRes.rows };
   },
 
-  async editorDashboard(userId = null) {
-    const [summaryRes, itemsRes] = await Promise.all([
-      pool.query(
-        `SELECT COUNT(*)::int AS total_queue,
-                COUNT(*) FILTER (WHERE status = 'submitted')::int AS new_submissions,
-                COUNT(*) FILTER (WHERE status = 'editor_screening')::int AS screening_count,
-                COUNT(*) FILTER (WHERE status = 'under_review')::int AS review_count,
-                COUNT(*) FILTER (WHERE status = 'revision_requested')::int AS revision_count,
-                COUNT(*) FILTER (WHERE status = 'accepted')::int AS accepted_count,
-                COUNT(*) FILTER (WHERE status = 'rejected')::int AS rejected_count
-         FROM ebook_submissions`,
-        []
-      ),
-      pool.query(
-        `SELECT es.*, u.full_name AS author_name, e.full_name AS editor_name,
-                COUNT(DISTINCT era.assignment_id)::int AS assignment_count,
-                COUNT(DISTINCT er.review_id)::int AS review_count
-         FROM ebook_submissions es
-         LEFT JOIN users u ON u.uuid = es.author_id
-         LEFT JOIN users e ON e.uuid = es.editor_id
-         LEFT JOIN ebook_review_assignments era ON era.submission_id = es.submission_id
-         LEFT JOIN ebook_reviews er ON er.submission_id = es.submission_id
-         GROUP BY es.submission_id, u.full_name, e.full_name
-         ORDER BY COALESCE(es.updated_at, es.created_at) DESC
-         LIMIT 100`,
-        []
-      ),
-    ]);
+ async editorDashboard(userId = null) {
+  const [summaryRes, itemsRes] = await Promise.all([
+    // ================= SUMMARY =================
+    pool.query(
+      `
+      SELECT
+        COUNT(*)::int AS total_queue,
 
-    return {
-      summary: summaryRes.rows[0],
-      submissions: itemsRes.rows,
-      viewer_id: userId,
-    };
-  },
+        COUNT(*) FILTER (
+          WHERE status = 'submitted'
+        )::int AS new_submissions,
+
+        COUNT(*) FILTER (
+          WHERE status = 'editor_screening'
+        )::int AS screening_count,
+
+        COUNT(*) FILTER (
+          WHERE status = 'under_review'
+        )::int AS review_count,
+
+        COUNT(*) FILTER (
+          WHERE status = 'revision_requested'
+        )::int AS revision_count,
+
+        COUNT(*) FILTER (
+          WHERE status = 'accepted'
+        )::int AS accepted_count,
+
+        COUNT(*) FILTER (
+          WHERE status = 'rejected'
+        )::int AS rejected_count
+
+      FROM ora_ebook_manuscripts
+      `,
+      []
+    ),
+
+    // ================= ITEMS =================
+    pool.query(
+      `
+      SELECT
+        es.id,
+        es.author_id,
+        es.title,
+        es.abstract,
+        es.file_path,
+        es.isbn,
+        es.language,
+        es.publication_year,
+        es.status,
+        es.created_at,
+        es.updated_at,
+
+        u.full_name AS author_name,
+
+        COUNT(DISTINCT era.assignment_id)::int AS assignment_count,
+
+        COUNT(DISTINCT er.review_id)::int AS review_count
+
+      FROM ora_ebook_manuscripts es
+
+      LEFT JOIN users u
+        ON u.uuid = es.author_id
+
+      LEFT JOIN ebook_review_assignments era
+        ON era.submission_id = es.id
+
+      LEFT JOIN ebook_reviews er
+        ON er.submission_id = es.id
+
+      GROUP BY
+        es.id,
+        u.full_name
+
+      ORDER BY
+        COALESCE(es.updated_at, es.created_at) DESC
+
+      LIMIT 100
+      `,
+      []
+    ),
+  ]);
+
+  return {
+    summary: summaryRes.rows[0] || {},
+    manuscripts: itemsRes.rows || [],
+    viewer_id: userId,
+  };
+},
 
   async reviewerDashboard(userId) {
     const [summaryRes, itemsRes] = await Promise.all([

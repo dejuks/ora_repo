@@ -3,12 +3,15 @@ import { authenticate } from "../../middleware/auth.middleware.js";
 
 import {
   getReviewerAssignmentsHandler,
+  getReviewerAssignmentsAllHandler,
   getReviewerPendingAssignmentsHandler,
   getReviewerAssignmentByIdHandler,
   respondToAssignmentHandler,
   startReviewHandler,
   submitReviewHandler,getCompletedReviewsHandler,getReviewerCompletedProductionHandler,
-  getProductionPaymentOrdersHandler,markPaymentPaidHandler,createProductionPaymentOrderHandler,markProductionPaymentPaidHandler 
+  getProductionPaymentOrdersHandler,markPaymentPaidHandler,createProductionPaymentOrderHandler,
+  markProductionPaymentPaidHandler,getRejectedReviewsHandler
+
 } from "../controllers/reviewer.controller.js";
 
 const router = express.Router();
@@ -41,10 +44,20 @@ router.get(
   "/completed",
   getCompletedReviewsHandler
 );
+// rejected
+router.get(
+  "/rejected",
+  getRejectedReviewsHandler
+);
 
 router.get(
   "/production/completed",
   getReviewerCompletedProductionHandler
+);
+//display all status
+router.get(
+  "/all",
+  getReviewerAssignmentsAllHandler
 );
 
 /**
